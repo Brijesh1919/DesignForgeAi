@@ -120,6 +120,27 @@ Borders: ${countBorders(rootUINode)}`);
     effectMismatches,
   };
 
+  const countFigmaNodeType = (fNode: SceneNode, typeStr: string): number => {
+    let c = fNode.type === typeStr ? 1 : 0;
+    if ("children" in fNode) {
+      for (const child of (fNode as any).children) {
+        c += countFigmaNodeType(child, typeStr);
+      }
+    }
+    return c;
+  };
+
+  const svgDet = countNodeType(rootUINode, "VECTOR");
+  const svgPr = countFigmaNodeType(rootFigmaNode, "FRAME") + countFigmaNodeType(rootFigmaNode, "VECTOR") + countFigmaNodeType(rootFigmaNode, "GROUP") + countFigmaNodeType(rootFigmaNode, "BOOLEAN_OPERATION");
+  const svgCh = Math.max(0, svgDet - svgPr);
+
+  console.log(`[BASE] node count: ${report.elementsExpected}`);
+  console.log(`[FINAL] node count: ${report.elementsCreated}`);
+  console.log(`[GEOMETRY] changed nodes: ${report.geometryMismatches}`);
+  console.log(`[TEXT] changed nodes: ${report.textMismatches}`);
+  console.log(`[SVG] changed nodes: ${svgCh}`);
+  console.log(`[EFFECT] changed nodes: ${report.effectMismatches}`);
+
   console.log(`[Fidelity]
 Elements expected: ${report.elementsExpected}
 Elements created: ${report.elementsCreated}

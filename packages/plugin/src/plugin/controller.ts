@@ -30,6 +30,7 @@ import {
 } from "./utils/post-processors";
 import { validateGeometryPostProcess, BaseRect } from "./utils/geometry-validator";
 import { recordBaseRenderBaseline } from "./utils/base-render-logger";
+import { applyFidelityAdapter } from "./fidelity";
 
 // ─── Plugin Init ─────────────────────────────────────────────
 
@@ -183,6 +184,7 @@ async function handleGeneration(payload: {
     // Initialize counts tracking
     const counts = { frames: 0, texts: 0, images: 0, skipped: 0 };
     const baseGeometryMap = new Map<string, BaseRect>();
+    const baseTextPropsMap = new Map<string, any>();
 
     const baseSettings = {
       ...payload.settings,
@@ -214,6 +216,7 @@ async function handleGeneration(payload: {
       settings: baseSettings,
       counts,
       baseGeometryMap,
+      baseTextPropsMap,
     });
 
     if (!result) {
@@ -223,7 +226,10 @@ async function handleGeneration(payload: {
     console.log("[BASE_RENDER] Completed");
 
     // Record BASE_RENDER baseline snapshot & node count BEFORE enhancements
-    recordBaseRenderBaseline(result);
+    const baselineSnapshot = recordBaseRenderBaseline(result);
+
+    // FIDELITY ADAPTER LAYER (HTML/CSS -> Figma 90% -> 99% Fidelity Upgrade)
+    await applyFidelityAdapter(rootFrame, result, baselineSnapshot);
 
     // STAGE 2: ISOLATED OPTIONAL ENHANCEMENT PASSES
     sendProgress("creating-nodes", "Executing optional enhancement passes...", 70);
@@ -253,7 +259,7 @@ async function handleGeneration(payload: {
     }
 
     // POST-ENHANCEMENT GEOMETRY VALIDATION PASS (Tolerance <= 0.5px)
-    validateGeometryPostProcess(result, baseGeometryMap);
+    validateGeometryPostProcess(result, baseGeometryMap, baseTextPropsMap);
 
     const printFigmaHierarchy = (node: SceneNode, indent = ""): string => {
       let rStr = `${indent}${node.name} (${node.type}) [x=${node.x}, y=${node.y}, w=${node.width}, h=${node.height}]\n`;

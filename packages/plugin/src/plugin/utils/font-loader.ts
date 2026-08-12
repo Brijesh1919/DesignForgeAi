@@ -46,28 +46,30 @@ export async function loadFont(
   family: string,
   weight: string = "Regular"
 ): Promise<FontName> {
-  const style = WEIGHT_MAP[weight] || "Regular";
-  const cacheKey = `${family}:${style}`;
+  const safeFamily = (family && family.trim()) ? family.trim() : "Inter";
+  const safeWeight = (weight && weight.trim()) ? weight.trim() : "Regular";
+  const style = WEIGHT_MAP[safeWeight] || "Regular";
+  const cacheKey = `${safeFamily}:${style}`;
 
   // Check cache
   if (loadedFonts.has(cacheKey)) {
-    return { family, style };
+    return { family: safeFamily, style };
   }
 
   // Try exact match
   try {
-    await figma.loadFontAsync({ family, style });
+    await figma.loadFontAsync({ family: safeFamily, style });
     loadedFonts.add(cacheKey);
-    return { family, style };
+    return { family: safeFamily, style };
   } catch {
     // Try weight alternatives
-    const alternatives = WEIGHT_ALTERNATIVES[weight] || [style];
+    const alternatives = WEIGHT_ALTERNATIVES[safeWeight] || [style];
     for (const altStyle of alternatives) {
       try {
-        await figma.loadFontAsync({ family, style: altStyle });
-        const altKey = `${family}:${altStyle}`;
+        await figma.loadFontAsync({ family: safeFamily, style: altStyle });
+        const altKey = `${safeFamily}:${altStyle}`;
         loadedFonts.add(altKey);
-        return { family, style: altStyle };
+        return { family: safeFamily, style: altStyle };
       } catch {
         continue;
       }

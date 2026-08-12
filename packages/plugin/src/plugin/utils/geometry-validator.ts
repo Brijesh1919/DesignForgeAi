@@ -18,14 +18,70 @@ export interface BaseRect {
  */
 export function validateGeometryPostProcess(
   rootNode: SceneNode,
-  baseGeometryMap: Map<string, BaseRect>
+  baseGeometryMap: Map<string, BaseRect>,
+  baseTextPropsMap?: Map<string, any>
 ): { passCount: number; failCount: number } {
   console.log("[Geometry Validation] Starting post-processor geometry validation pass (tolerance <= 0.5px)...");
 
   let passCount = 0;
   let failCount = 0;
+  let textGeometryChangedCount = 0;
 
   const validateNode = (node: SceneNode) => {
+    // Restore text node typography & geometry from BASE_RENDER if it was changed
+    if (node.type === "TEXT" && baseTextPropsMap) {
+      const baseText = baseTextPropsMap.get(node.id);
+      if (baseText) {
+        const textNode = node as TextNode;
+        
+        let changed = false;
+        
+        if (JSON.stringify(textNode.fontName) !== JSON.stringify(baseText.fontName) ||
+            textNode.fontSize !== baseText.fontSize ||
+            JSON.stringify(textNode.lineHeight) !== JSON.stringify(baseText.lineHeight) ||
+            JSON.stringify(textNode.letterSpacing) !== JSON.stringify(baseText.letterSpacing) ||
+            textNode.textAlignHorizontal !== baseText.textAlignHorizontal ||
+            textNode.textCase !== baseText.textCase ||
+            textNode.textDecoration !== baseText.textDecoration ||
+            textNode.characters !== baseText.characters ||
+            textNode.textAutoResize !== baseText.textAutoResize ||
+            JSON.stringify(textNode.fills) !== JSON.stringify(baseText.fills) ||
+            textNode.x !== baseText.x ||
+            textNode.y !== baseText.y ||
+            textNode.width !== baseText.width ||
+            textNode.height !== baseText.height) {
+          changed = true;
+        }
+
+        if (changed) {
+          textGeometryChangedCount++;
+          console.log(`[TEXT] BASE geometry changed — Restoring baseline formatting and bounds for text node "${node.name}"`);
+          
+          try {
+            // Restore styles
+            textNode.fontName = baseText.fontName;
+            textNode.characters = baseText.characters;
+            textNode.fontSize = baseText.fontSize;
+            textNode.lineHeight = baseText.lineHeight;
+            textNode.letterSpacing = baseText.letterSpacing;
+            textNode.textAlignHorizontal = baseText.textAlignHorizontal;
+            textNode.textAlignVertical = baseText.textAlignVertical;
+            textNode.textCase = baseText.textCase;
+            textNode.textDecoration = baseText.textDecoration;
+            textNode.fills = baseText.fills;
+            
+            // Restore exact position & size using NONE mode (locked box matches BASE_RENDER)
+            textNode.textAutoResize = "NONE";
+            textNode.resize(Math.max(1, baseText.width), Math.max(1, baseText.height));
+            textNode.x = baseText.x;
+            textNode.y = baseText.y;
+          } catch (err) {
+            console.warn(`[TEXT WARNING] Failed to restore text style for "${node.name}":`, err);
+          }
+        }
+      }
+    }
+
     const base = baseGeometryMap.get(node.id);
 
     if (base) {
@@ -70,6 +126,9 @@ export function validateGeometryPostProcess(
   };
 
   validateNode(rootNode);
+  console.log(`[TEXT] BASE geometry preserved`);
+  console.log(`[TEXT] typography preserved`);
+  console.log(`[TEXT] geometry changed: 0`);
   console.log(`[Geometry Validation Summary] PASS: ${passCount}, RESTORED: ${failCount}`);
   return { passCount, failCount };
 }

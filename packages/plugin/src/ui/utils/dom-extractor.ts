@@ -22,6 +22,28 @@ interface DOMExtractorOptions {
 }
 
 /**
+ * Resolves CSS var(--name) calls in a string against an element's computed styles.
+ */
+function resolveCssVariablesInString(str: string, element: HTMLElement, win: Window): string {
+  if (!str || !str.includes("var(")) return str;
+  return str.replace(/var\((--[^)]+)\)/g, (match, varName) => {
+    const trimmedVar = varName.trim();
+    let current: HTMLElement | null = element;
+    while (current && current.nodeType === Node.ELEMENT_NODE) {
+      const val = win.getComputedStyle(current).getPropertyValue(trimmedVar);
+      if (val && val.trim() !== "") {
+        console.log(`[VARIABLE]
+name: ${trimmedVar}
+resolvedValue: ${val.trim()}`);
+        return val.trim();
+      }
+      current = current.parentElement;
+    }
+    return match;
+  });
+}
+
+/**
  * Converts a RGB/RGBA color string to Hex format #RRGGBB or #RRGGBBAA.
  */
 function rgbaToHex(rgbaStr: string, doc?: Document): string {
@@ -149,6 +171,8 @@ function parseBoxShadow(boxShadow: string, doc: Document): any[] {
       blur: blur,
       spread: spread,
       opacity: shadowCol.length > 7 ? parseInt(shadowCol.substring(7, 9), 16) / 255 : 0.25,
+      source: "box-shadow",
+      value: trimmed,
     });
   }
   return effects;
@@ -232,8 +256,107 @@ function traverseDOM(
 
   // Determine Type and Collapsing
   let type: UINode["type"] = "FRAME";
-  if (element.tagName === "IMG") {
+  let svgContent: string | undefined = undefined;
+
+  const isSVG = element.localName?.toLowerCase() === "svg" || element.tagName.toLowerCase() === "svg" || (win.SVGElement && element instanceof win.SVGElement && element.tagName.toLowerCase() === "svg");
+
+  if (element.tagName.toUpperCase() === "IMG") {
     type = "IMAGE";
+  } else if (isSVG) {
+    type = "VECTOR";
+    const svgClone = element.cloneNode(true) as HTMLElement;
+
+    // First, resolve general attributes and variables in the cloned tree
+    const resolveAttributesAndVariables = (el: HTMLElement) => {
+      const attrs = Array.from(el.attributes);
+      for (const attr of attrs) {
+        if (attr.value && attr.value.includes("var(")) {
+          attr.value = resolveCssVariablesInString(attr.value, el, win);
+        }
+      }
+      for (const child of Array.from(el.children)) {
+        resolveAttributesAndVariables(child as HTMLElement);
+      }
+    };
+    resolveAttributesAndVariables(svgClone);
+
+    // Recursively inline computed presentation styles to bypassed Figma importer stylesheet ignorance
+    const inlineStylesRecursively = (original: HTMLElement, cloned: HTMLElement) => {
+      const style = win.getComputedStyle(original);
+
+      const fillVal = style.fill;
+      if (fillVal && fillVal !== "none" && fillVal !== "context-fill") {
+        cloned.setAttribute("fill", resolveCssVariablesInString(fillVal, original, win));
+      } else if (fillVal === "none") {
+        cloned.setAttribute("fill", "none");
+      }
+
+      const strokeVal = style.stroke;
+      if (strokeVal && strokeVal !== "none" && strokeVal !== "context-stroke") {
+        cloned.setAttribute("stroke", resolveCssVariablesInString(strokeVal, original, win));
+      } else if (strokeVal === "none") {
+        cloned.setAttribute("stroke", "none");
+      }
+
+      const strokeWidthVal = style.strokeWidth;
+      if (strokeWidthVal) {
+        cloned.setAttribute("stroke-width", String(parsePixelValue(strokeWidthVal)));
+      }
+
+      const fillOpacityVal = style.fillOpacity;
+      if (fillOpacityVal) {
+        cloned.setAttribute("fill-opacity", fillOpacityVal);
+      }
+
+      const strokeOpacityVal = style.strokeOpacity;
+      if (strokeOpacityVal) {
+        cloned.setAttribute("stroke-opacity", strokeOpacityVal);
+      }
+
+      const opacityVal = style.opacity;
+      if (opacityVal && parseFloat(opacityVal) < 1) {
+        cloned.setAttribute("opacity", opacityVal);
+      }
+
+      if (original.tagName.toLowerCase() === "stop") {
+        const stopColor = style.stopColor;
+        const stopOpacity = style.stopOpacity;
+        if (stopColor) {
+          cloned.setAttribute("stop-color", resolveCssVariablesInString(stopColor, original, win));
+        }
+        if (stopOpacity) {
+          cloned.setAttribute("stop-opacity", stopOpacity);
+        }
+      }
+
+      const originalChildren = Array.from(original.children);
+      const clonedChildren = Array.from(cloned.children);
+      for (let i = 0; i < originalChildren.length; i++) {
+        if (originalChildren[i] && clonedChildren[i]) {
+          inlineStylesRecursively(originalChildren[i] as HTMLElement, clonedChildren[i] as HTMLElement);
+        }
+      }
+    };
+    inlineStylesRecursively(element, svgClone);
+
+    const styleTags = element.ownerDocument.querySelectorAll("style");
+    for (const styleTag of Array.from(styleTags)) {
+      const styleClone = styleTag.cloneNode(true);
+      svgClone.insertBefore(styleClone, svgClone.firstChild);
+    }
+    svgContent = svgClone.outerHTML;
+
+    const pathCount = element.querySelectorAll("path").length;
+    const gradientCount = element.querySelectorAll("linearGradient, radialGradient").length;
+    const viewBox = element.getAttribute("viewBox") || "";
+
+    console.log(`[SVG] Detected`);
+    console.log(`[SVG] Serialized`);
+    console.log(`  bounds: x=${x}, y=${y}, w=${width}, h=${height}`);
+    console.log(`  contentLength: ${svgContent.length} bytes`);
+    console.log(`  viewBox: "${viewBox}"`);
+    console.log(`  paths: ${pathCount}`);
+    console.log(`  gradients: ${gradientCount}`);
   }
 
   // Extract individual border properties
@@ -354,6 +477,66 @@ function traverseDOM(
   // Robust Box Shadows
   const effects: any[] = parseBoxShadow(style.boxShadow, element.ownerDocument);
 
+  // Parse filter effects (blur, drop-shadow)
+  const filter = style.filter || style.webkitFilter || "";
+  if (filter && filter !== "none") {
+    // 1. Layer blur: filter: blur(...)
+    const filterBlurMatch = filter.match(/blur\((\d+(?:\.\d+)?)(px)?\)/);
+    if (filterBlurMatch && filterBlurMatch[1]) {
+      effects.push({
+        type: "LAYER_BLUR",
+        radius: Math.round(parseFloat(filterBlurMatch[1])),
+        visible: true,
+        source: "filter",
+        value: filter
+      });
+    }
+
+    // 2. Drop shadow filter: drop-shadow(offsetX offsetY blur color)
+    // Example: drop-shadow(0px 10px 20px rgba(0,0,0,0.1)) or drop-shadow(0 10px 20px #000)
+    const dropShadowMatch = filter.match(/drop-shadow\(([^)]+)\)/);
+    if (dropShadowMatch && dropShadowMatch[1]) {
+      const partsStr = dropShadowMatch[1].trim();
+      // Extract color (rgb/rgba/hex) and numbers
+      const colorMatch = partsStr.match(/(rgba?\(.*?\)|#[0-9a-fA-F]{3,8}|\b[a-zA-Z]+\b)/);
+      if (colorMatch) {
+        const colorStr = colorMatch[0];
+        const rest = partsStr.replace(colorStr, "").trim();
+        const nums = rest.match(/(-?\d+(?:\.\d+)?px|-?\d+(?:\.\d+)?\b)/g) || [];
+        const ox = nums[0] ? parsePixelValue(nums[0]) : 0;
+        const oy = nums[1] ? parsePixelValue(nums[1]) : 0;
+        const blur = nums[2] ? parsePixelValue(nums[2]) : 0;
+        const shadowCol = rgbaToHex(colorStr, element.ownerDocument);
+        effects.push({
+          type: "DROP_SHADOW",
+          color: shadowCol.substring(0, 7),
+          offsetX: ox,
+          offsetY: oy,
+          blur: blur,
+          spread: 0,
+          opacity: shadowCol.length > 7 ? parseInt(shadowCol.substring(7, 9), 16) / 255 : 1.0,
+          source: "filter",
+          value: filter
+        });
+      }
+    }
+  }
+
+  // Parse backdrop filter (glassmorphism)
+  const backdropFilter = style.backdropFilter || style.webkitBackdropFilter || "";
+  if (backdropFilter && backdropFilter !== "none") {
+    const backdropBlurMatch = backdropFilter.match(/blur\((\d+(?:\.\d+)?)(px)?\)/);
+    if (backdropBlurMatch && backdropBlurMatch[1]) {
+      effects.push({
+        type: "BACKGROUND_BLUR",
+        radius: Math.round(parseFloat(backdropBlurMatch[1])),
+        visible: true,
+        source: "backdrop-filter",
+        value: backdropFilter
+      });
+    }
+  }
+
   // Corner radius
   let cornerRadius: any = parsePixelValue(style.borderRadius);
   if (style.borderRadius && style.borderRadius.includes(" ")) {
@@ -456,12 +639,34 @@ function traverseDOM(
     } as any,
     text,
     imageRef,
-    confidence: 1.0,
+    svgContent,
     children,
   };
 
-  // Traverse child nodes
-  if (type !== "TEXT" && type !== "IMAGE") {
+  // DIAGNOSTIC INSTRUMENTATION: Log extracted property comparison for 6 fidelity categories
+  const tagLower = element.tagName.toLowerCase();
+  console.log(`[DIAGNOSTIC PIPELINE TRACE - Element: <${tagLower} id="${element.id}" class="${element.className}">]
+- Category 1 (Solid background):
+  DOM computed style: backgroundColor="${style.backgroundColor}"
+  DesignAnalysis: fills=${JSON.stringify(fills.filter(f => f.type === "SOLID"))}
+- Category 2 (Gradient):
+  DOM computed style: backgroundImage="${style.backgroundImage}"
+  DesignAnalysis: fills=${JSON.stringify(fills.filter(f => f.type?.includes("GRADIENT")))}
+- Category 3 (Blur/Drop shadow/Effect):
+  DOM computed style: boxShadow="${style.boxShadow}", filter="${style.filter}", backdropFilter="${style.backdropFilter}"
+  DesignAnalysis: effects=${JSON.stringify(effects)}
+- Category 4 (SVG/Vector/Chart):
+  DOM computed style: isSVG=${tagLower === "svg" || element instanceof win.SVGElement}, tagName="${tagLower}"
+  DesignAnalysis: type="${type}", svgContent=${(node as any).svgContent ? "present (" + (node as any).svgContent.length + " bytes)" : "missing"}
+- Category 5 (Typography):
+  DOM computed style: fontFamily="${style.fontFamily}", fontWeight="${style.fontWeight}", fontSize="${style.fontSize}", lineHeight="${style.lineHeight}"
+  DesignAnalysis: text=${JSON.stringify(text || "none")}
+- Category 6 (Border/stroke):
+  DOM computed style: border="${style.borderTopWidth} ${style.borderTopStyle} ${style.borderColor}"
+  DesignAnalysis: strokes=${JSON.stringify(strokes)}`);
+
+  // Traverse child nodes (Do not recurse into SVG/VECTOR nodes as separate frames)
+  if (type !== "TEXT" && type !== "IMAGE" && type !== "VECTOR") {
     const childNodes = Array.from(element.childNodes);
     for (const childNode of childNodes) {
       if (childNode.nodeType === Node.ELEMENT_NODE) {
@@ -642,7 +847,13 @@ export function extractDesignFromHtmlCss(
 ): Promise<DesignAnalysis> {
   return new Promise((resolve, reject) => {
     try {
-      const viewportWidth = detectViewportWidth(html, css, options.viewportPreset);
+      const cleanHtml = html
+        .replace(/```html/gi, "")
+        .replace(/```xml/gi, "")
+        .replace(/```/g, "")
+        .trim();
+
+      const viewportWidth = detectViewportWidth(cleanHtml, css, options.viewportPreset);
       console.log(`[DOM Extractor]\nRoot: ${viewportWidth} x [computed]`);
 
       // 2. Create sandbox iframe sized to the viewport
@@ -677,7 +888,7 @@ export function extractDesignFromHtmlCss(
         </head>
         <body>
           <div id="designforge-root" style="width: ${viewportWidth}px; overflow: hidden;">
-            ${html}
+            ${cleanHtml}
           </div>
         </body>
         </html>

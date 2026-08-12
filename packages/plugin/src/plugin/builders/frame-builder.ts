@@ -10,6 +10,11 @@ import { buildTextNode } from "./text-builder";
 import { isComponentInstance } from "./component-builder";
 import { insertImage } from "./image-builder";
 import { cssGradientToFigmaPaint } from "../utils/css-gradient-converter";
+import { renderSVGNode } from "../fidelity/svg";
+import { renderImageNode } from "../fidelity/images";
+import { processEffectsFidelity } from "../fidelity/effects";
+import { processGradientFidelity } from "../fidelity/gradients";
+import { sortStackingOrder } from "../fidelity/stacking";
 
 interface UINode {
   type: string;
@@ -65,6 +70,12 @@ interface BuildContext {
     skipped: number;
   };
   baseGeometryMap?: Map<string, { x: number; y: number; width: number; height: number }>;
+  baseTextPropsMap?: Map<string, any>;
+
+  parentBrowserX?: number;
+  parentBrowserY?: number;
+  parentFigmaX?: number;
+  parentFigmaY?: number;
 }
 
 /**
@@ -76,12 +87,28 @@ export async function buildNodeTree(
   parent: BaseNode & ChildrenMixin,
   context: BuildContext
 ): Promise<SceneNode | null> {
+  const pBx = context.parentBrowserX ?? 0;
+  const pBy = context.parentBrowserY ?? 0;
+  const pFx = context.parentFigmaX ?? 0;
+  const pFy = context.parentFigmaY ?? 0;
+
+  const browserAbsX = pBx + node.bounds.x;
+  const browserAbsY = pBy + node.bounds.y;
+
+  const subContext: BuildContext = {
+    ...context,
+    parentBrowserX: browserAbsX,
+    parentBrowserY: browserAbsY,
+    parentFigmaX: pFx + node.bounds.x,
+    parentFigmaY: pFy + node.bounds.y,
+  };
+
   console.log(`[FIGMA INPUT]\n${node.name || node.type}\n  x=${node.bounds.x}\n  y=${node.bounds.y}\n  width=${node.bounds.width}\n  height=${node.bounds.height}`);
 
   // Handle component instances
   if (node.componentRef && isComponentInstance(node.componentRef, context.components)) {
     try {
-      const instance = await buildComponentInstance(node, context);
+      const instance = await buildComponentInstance(node, subContext);
       if (instance) {
         parent.appendChild(instance);
         if (context.debugMode) {
@@ -119,7 +146,7 @@ export async function buildNodeTree(
 
     case "IMAGE":
       try {
-        figmaNode = await buildImageFrame(node, context);
+        figmaNode = await buildImageFrame(node, subContext);
         if (context.counts) context.counts.images++;
         if (context.debugMode) {
           console.log(`Creating Image Frame "${node.name}"... ✓`);
@@ -179,19 +206,15 @@ export async function buildNodeTree(
         if (context.counts) context.counts.skipped++;
         throw err;
       }
+      break;
+    case "SVG":
     case "VECTOR":
       try {
-        if (node.svgContent) {
-          try {
-            figmaNode = figma.createNodeFromSvg(node.svgContent);
-            console.log(`[SVG Import] Created native vector layer for "${node.name}" ✓`);
-          } catch (svgErr) {
-            console.warn(`[SVG Import] Failed native SVG creation, using frame fallback:`, svgErr);
-            figmaNode = await buildFrame(node, context);
-          }
-        } else {
-          figmaNode = await buildFrame(node, context);
-        }
+        figmaNode = await renderSVGNode(parent, {
+          nodeName: node.name,
+          bounds: node.bounds,
+          svgContent: node.svgContent,
+        });
         if (context.counts) context.counts.frames++;
       } catch (err) {
         if (context.counts) context.counts.skipped++;
@@ -202,7 +225,7 @@ export async function buildNodeTree(
     default:
       // FRAME, GROUP, ICON, COMPONENT_INSTANCE, VECTOR → build as frame
       try {
-        figmaNode = await buildFrame(node, context);
+        figmaNode = await buildFrame(node, subContext);
         if (context.counts) context.counts.frames++;
         if (context.debugMode) {
           console.log(`Creating Frame "${node.name}"... ✓`);
@@ -278,6 +301,66 @@ export async function buildNodeTree(
     if (context.baseGeometryMap) {
       context.baseGeometryMap.set(figmaNode.id, { x: fx, y: fy, width: fw, height: fh });
     }
+    if (node.type === "TEXT" && context.baseTextPropsMap) {
+      const textNode = figmaNode as TextNode;
+      context.baseTextPropsMap.set(figmaNode.id, {
+        fontName: textNode.fontName,
+        fontSize: textNode.fontSize,
+        lineHeight: textNode.lineHeight,
+        letterSpacing: textNode.letterSpacing,
+        textAlignHorizontal: textNode.textAlignHorizontal,
+        textAlignVertical: textNode.textAlignVertical,
+        textCase: textNode.textCase,
+        textDecoration: textNode.textDecoration,
+        fills: textNode.fills,
+        characters: textNode.characters,
+        textAutoResize: textNode.textAutoResize,
+        x: textNode.x,
+        y: textNode.y,
+        width: textNode.width,
+        height: textNode.height,
+      });
+    }
+
+    const targetSections = ["HEADER", "hero", "hero-visual", "dashboard-preview", "trusted", "features", "stats", "CTA", "footer"];
+    const matchesSection = targetSections.some(sec => node.name?.toLowerCase().includes(sec.toLowerCase()) || node.type?.toLowerCase().includes(sec.toLowerCase()));
+    
+    if (matchesSection) {
+      console.log(`[GEOMETRY TRACE]
+element: ${node.name || node.type}
+browserAbsolute: x=${browserAbsX} y=${browserAbsY} w=${node.bounds.width} h=${node.bounds.height}
+parentBrowser: x=${pBx} y=${pBy}
+normalized: x=${node.bounds.x} y=${node.bounds.y} w=${node.bounds.width} h=${node.bounds.height}
+parentFigma: x=${pFx} y=${pFy}
+finalFigma: x=${fx} y=${fy} w=${fw} h=${fh}
+transform: none`);
+    }
+    
+    // DIAGNOSTIC INSTRUMENTATION: Stage 3 (buildNodeTree) & Stage 4 (Figma Node Applied)
+    const nodeFills = "fills" in figmaNode && Array.isArray(figmaNode.fills) ? figmaNode.fills : [];
+    const nodeStrokes = "strokes" in figmaNode && Array.isArray(figmaNode.strokes) ? figmaNode.strokes : [];
+    const nodeEffects = "effects" in figmaNode && Array.isArray(figmaNode.effects) ? figmaNode.effects : [];
+    
+    console.log(`[DIAGNOSTIC BUILDER TRACE - Node: "${node.name || node.type}"]
+- Category 1 (Solid background):
+  DesignAnalysis fills: ${JSON.stringify(node.style?.fills?.filter((f: any) => f.type === "SOLID") || [])}
+  Figma node applied fills: ${JSON.stringify(nodeFills.filter((f: any) => f.type === "SOLID"))}
+- Category 2 (Gradient):
+  DesignAnalysis fills: ${JSON.stringify(node.style?.fills?.filter((f: any) => f.type?.includes("GRADIENT")) || [])}
+  Figma node applied fills: ${JSON.stringify(nodeFills.filter((f: any) => f.type?.includes("GRADIENT")))}
+- Category 3 (Blur/Drop shadow/Effect):
+  DesignAnalysis effects: ${JSON.stringify(node.style?.effects || [])}
+  Figma node applied effects: ${JSON.stringify(nodeEffects)}
+- Category 4 (SVG/Vector/Chart):
+  DesignAnalysis type: "${node.type}", svgContent: ${node.svgContent ? "present (" + node.svgContent.length + " bytes)" : "missing"}
+  Figma node created type: "${figmaNode.type}"
+- Category 5 (Typography):
+  DesignAnalysis text: ${JSON.stringify(node.text || "none")}
+  Figma node type: "${figmaNode.type}" (fontName=${node.type === "TEXT" && "fontName" in figmaNode ? JSON.stringify((figmaNode as TextNode).fontName) : "n/a"})
+- Category 6 (Border/stroke):
+  DesignAnalysis strokes: ${JSON.stringify(node.style?.strokes || [])}
+  Figma node applied strokes: ${JSON.stringify(nodeStrokes)}`);
+
     console.log(`[FIGMA OUTPUT]\n${figmaNode.name || figmaNode.type}\n  x=${fx}\n  y=${fy}\n  width=${fw}\n  height=${fh}`);
   }
 
@@ -309,6 +392,21 @@ async function buildFrame(
   if (node.style.strokes.length > 0) {
     frame.strokes = node.style.strokes.map((s: any) => createSolidPaint(s.color, s.opacity));
     const firstStroke = node.style.strokes[0];
+    const topW = firstStroke.weights?.top ?? firstStroke.weight ?? 0;
+    const rightW = firstStroke.weights?.right ?? firstStroke.weight ?? 0;
+    const bottomW = firstStroke.weights?.bottom ?? firstStroke.weight ?? 0;
+    const leftW = firstStroke.weights?.left ?? firstStroke.weight ?? 0;
+    const rVal = typeof node.style.cornerRadius === "number"
+      ? `${node.style.cornerRadius}px`
+      : JSON.stringify(node.style.cornerRadius || 0);
+
+    console.log(`[BORDER]
+node: ${node.name}
+top: ${topW}px ${firstStroke.color || ""}
+right: ${rightW}px ${firstStroke.color || ""}
+bottom: ${bottomW}px ${firstStroke.color || ""}
+left: ${leftW}px ${firstStroke.color || ""}`);
+
     if (firstStroke.weights) {
       frame.strokeTopWeight = firstStroke.weights.top;
       frame.strokeRightWeight = firstStroke.weights.right;
@@ -321,7 +419,7 @@ async function buildFrame(
   }
 
   // Apply effects (shadows, blurs)
-  frame.effects = buildEffects(node.style.effects);
+  frame.effects = buildEffects(node.style.effects, node.name);
 
   // Clip content
   frame.clipsContent = node.style.clipsContent;
@@ -411,6 +509,21 @@ function buildRectangle(node: UINode): RectangleNode {
   if (node.style.strokes.length > 0) {
     rect.strokes = node.style.strokes.map((s: any) => createSolidPaint(s.color, s.opacity));
     const firstStroke = node.style.strokes[0];
+    const topW = firstStroke.weights?.top ?? firstStroke.weight ?? 0;
+    const rightW = firstStroke.weights?.right ?? firstStroke.weight ?? 0;
+    const bottomW = firstStroke.weights?.bottom ?? firstStroke.weight ?? 0;
+    const leftW = firstStroke.weights?.left ?? firstStroke.weight ?? 0;
+    const rVal = typeof node.style.cornerRadius === "number"
+      ? `${node.style.cornerRadius}px`
+      : JSON.stringify(node.style.cornerRadius || 0);
+
+    console.log(`[BORDER]
+node: ${node.name}
+top: ${topW}px ${firstStroke.color || ""}
+right: ${rightW}px ${firstStroke.color || ""}
+bottom: ${bottomW}px ${firstStroke.color || ""}
+left: ${leftW}px ${firstStroke.color || ""}`);
+
     if (firstStroke.weights) {
       rect.strokeTopWeight = firstStroke.weights.top;
       rect.strokeRightWeight = firstStroke.weights.right;
@@ -422,7 +535,7 @@ function buildRectangle(node: UINode): RectangleNode {
     rect.strokeAlign = (firstStroke.position || "INSIDE") as "INSIDE" | "OUTSIDE" | "CENTER";
   }
 
-  rect.effects = buildEffects(node.style.effects);
+  rect.effects = buildEffects(node.style.effects, node.name);
   return rect;
 }
 
@@ -543,23 +656,9 @@ function applyCornerRadius(
 /**
  * Build Figma effects from schema effects.
  */
-function buildEffects(effects: any[]): Effect[] {
+function buildEffects(effects: any[], nodeName = "Node"): Effect[] {
   if (!effects || effects.length === 0) return [];
-
-  return effects
-    .filter((e) => e.type === "DROP_SHADOW" || e.type === "INNER_SHADOW")
-    .map((e) => ({
-      type: e.type as "DROP_SHADOW" | "INNER_SHADOW",
-      color: {
-        ...hexToFigmaRGB(e.color),
-        a: e.opacity ?? 0.25,
-      },
-      offset: { x: e.offsetX || 0, y: e.offsetY || 0 },
-      radius: e.blur || 0,
-      spread: e.spread || 0,
-      visible: true,
-      blendMode: "NORMAL" as BlendMode,
-    }));
+  return processEffectsFidelity(effects, nodeName);
 }
 
 /**
