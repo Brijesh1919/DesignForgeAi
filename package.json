@@ -1,0 +1,22 @@
+{
+  "name": "designforge-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-powered Figma plugin that converts UI screenshots into editable Figma designs",
+  "scripts": {
+    "dev:backend": "pnpm --filter @designforge/backend dev",
+    "dev:plugin": "pnpm --filter @designforge/plugin dev",
+    "build": "pnpm -r build",
+    "build:shared": "pnpm --filter @designforge/shared build",
+    "build:backend": "pnpm --filter @designforge/backend build",
+    "build:plugin": "pnpm --filter @designforge/plugin build",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm -r run test",
+    "lint": "pnpm -r run lint",
+    "clean": "pnpm -r run clean"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

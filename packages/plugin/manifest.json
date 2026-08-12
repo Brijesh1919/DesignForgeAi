@@ -1,0 +1,21 @@
+{
+  "name": "DesignForge AI",
+  "id": "0000000000000000000",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "ui": "dist/index.html",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": ["*"],
+    "reasoning": "Required to connect to backend and external design generation APIs."
+  },
+  "permissions": ["currentuser"],
+  "relaunchButtons": [
+    {
+      "command": "regenerate",
+      "name": "Regenerate Design",
+      "multipleSelection": false
+    }
+  ]
+}
