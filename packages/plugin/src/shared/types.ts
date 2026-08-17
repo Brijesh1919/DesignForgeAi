@@ -5,6 +5,8 @@
  * and the Plugin Sandbox (Figma API).
  */
 
+export type { DesignAnalysis, UINode, HexColor, LayoutDirection, SizingMode, Alignment } from "@designforge/shared";
+
 // ─── Processing Stages ──────────────────────────────────────
 
 export type ProcessingStage =

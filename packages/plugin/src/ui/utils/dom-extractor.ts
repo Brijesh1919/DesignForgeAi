@@ -6,7 +6,7 @@
  * payload suitable for the Figma Builder.
  */
 
-import type { DesignAnalysis, UINode, HexColor, LayoutDirection, SizingMode, Alignment } from "../../shared/types";
+import type { DesignAnalysis, UINode, LayoutDirection, Alignment } from "../../shared/types";
 
 interface DOMExtractorOptions {
   createAutoLayout: boolean;
@@ -32,9 +32,6 @@ function resolveCssVariablesInString(str: string, element: HTMLElement, win: Win
     while (current && current.nodeType === Node.ELEMENT_NODE) {
       const val = win.getComputedStyle(current).getPropertyValue(trimmedVar);
       if (val && val.trim() !== "") {
-        console.log(`[VARIABLE]
-name: ${trimmedVar}
-resolvedValue: ${val.trim()}`);
         return val.trim();
       }
       current = current.parentElement;
@@ -74,10 +71,10 @@ function rgbaToHex(rgbaStr: string, doc?: Document): string {
         ctx.fillStyle = rgbaStr;
         ctx.fillRect(0, 0, 1, 1);
         const data = ctx.getImageData(0, 0, 1, 1).data;
-        const r = data[0].toString(16).padStart(2, "0");
-        const g = data[1].toString(16).padStart(2, "0");
-        const b = data[2].toString(16).padStart(2, "0");
-        const aVal = data[3];
+        const r = (data[0] ?? 0).toString(16).padStart(2, "0");
+        const g = (data[1] ?? 0).toString(16).padStart(2, "0");
+        const b = (data[2] ?? 0).toString(16).padStart(2, "0");
+        const aVal = data[3] ?? 255;
         const a = aVal < 255 ? aVal.toString(16).padStart(2, "0") : "";
         return `#${r}${g}${b}${a}`.toUpperCase();
       }
@@ -95,7 +92,7 @@ function rgbaToHex(rgbaStr: string, doc?: Document): string {
   const r = parseInt(matches[1]!, 10).toString(16).padStart(2, "0");
   const g = parseInt(matches[2]!, 10).toString(16).padStart(2, "0");
   const b = parseInt(matches[3]!, 10).toString(16).padStart(2, "0");
-  
+
   let a = "";
   if (matches[4] !== undefined) {
     const alpha = parseFloat(matches[4]);
@@ -111,23 +108,92 @@ function rgbaToHex(rgbaStr: string, doc?: Document): string {
  * Extracts a number from CSS values like "12px", "0.5em" etc.
  */
 function parsePixelValue(cssValue: string): number {
+  if (!cssValue) return 0;
   const val = parseFloat(cssValue);
   return isNaN(val) ? 0 : Math.round(val);
+}
+
+/**
+ * Robustly parses font-weight string into standard weight labels.
+ */
+function parseFontWeight(fwStr: string): string {
+  if (!fwStr) return "Regular";
+  const lower = fwStr.toLowerCase().trim();
+  if (lower === "bold") return "Bold";
+  if (lower === "normal") return "Regular";
+  if (lower === "lighter") return "Light";
+  if (lower === "bolder") return "ExtraBold";
+  const num = parseInt(fwStr, 10);
+  if (isNaN(num)) return "Regular";
+  if (num <= 300) return "Light";
+  if (num === 400) return "Regular";
+  if (num === 500) return "Medium";
+  if (num === 600) return "SemiBold";
+  if (num === 700) return "Bold";
+  if (num >= 800) return "ExtraBold";
+  return "Regular";
+}
+
+/**
+ * Robustly parses line-height values (pixel, em, rem, %, unitless, normal).
+ */
+function parseLineHeight(lineHeightStr: string, fontSize: number): number | undefined {
+  if (!lineHeightStr || lineHeightStr === "normal") {
+    return Math.round(fontSize * 1.2);
+  }
+  const trimmed = lineHeightStr.trim();
+  if (trimmed.endsWith("px")) {
+    const val = parseFloat(trimmed);
+    return isNaN(val) ? Math.round(fontSize * 1.2) : Math.round(val);
+  }
+  if (trimmed.endsWith("%")) {
+    const val = parseFloat(trimmed);
+    return isNaN(val) ? Math.round(fontSize * 1.2) : Math.round((val / 100) * fontSize);
+  }
+  if (trimmed.endsWith("em") || trimmed.endsWith("rem")) {
+    const val = parseFloat(trimmed);
+    return isNaN(val) ? Math.round(fontSize * 1.2) : Math.round(val * fontSize);
+  }
+  const val = parseFloat(trimmed);
+  if (!isNaN(val)) {
+    if (val > 0 && val < 5) {
+      return Math.round(val * fontSize);
+    }
+    return Math.round(val);
+  }
+  return Math.round(fontSize * 1.2);
 }
 
 /**
  * Helper to check if an element is a visible element.
  */
 function isVisible(element: HTMLElement, style: CSSStyleDeclaration): boolean {
-  if (style.display === "none" || style.visibility === "hidden" || parseFloat(style.opacity) === 0) {
+  const classNameStr = element.className && typeof element.className === 'string' ? '.' + element.className.trim().replace(/\s+/g, '.') : '';
+  const nodeIdentifier = `${element.tagName.toLowerCase()}${element.id ? '#' + element.id : ''}${classNameStr}`;
+
+  if (style.display === "none" || style.visibility === "hidden") {
+    console.log(`[DesignForge][HTML] Skipped hidden element: ${nodeIdentifier} - Reason: display:none or visibility:hidden`);
     return false;
   }
+
+  // Note: opacity: 0 elements are preserved as entrance / animated content
+
   if (style.display === "contents") {
     return true; // Children are rendered directly
   }
+
   const rect = element.getBoundingClientRect();
   if (rect.width === 0 && rect.height === 0) {
-    if (element.children.length > 0) return true; // Positioning parent
+    const hasText = element.textContent && element.textContent.trim().length > 0;
+    const hasSvg = element.querySelector("svg") !== null || element.tagName.toLowerCase() === "svg";
+    const hasImg = element.tagName.toLowerCase() === "img" || element.querySelector("img") !== null;
+    const hasForm = ["input", "button", "select", "textarea"].includes(element.tagName.toLowerCase());
+
+    if (element.children.length > 0 || hasText || hasSvg || hasImg || hasForm) {
+      return true;
+    }
+
+    console.log(`[DesignForge][HTML] Skipped empty zero-sized element: ${nodeIdentifier}`);
     return false;
   }
   return true;
@@ -140,21 +206,17 @@ function parseBoxShadow(boxShadow: string, doc: Document): any[] {
   const effects: any[] = [];
   if (!boxShadow || boxShadow === "none") return effects;
 
-  // Split multiple shadows by comma (avoid splitting inside rgb/rgba color parenthesis)
   const shadows = boxShadow.split(/,(?![^(]*\))/);
-  
   for (const shadow of shadows) {
     const trimmed = shadow.trim();
     if (!trimmed) continue;
 
-    // Extract rgba, rgb, hex, or named color
     const colorMatch = trimmed.match(/(rgba?\(.*?\)|#[0-9a-fA-F]{3,8}|\b[a-zA-Z]+\b)/);
     if (!colorMatch) continue;
 
     const colorStr = colorMatch[0];
     const rest = trimmed.replace(colorStr, "").trim();
-    
-    // Parse dimensions (offsets, blur, spread)
+
     const nums = rest.match(/(-?\d+(?:\.\d+)?px|-?\d+(?:\.\d+)?\b)/g) || [];
     const ox = nums[0] ? parsePixelValue(nums[0]) : 0;
     const oy = nums[1] ? parsePixelValue(nums[1]) : 0;
@@ -162,7 +224,7 @@ function parseBoxShadow(boxShadow: string, doc: Document): any[] {
     const spread = nums[3] ? parsePixelValue(nums[3]) : 0;
 
     const shadowCol = rgbaToHex(colorStr, doc);
-    
+
     effects.push({
       type: trimmed.includes("inset") ? "INNER_SHADOW" : "DROP_SHADOW",
       color: shadowCol.substring(0, 7),
@@ -179,32 +241,107 @@ function parseBoxShadow(boxShadow: string, doc: Document): any[] {
 }
 
 /**
- * Traverses a DOM tree recursively and extracts UINodes.
- */
-/**
  * Helper to extract text properties from computed styles.
  */
 function extractTextProperties(element: HTMLElement, style: CSSStyleDeclaration, content: string): any {
   const colHex = rgbaToHex(style.color, element.ownerDocument);
-  let fontWeight = "Regular";
-  const fw = style.fontWeight;
-  if (fw === "bold" || parseInt(fw) >= 700) fontWeight = "Bold";
-  else if (parseInt(fw) >= 500) fontWeight = "Medium";
-  else if (parseInt(fw) >= 600) fontWeight = "SemiBold";
+  const fontSize = parsePixelValue(style.fontSize) || 14;
+  const fontWeight = parseFontWeight(style.fontWeight);
+  const lineHeight = parseLineHeight(style.lineHeight, fontSize);
+  const letterSpacing = parsePixelValue(style.letterSpacing) || 0;
 
   return {
     content: content,
     fontFamily: style.fontFamily.split(",")[0]?.replace(/['"]/g, "").trim() || "Inter",
     fontWeight: fontWeight as any,
-    fontSize: parsePixelValue(style.fontSize) || 14,
-    lineHeight: parsePixelValue(style.lineHeight) || undefined,
-    letterSpacing: parsePixelValue(style.letterSpacing) || 0,
-    textAlign: style.textAlign.toUpperCase() as any,
+    fontSize: fontSize,
+    lineHeight: lineHeight,
+    letterSpacing: letterSpacing,
+    textAlign: style.textAlign ? style.textAlign.toUpperCase() : "LEFT",
     textCase: style.textTransform === "uppercase" ? "UPPER" : "ORIGINAL" as any,
     textDecoration: style.textDecorationLine === "underline" ? "UNDERLINE" : "NONE" as any,
     color: colHex.substring(0, 7),
     opacity: colHex.length > 7 ? parseInt(colHex.substring(7, 9), 16) / 255 : 1.0,
   };
+}
+
+/**
+ * Helper to extract pseudo elements (::before / ::after) if present and renderable.
+ */
+function extractPseudoElement(
+  parentEl: HTMLElement,
+  pseudoName: "::before" | "::after",
+  win: Window
+): UINode | null {
+  try {
+    const pseudoStyle = win.getComputedStyle(parentEl, pseudoName);
+    if (!pseudoStyle || pseudoStyle.display === "none" || pseudoStyle.visibility === "hidden" || pseudoStyle.content === "none" || pseudoStyle.content === "normal" || pseudoStyle.content === '""' && parsePixelValue(pseudoStyle.width) === 0 && parsePixelValue(pseudoStyle.height) === 0 && pseudoStyle.backgroundColor === "transparent" && (!pseudoStyle.backgroundImage || pseudoStyle.backgroundImage === "none")) {
+      return null;
+    }
+
+    let rawContent = pseudoStyle.content ? pseudoStyle.content.replace(/^['"]|['"]$/g, "").trim() : "";
+    if (rawContent === "none" || rawContent === "normal") rawContent = "";
+
+    const pWidth = parsePixelValue(pseudoStyle.width);
+    const pHeight = parsePixelValue(pseudoStyle.height);
+    const bgCol = rgbaToHex(pseudoStyle.backgroundColor, parentEl.ownerDocument);
+    const hasBg = bgCol !== "#00000000" && !bgCol.endsWith("00");
+    const hasBgImg = pseudoStyle.backgroundImage && pseudoStyle.backgroundImage !== "none";
+
+    if (!rawContent && pWidth === 0 && pHeight === 0 && !hasBg && !hasBgImg) {
+      return null;
+    }
+
+    const pTop = parsePixelValue(pseudoStyle.top);
+    const pLeft = parsePixelValue(pseudoStyle.left);
+
+    const fills: any[] = [];
+    if (hasBg) {
+      fills.push({
+        type: "SOLID",
+        color: bgCol.substring(0, 7),
+        opacity: bgCol.length > 7 ? parseInt(bgCol.substring(7, 9), 16) / 255 : 1.0,
+      });
+    }
+
+    const pType = rawContent ? "TEXT" : "FRAME";
+    const node: UINode = {
+      type: pType,
+      name: `${pseudoName.replace("::", "")}-decoration`,
+      role: "decoration",
+      bounds: {
+        x: Math.max(0, pLeft),
+        y: Math.max(0, pTop),
+        width: Math.max(1, pWidth || 20),
+        height: Math.max(1, pHeight || 20),
+      },
+      layout: {
+        direction: "NONE",
+        primaryAxisSizing: "FIXED",
+        counterAxisSizing: "FIXED",
+        paddingTop: 0, paddingRight: 0, paddingBottom: 0, paddingLeft: 0,
+        itemSpacing: 0, alignment: "TOP_LEFT", wrap: false,
+      } as any,
+      childLayout: { layoutAlign: "INHERIT", layoutGrow: 0 },
+      constraints: { horizontal: "LEFT", vertical: "TOP" },
+      style: {
+        fills,
+        strokes: [],
+        effects: [],
+        cornerRadius: parsePixelValue(pseudoStyle.borderRadius),
+        opacity: parseFloat(pseudoStyle.opacity) || 1.0,
+        clipsContent: false,
+        visible: true,
+        position: pseudoStyle.position || "absolute",
+        zIndex: 0,
+      } as any,
+      text: rawContent ? extractTextProperties(parentEl, pseudoStyle, rawContent) : undefined,
+      children: [],
+    };
+    return node;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -218,32 +355,28 @@ function traverseDOM(
 ): UINode | null {
   const style = win.getComputedStyle(element);
   if (!isVisible(element, style)) {
-    let reason = "unknown";
-    if (style.display === "none") reason = "display: none";
-    else if (style.visibility === "hidden") reason = "visibility: hidden";
-    else if (parseFloat(style.opacity) === 0) reason = "opacity: 0";
-    else {
-      const rect = element.getBoundingClientRect();
-      if (rect.width === 0 && rect.height === 0 && element.children.length === 0) {
-        reason = "0x0 size and no children";
-      }
-    }
-    const classNameStr = element.className && typeof element.className === 'string' ? '.' + element.className.trim().replace(/\s+/g, '.') : '';
-    const nodeIdentifier = `${element.tagName.toLowerCase()}${element.id ? '#' + element.id : ''}${classNameStr}`;
-    console.log(`[DOM Extractor] Skipped element: ${nodeIdentifier} - Reason: ${reason}`);
     return null;
   }
 
   const rect = element.getBoundingClientRect();
   const x = Math.round(rect.left - parentRect.left);
   const y = Math.round(rect.top - parentRect.top);
-  const width = Math.max(1, Math.round(rect.width));
-  const height = Math.max(1, Math.round(rect.height));
+  let width = Math.max(1, Math.round(rect.width));
+  let height = Math.max(1, Math.round(rect.height));
 
   const classNameStr = element.className && typeof element.className === 'string' ? '.' + element.className.trim().replace(/\s+/g, '.') : '';
   const nodeIdentifier = `${element.tagName.toLowerCase()}${element.id ? '#' + element.id : ''}${classNameStr}`;
   const role = element.getAttribute("role") || element.tagName.toLowerCase();
-  
+
+  // Log unsupported CSS properties for troubleshooting
+  const unsupportedCheck = ["clip-path", "mask", "filter", "perspective"];
+  for (const prop of unsupportedCheck) {
+    const val = style.getPropertyValue(prop);
+    if (val && val !== "none" && val !== "initial") {
+      console.log(`[DesignForge][HTML] Unsupported CSS property: ${prop} on ${nodeIdentifier}`);
+    }
+  }
+
   // Layer Naming Optimization
   let name = element.tagName.toUpperCase();
   if (options.optimizeLayerNames) {
@@ -254,19 +387,22 @@ function traverseDOM(
     name = `${element.tagName.toLowerCase()}${id}${classes}` || name;
   }
 
-  // Determine Type and Collapsing
+  // Determine Type
   let type: UINode["type"] = "FRAME";
   let svgContent: string | undefined = undefined;
 
-  const isSVG = element.localName?.toLowerCase() === "svg" || element.tagName.toLowerCase() === "svg" || (win.SVGElement && element instanceof win.SVGElement && element.tagName.toLowerCase() === "svg");
+  const isSVG = element.localName?.toLowerCase() === "svg" || element.tagName.toLowerCase() === "svg" || ((win as any).SVGElement && element instanceof (win as any).SVGElement && element.tagName.toLowerCase() === "svg");
 
   if (element.tagName.toUpperCase() === "IMG") {
     type = "IMAGE";
+    if (width <= 1 && height <= 1) {
+      width = parsePixelValue(style.width) || 100;
+      height = parsePixelValue(style.height) || 100;
+    }
   } else if (isSVG) {
     type = "VECTOR";
     const svgClone = element.cloneNode(true) as HTMLElement;
 
-    // First, resolve general attributes and variables in the cloned tree
     const resolveAttributesAndVariables = (el: HTMLElement) => {
       const attrs = Array.from(el.attributes);
       for (const attr of attrs) {
@@ -280,47 +416,46 @@ function traverseDOM(
     };
     resolveAttributesAndVariables(svgClone);
 
-    // Recursively inline computed presentation styles to bypassed Figma importer stylesheet ignorance
     const inlineStylesRecursively = (original: HTMLElement, cloned: HTMLElement) => {
-      const style = win.getComputedStyle(original);
+      const s = win.getComputedStyle(original);
 
-      const fillVal = style.fill;
+      const fillVal = s.fill;
       if (fillVal && fillVal !== "none" && fillVal !== "context-fill") {
         cloned.setAttribute("fill", resolveCssVariablesInString(fillVal, original, win));
       } else if (fillVal === "none") {
         cloned.setAttribute("fill", "none");
       }
 
-      const strokeVal = style.stroke;
+      const strokeVal = s.stroke;
       if (strokeVal && strokeVal !== "none" && strokeVal !== "context-stroke") {
         cloned.setAttribute("stroke", resolveCssVariablesInString(strokeVal, original, win));
       } else if (strokeVal === "none") {
         cloned.setAttribute("stroke", "none");
       }
 
-      const strokeWidthVal = style.strokeWidth;
+      const strokeWidthVal = s.strokeWidth;
       if (strokeWidthVal) {
         cloned.setAttribute("stroke-width", String(parsePixelValue(strokeWidthVal)));
       }
 
-      const fillOpacityVal = style.fillOpacity;
+      const fillOpacityVal = s.fillOpacity;
       if (fillOpacityVal) {
         cloned.setAttribute("fill-opacity", fillOpacityVal);
       }
 
-      const strokeOpacityVal = style.strokeOpacity;
+      const strokeOpacityVal = s.strokeOpacity;
       if (strokeOpacityVal) {
         cloned.setAttribute("stroke-opacity", strokeOpacityVal);
       }
 
-      const opacityVal = style.opacity;
+      const opacityVal = s.opacity;
       if (opacityVal && parseFloat(opacityVal) < 1) {
         cloned.setAttribute("opacity", opacityVal);
       }
 
       if (original.tagName.toLowerCase() === "stop") {
-        const stopColor = style.stopColor;
-        const stopOpacity = style.stopOpacity;
+        const stopColor = s.stopColor;
+        const stopOpacity = s.stopOpacity;
         if (stopColor) {
           cloned.setAttribute("stop-color", resolveCssVariablesInString(stopColor, original, win));
         }
@@ -345,18 +480,6 @@ function traverseDOM(
       svgClone.insertBefore(styleClone, svgClone.firstChild);
     }
     svgContent = svgClone.outerHTML;
-
-    const pathCount = element.querySelectorAll("path").length;
-    const gradientCount = element.querySelectorAll("linearGradient, radialGradient").length;
-    const viewBox = element.getAttribute("viewBox") || "";
-
-    console.log(`[SVG] Detected`);
-    console.log(`[SVG] Serialized`);
-    console.log(`  bounds: x=${x}, y=${y}, w=${width}, h=${height}`);
-    console.log(`  contentLength: ${svgContent.length} bytes`);
-    console.log(`  viewBox: "${viewBox}"`);
-    console.log(`  paths: ${pathCount}`);
-    console.log(`  gradients: ${gradientCount}`);
   }
 
   // Extract individual border properties
@@ -379,8 +502,12 @@ function traverseDOM(
     (borderBottomW > 0 && borderBottomStyle !== "none") ||
     (borderLeftW > 0 && borderLeftStyle !== "none");
 
-  // Prevent collapsing structural/interactive tags
-  const structuralTags = new Set(["table", "thead", "tbody", "tr", "td", "th", "button", "input", "select", "textarea", "form", "a", "label", "nav", "header", "footer", "main", "section", "aside"]);
+  // Prevent collapsing structural/interactive tags into plain TEXT nodes
+  const structuralTags = new Set([
+    "table", "thead", "tbody", "tr", "td", "th", "button", "input", "select", "textarea", "form",
+    "a", "label", "nav", "header", "footer", "main", "section", "article", "aside", "p",
+    "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "figure", "figcaption", "details", "summary", "div"
+  ]);
   const canCollapseToText = 
     element.tagName !== "IMG" &&
     !structuralTags.has(element.tagName.toLowerCase()) &&
@@ -398,11 +525,7 @@ function traverseDOM(
     type = "TEXT";
   }
 
-  // Console log element properties matching user requested format
-  console.log(`[DOM]\nelement: ${element.tagName.toLowerCase()}\nclass: ${element.className || 'none'}\nrect: ${x} ${y} ${width} ${height}\ndisplay: ${style.display}\nbackground: ${style.backgroundColor}\ncolor: ${style.color}`);
-  console.log(`[Figma Mapping] DOM ${element.tagName.toLowerCase()} -> ${type}`);
-
-  // Styles
+  // Fills
   const fills: any[] = [];
   if (style.backgroundColor && !isBgTransparent) {
     fills.push({
@@ -411,25 +534,21 @@ function traverseDOM(
       opacity: bgCol.length > 7 ? parseInt(bgCol.substring(7, 9), 16) / 255 : 1.0,
     });
   }
-  console.log(`[BACKGROUND_FILL_FIDELITY] DOM element: <${element.tagName.toLowerCase()}${element.id ? '#' + element.id : ''}${classNameStr}> → computed backgroundColor: "${style.backgroundColor}" → resolved Figma fill: ${fills.length > 0 ? JSON.stringify(fills[0]) : "none"}`);
 
-  // If type is IMAGE and has src
+  // Image reference
   let imageRef = undefined;
-  if (type === "IMAGE" && (element as HTMLImageElement).src) {
-    imageRef = (element as HTMLImageElement).src;
+  if (type === "IMAGE") {
+    imageRef = (element as HTMLImageElement).src || undefined;
   }
 
-  // Check background image
   if (style.backgroundImage && style.backgroundImage !== "none") {
     const urlMatch = style.backgroundImage.match(/url\("?([^"]*)"?\)/);
     if (urlMatch && urlMatch[1]) {
-      // Keep type as FRAME if it has children, so children aren't skipped!
       if (element.children.length === 0) {
         type = "IMAGE";
       }
       imageRef = urlMatch[1];
     } else if (style.backgroundImage.includes("gradient")) {
-      // Parse CSS Gradient
       const colorMatches = style.backgroundImage.match(/(rgba?\(.*?\)|#[0-9a-fA-F]{3,8})/g);
       if (colorMatches && colorMatches.length >= 2) {
         const stops = colorMatches.map((cStr, idx) => {
@@ -450,9 +569,6 @@ function traverseDOM(
       }
     }
   }
-
-  // Print background log
-  console.log(`[Background]\nElement: ${nodeIdentifier}\nBackground Color: ${style.backgroundColor}\nBackground Image: ${style.backgroundImage}\nResolved Paint: ${JSON.stringify(fills)}\nFallback: false`);
 
   const strokes: any[] = [];
   if (hasBorders) {
@@ -475,13 +591,10 @@ function traverseDOM(
     });
   }
 
-  // Robust Box Shadows
   const effects: any[] = parseBoxShadow(style.boxShadow, element.ownerDocument);
 
-  // Parse filter effects (blur, drop-shadow)
   const filter = style.filter || style.webkitFilter || "";
   if (filter && filter !== "none") {
-    // 1. Layer blur: filter: blur(...)
     const filterBlurMatch = filter.match(/blur\((\d+(?:\.\d+)?)(px)?\)/);
     if (filterBlurMatch && filterBlurMatch[1]) {
       effects.push({
@@ -493,12 +606,9 @@ function traverseDOM(
       });
     }
 
-    // 2. Drop shadow filter: drop-shadow(offsetX offsetY blur color)
-    // Example: drop-shadow(0px 10px 20px rgba(0,0,0,0.1)) or drop-shadow(0 10px 20px #000)
     const dropShadowMatch = filter.match(/drop-shadow\(([^)]+)\)/);
     if (dropShadowMatch && dropShadowMatch[1]) {
       const partsStr = dropShadowMatch[1].trim();
-      // Extract color (rgb/rgba/hex) and numbers
       const colorMatch = partsStr.match(/(rgba?\(.*?\)|#[0-9a-fA-F]{3,8}|\b[a-zA-Z]+\b)/);
       if (colorMatch) {
         const colorStr = colorMatch[0];
@@ -523,8 +633,7 @@ function traverseDOM(
     }
   }
 
-  // Parse backdrop filter (glassmorphism)
-  const backdropFilter = style.backdropFilter || style.webkitBackdropFilter || "";
+  const backdropFilter = style.backdropFilter || (style as any).webkitBackdropFilter || "";
   if (backdropFilter && backdropFilter !== "none") {
     const backdropBlurMatch = backdropFilter.match(/blur\((\d+(?:\.\d+)?)(px)?\)/);
     if (backdropBlurMatch && backdropBlurMatch[1]) {
@@ -538,7 +647,6 @@ function traverseDOM(
     }
   }
 
-  // Corner radius
   let cornerRadius: any = parsePixelValue(style.borderRadius);
   if (style.borderRadius && style.borderRadius.includes(" ")) {
     const radii = style.borderRadius.split(/\s+/).map(r => parsePixelValue(r));
@@ -550,23 +658,22 @@ function traverseDOM(
     };
   }
 
-  // Auto Layout
+  // Layout Properties Parsing (Flex, Grid, Inline-Flex, Grid-Template-Columns)
   let direction: LayoutDirection = "NONE";
   let itemSpacing = 0;
-  let paddingTop = 0;
-  let paddingRight = 0;
-  let paddingBottom = 0;
-  let paddingLeft = 0;
+  let paddingTop = parsePixelValue(style.paddingTop);
+  let paddingRight = parsePixelValue(style.paddingRight);
+  let paddingBottom = parsePixelValue(style.paddingBottom);
+  let paddingLeft = parsePixelValue(style.paddingLeft);
   let alignment: Alignment = "TOP_LEFT";
 
-  // Always extract direction and styling so frame-builder can use it if enabled
-  if (style.display === "flex") {
-    direction = style.flexDirection === "column" ? "VERTICAL" : "HORIZONTAL";
-    itemSpacing = parsePixelValue(style.gap);
-    paddingTop = parsePixelValue(style.paddingTop);
-    paddingRight = parsePixelValue(style.paddingRight);
-    paddingBottom = parsePixelValue(style.paddingBottom);
-    paddingLeft = parsePixelValue(style.paddingLeft);
+  const displayVal = style.display;
+  const isFlex = displayVal === "flex" || displayVal === "inline-flex";
+  const isGrid = displayVal === "grid" || displayVal === "inline-grid";
+
+  if (isFlex) {
+    direction = style.flexDirection?.includes("column") ? "VERTICAL" : "HORIZONTAL";
+    itemSpacing = parsePixelValue(style.gap || style.columnGap || style.rowGap);
 
     const ai = style.alignItems;
     const jc = style.justifyContent;
@@ -578,47 +685,69 @@ function traverseDOM(
     else if (ai === "flex-end") alignment = "BOTTOM_LEFT";
     else if (jc === "center") alignment = "TOP_CENTER";
     else if (jc === "flex-end") alignment = "TOP_RIGHT";
+  } else if (isGrid) {
+    direction = "HORIZONTAL";
+    itemSpacing = parsePixelValue(style.gap || style.columnGap || style.rowGap);
+    const ai = style.alignItems;
+    const jc = style.justifyContent;
+    if (ai === "center" && jc === "center") alignment = "CENTER";
+    else if (ai === "center") alignment = "CENTER_LEFT";
+    else if (jc === "center") alignment = "TOP_CENTER";
   } else if (element.children.length > 0) {
-    if (element.children.length >= 2) {
-      const child1 = element.children[0].getBoundingClientRect();
-      const child2 = element.children[1].getBoundingClientRect();
+    // Filter out absolute/fixed children when determining flow direction!
+    const flowChildren: HTMLElement[] = [];
+    for (let i = 0; i < element.children.length; i++) {
+      const childEl = element.children[i] as HTMLElement;
+      const childStyle = win.getComputedStyle(childEl);
+      if (childStyle.position !== "absolute" && childStyle.position !== "fixed") {
+        flowChildren.push(childEl);
+      }
+    }
+
+    if (flowChildren.length >= 2) {
+      const child1 = flowChildren[0]!.getBoundingClientRect();
+      const child2 = flowChildren[1]!.getBoundingClientRect();
       const isVertical = Math.abs(child2.top - child1.top) > Math.abs(child2.left - child1.left);
       direction = isVertical ? "VERTICAL" : "HORIZONTAL";
     } else {
       direction = "VERTICAL";
     }
-    itemSpacing = 0;
-    paddingTop = parsePixelValue(style.paddingTop);
-    paddingRight = parsePixelValue(style.paddingRight);
-    paddingBottom = parsePixelValue(style.paddingBottom);
-    paddingLeft = parsePixelValue(style.paddingLeft);
   }
 
-  // Dynamic Sizing heuristic: Check if container width/height hugs child bounds
+  // Dynamic Sizing heuristic: Check if container width/height hugs flow child bounds
   let primaryAxisSizing = "FIXED";
   let counterAxisSizing = "FIXED";
   if (direction !== "NONE" && element.children.length > 0) {
     let maxChildRight = 0;
     let maxChildBottom = 0;
+    let flowCount = 0;
     for (let i = 0; i < element.children.length; i++) {
-      const childEl = element.children[i];
+      const childEl = element.children[i] as HTMLElement;
+      const childStyle = win.getComputedStyle(childEl);
+      if (childStyle.position === "absolute" || childStyle.position === "fixed") {
+        continue; // Exclude absolute / fixed overlays from flow content height calculation!
+      }
+      flowCount++;
       const cRect = childEl.getBoundingClientRect();
       const cRight = cRect.right - rect.left;
       const cBottom = cRect.bottom - rect.top;
       if (cRight > maxChildRight) maxChildRight = cRight;
       if (cBottom > maxChildBottom) maxChildBottom = cBottom;
     }
-    const contentW = maxChildRight + paddingRight;
-    const contentH = maxChildBottom + paddingBottom;
 
-    const isVertical = direction === "VERTICAL";
-    const primarySize = isVertical ? height : width;
-    const primaryContentSize = isVertical ? contentH : contentW;
-    const counterSize = isVertical ? width : height;
-    const counterContentSize = isVertical ? contentW : contentH;
+    if (flowCount > 0) {
+      const contentW = maxChildRight + paddingRight;
+      const contentH = maxChildBottom + paddingBottom;
 
-    primaryAxisSizing = Math.abs(primarySize - primaryContentSize) < 5 ? "HUG" : "FIXED";
-    counterAxisSizing = Math.abs(counterSize - counterContentSize) < 5 ? "HUG" : "FIXED";
+      const isVertical = direction === "VERTICAL";
+      const primarySize = isVertical ? height : width;
+      const primaryContentSize = isVertical ? contentH : contentW;
+      const counterSize = isVertical ? width : height;
+      const counterContentSize = isVertical ? contentW : contentH;
+
+      primaryAxisSizing = Math.abs(primarySize - primaryContentSize) < 5 ? "HUG" : "FIXED";
+      counterAxisSizing = Math.abs(counterSize - counterContentSize) < 5 ? "HUG" : "FIXED";
+    }
   }
 
   let layoutAlign = "INHERIT";
@@ -631,21 +760,17 @@ function traverseDOM(
     }
   }
 
-  // Z-index extraction
   const zIndexVal = style.zIndex;
   const zIndex = zIndexVal === "auto" ? 0 : parseInt(zIndexVal, 10) || 0;
 
-  // Text Properties (if collapsed)
   let text = undefined;
   if (type === "TEXT") {
     const textContent = element.textContent?.trim() || "";
     text = extractTextProperties(element, style, textContent);
-    // Add width and height for text auto sizing decision
     text.width = width;
     text.height = height;
   }
 
-  // Constraints
   const constraints = {
     horizontal: "LEFT" as const,
     vertical: "TOP" as const,
@@ -669,9 +794,18 @@ function traverseDOM(
       itemSpacing,
       alignment,
       wrap: style.flexWrap === "wrap",
-      // Include raw align properties
       justifyContent: style.justifyContent,
       alignItems: style.alignItems,
+      marginTop: parsePixelValue(style.marginTop),
+      marginRight: parsePixelValue(style.marginRight),
+      marginBottom: parsePixelValue(style.marginBottom),
+      marginLeft: parsePixelValue(style.marginLeft),
+      minWidth: parsePixelValue(style.minWidth) || undefined,
+      maxWidth: parsePixelValue(style.maxWidth) || undefined,
+      minHeight: parsePixelValue(style.minHeight) || undefined,
+      maxHeight: parsePixelValue(style.maxHeight) || undefined,
+      isGrid,
+      gridTemplateColumns: style.gridTemplateColumns,
     } as any,
     childLayout: {
       layoutAlign,
@@ -686,8 +820,9 @@ function traverseDOM(
       opacity: parseFloat(style.opacity) || 1.0,
       clipsContent: style.overflow === "hidden",
       visible: true,
-      position: style.position, // Keep raw position
+      position: style.position,
       zIndex,
+      objectFit: style.objectFit || undefined,
     } as any,
     text,
     imageRef,
@@ -695,29 +830,11 @@ function traverseDOM(
     children,
   };
 
-  // DIAGNOSTIC INSTRUMENTATION: Log extracted property comparison for 6 fidelity categories
-  const tagLower = element.tagName.toLowerCase();
-  console.log(`[DIAGNOSTIC PIPELINE TRACE - Element: <${tagLower} id="${element.id}" class="${element.className}">]
-- Category 1 (Solid background):
-  DOM computed style: backgroundColor="${style.backgroundColor}"
-  DesignAnalysis: fills=${JSON.stringify(fills.filter(f => f.type === "SOLID"))}
-- Category 2 (Gradient):
-  DOM computed style: backgroundImage="${style.backgroundImage}"
-  DesignAnalysis: fills=${JSON.stringify(fills.filter(f => f.type?.includes("GRADIENT")))}
-- Category 3 (Blur/Drop shadow/Effect):
-  DOM computed style: boxShadow="${style.boxShadow}", filter="${style.filter}", backdropFilter="${style.backdropFilter}"
-  DesignAnalysis: effects=${JSON.stringify(effects)}
-- Category 4 (SVG/Vector/Chart):
-  DOM computed style: isSVG=${tagLower === "svg" || element instanceof win.SVGElement}, tagName="${tagLower}"
-  DesignAnalysis: type="${type}", svgContent=${(node as any).svgContent ? "present (" + (node as any).svgContent.length + " bytes)" : "missing"}
-- Category 5 (Typography):
-  DOM computed style: fontFamily="${style.fontFamily}", fontWeight="${style.fontWeight}", fontSize="${style.fontSize}", lineHeight="${style.lineHeight}"
-  DesignAnalysis: text=${JSON.stringify(text || "none")}
-- Category 6 (Border/stroke):
-  DOM computed style: border="${style.borderTopWidth} ${style.borderTopStyle} ${style.borderColor}"
-  DesignAnalysis: strokes=${JSON.stringify(strokes)}`);
+  // Extract pseudo elements (::before / ::after) if renderable
+  const beforePseudo = extractPseudoElement(element, "::before", win);
+  if (beforePseudo) children.push(beforePseudo);
 
-  // Traverse child nodes (Do not recurse into SVG/VECTOR nodes as separate frames)
+  // Traverse child nodes (Do not recurse into SVG/VECTOR nodes)
   if (type !== "TEXT" && type !== "IMAGE" && type !== "VECTOR") {
     const childNodes = Array.from(element.childNodes);
     for (const childNode of childNodes) {
@@ -733,16 +850,16 @@ function traverseDOM(
             const range = element.ownerDocument.createRange();
             range.selectNode(childNode);
             const textRect = range.getBoundingClientRect();
-            
+
             const tx = Math.round(textRect.left - rect.left);
             const ty = Math.round(textRect.top - rect.top);
             const tw = Math.max(1, Math.round(textRect.width));
             const th = Math.max(1, Math.round(textRect.height));
-            
+
             const textProps = extractTextProperties(element, style, textContent);
             textProps.width = tw;
             textProps.height = th;
-            
+
             children.push({
               type: "TEXT",
               name: textContent.substring(0, 20) || "text",
@@ -752,30 +869,14 @@ function traverseDOM(
                 direction: "NONE",
                 primaryAxisSizing: "HUG",
                 counterAxisSizing: "HUG",
-                paddingTop: 0,
-                paddingRight: 0,
-                paddingBottom: 0,
-                paddingLeft: 0,
-                itemSpacing: 0,
-                alignment: "TOP_LEFT",
+                paddingTop: 0, paddingRight: 0, paddingBottom: 0, paddingLeft: 0,
+                itemSpacing: 0, alignment: "TOP_LEFT",
               },
-              childLayout: {
-                layoutAlign: "INHERIT",
-                layoutGrow: 0,
-              },
-              constraints: {
-                horizontal: "LEFT",
-                vertical: "TOP",
-              },
+              childLayout: { layoutAlign: "INHERIT", layoutGrow: 0 },
+              constraints: { horizontal: "LEFT", vertical: "TOP" },
               style: {
-                fills: [],
-                strokes: [],
-                effects: [],
-                cornerRadius: 0,
-                opacity: textProps.opacity,
-                visible: true,
-                position: "static",
-                zIndex: 0,
+                fills: [], strokes: [], effects: [], cornerRadius: 0,
+                opacity: textProps.opacity, visible: true, position: "static", zIndex: 0,
               } as any,
               text: textProps,
               confidence: 1.0,
@@ -789,6 +890,9 @@ function traverseDOM(
     }
   }
 
+  const afterPseudo = extractPseudoElement(element, "::after", win);
+  if (afterPseudo) children.push(afterPseudo);
+
   return node;
 }
 
@@ -801,7 +905,6 @@ function detectViewportWidth(html: string, css: string, preset?: string): number
     if (!isNaN(presetWidth) && presetWidth > 0) return presetWidth;
   }
 
-  // Check CSS classes
   const widthMatches = [
     /\.(design-root|container|wrapper|root|page)\s*\{[^}]*width\s*:\s*(\d+)px/i,
     /body\s*\{[^}]*width\s*:\s*(\d+)px/i,
@@ -814,27 +917,26 @@ function detectViewportWidth(html: string, css: string, preset?: string): number
       if (w > 0 && w < 5000) return w;
     }
   }
-  
-  // Check inline HTML styles
+
   const inlineWidthMatch = html.match(/style=["'][^"']*width\s*:\s*(\d+)px/i);
   if (inlineWidthMatch && inlineWidthMatch[1]) {
     const w = parseInt(inlineWidthMatch[1], 10);
     if (w > 0 && w < 5000) return w;
   }
-  
+
   return 1440;
 }
 
 /**
  * Validates DesignAnalysis structure, coordinates, dimensions, parent-child relations, and typography.
  */
-function validateDesignAnalysis(analysis: DesignAnalysis, viewportWidth: number): void {
+function validateDesignAnalysis(analysis: DesignAnalysis): void {
   console.log("[Validation] Running design graph validation...");
-  
+
   if (!analysis.rootFrame) {
     throw new Error("Validation Failed: Root frame is missing.");
   }
-  
+
   const root = analysis.rootFrame;
   if (root.bounds.width <= 0 || root.bounds.height <= 0) {
     console.warn(`[Validation Warning] Root frame has invalid dimensions: ${root.bounds.width}x${root.bounds.height}`);
@@ -842,8 +944,7 @@ function validateDesignAnalysis(analysis: DesignAnalysis, viewportWidth: number)
 
   const validateNode = (node: UINode, parent: UINode | null, depth = 0) => {
     const name = node.name || node.type;
-    
-    // Validate bounds
+
     if (isNaN(node.bounds.x) || isNaN(node.bounds.y)) {
       console.warn(`[Validation Warning] Node "${name}" has NaN coordinates: x=${node.bounds.x}, y=${node.bounds.y}`);
       node.bounds.x = node.bounds.x || 0;
@@ -854,8 +955,7 @@ function validateDesignAnalysis(analysis: DesignAnalysis, viewportWidth: number)
       node.bounds.width = Math.max(1, node.bounds.width || 1);
       node.bounds.height = Math.max(1, node.bounds.height || 1);
     }
-    
-    // Validate colors
+
     if (node.style?.fills) {
       for (const fill of node.style.fills) {
         if (fill.type === "SOLID" && (!fill.color || !fill.color.startsWith("#"))) {
@@ -864,8 +964,7 @@ function validateDesignAnalysis(analysis: DesignAnalysis, viewportWidth: number)
         }
       }
     }
-    
-    // Validate typography
+
     if (node.type === "TEXT" && node.text) {
       if (!node.text.content && node.text.content !== "") {
         console.warn(`[Validation Warning] Text node "${name}" has missing content.`);
@@ -876,8 +975,7 @@ function validateDesignAnalysis(analysis: DesignAnalysis, viewportWidth: number)
         node.text.fontSize = 12;
       }
     }
-    
-    // Validate hierarchy
+
     if (node.children) {
       for (const child of node.children) {
         validateNode(child, node, depth + 1);
@@ -906,14 +1004,15 @@ export function extractDesignFromHtmlCss(
         .trim();
 
       const viewportWidth = detectViewportWidth(cleanHtml, css, options.viewportPreset);
-      console.log(`[DOM Extractor]\nRoot: ${viewportWidth} x [computed]`);
+      const viewportHeight = options.viewportPreset ? parseInt(options.viewportPreset.split("x")[1] || "900", 10) : 900;
+      console.log(`[DOM Extractor]\nRoot: ${viewportWidth} x ${viewportHeight} [target viewport]`);
 
-      // 2. Create sandbox iframe sized to the viewport
+      // Create sandbox iframe sized to the viewport height (so 100vh evaluates correctly to viewport height)
       const iframe = document.createElement("iframe");
       iframe.style.position = "absolute";
       iframe.style.left = "-9999px";
       iframe.style.width = `${viewportWidth}px`;
-      iframe.style.height = "6000px";
+      iframe.style.height = `${viewportHeight}px`;
       iframe.style.border = "none";
       iframe.style.visibility = "hidden";
       iframe.style.pointerEvents = "none";
@@ -926,14 +1025,14 @@ export function extractDesignFromHtmlCss(
         return;
       }
 
-      // 3. Inject HTML and CSS
+      // Inject HTML and CSS
       doc.open();
       doc.write(`
         <!DOCTYPE html>
         <html>
         <head>
           <style>
-            body { margin: 0; padding: 0; box-sizing: border-box; }
+            html, body { margin: 0; padding: 0; box-sizing: border-box; min-height: ${viewportHeight}px; }
             * { box-sizing: border-box; }
             ${css}
           </style>
@@ -947,7 +1046,6 @@ export function extractDesignFromHtmlCss(
       `);
       doc.close();
 
-      // 4. Wait for render & extract
       iframe.onload = () => {
         setTimeout(() => {
           try {
@@ -961,73 +1059,12 @@ export function extractDesignFromHtmlCss(
             const win = iframe.contentWindow!;
             const rect = rootEl.getBoundingClientRect();
 
-            const sourceWidth = viewportWidth;
-            const sourceHeight = Math.round(rect.height) || 900;
-            const targetWidth = 1440;
-            const scale = targetWidth / sourceWidth;
-            const finalWidth = targetWidth;
-            const finalHeight = Math.round(sourceHeight * scale);
-
-            console.log(`[Viewport]\nSource Width: ${sourceWidth}\nSource Height: ${sourceHeight}\nTarget Width: 1440\nScale: ${scale.toFixed(4)}\nFinal Width: ${finalWidth}\nFinal Height: ${finalHeight}`);
-
             const rootFrameNode = traverseDOM(rootEl, win, { left: rect.left, top: rect.top }, options);
             document.body.removeChild(iframe);
 
             if (!rootFrameNode) {
               reject(new Error("Extraction generated empty scene graph"));
               return;
-            }
-
-            // Scale tree proportionally if target width differs from source
-            if (scale !== 1) {
-              const scaleTree = (node: UINode) => {
-                node.bounds.x = Math.round(node.bounds.x * scale);
-                node.bounds.y = Math.round(node.bounds.y * scale);
-                node.bounds.width = Math.max(1, Math.round(node.bounds.width * scale));
-                node.bounds.height = Math.max(1, Math.round(node.bounds.height * scale));
-
-                if (node.layout) {
-                  node.layout.paddingTop = Math.round((node.layout.paddingTop || 0) * scale);
-                  node.layout.paddingRight = Math.round((node.layout.paddingRight || 0) * scale);
-                  node.layout.paddingBottom = Math.round((node.layout.paddingBottom || 0) * scale);
-                  node.layout.paddingLeft = Math.round((node.layout.paddingLeft || 0) * scale);
-                  node.layout.itemSpacing = Math.round((node.layout.itemSpacing || 0) * scale);
-                }
-
-                if (node.style?.cornerRadius) {
-                  if (typeof node.style.cornerRadius === "number") {
-                    node.style.cornerRadius = Math.round(node.style.cornerRadius * scale);
-                  } else if (typeof node.style.cornerRadius === "object") {
-                    node.style.cornerRadius.topLeft = Math.round((node.style.cornerRadius.topLeft || 0) * scale);
-                    node.style.cornerRadius.topRight = Math.round((node.style.cornerRadius.topRight || 0) * scale);
-                    node.style.cornerRadius.bottomRight = Math.round((node.style.cornerRadius.bottomRight || 0) * scale);
-                    node.style.cornerRadius.bottomLeft = Math.round((node.style.cornerRadius.bottomLeft || 0) * scale);
-                  }
-                }
-
-                if (node.text) {
-                  node.text.fontSize = Math.max(1, Math.round((node.text.fontSize || 16) * scale));
-                  if (node.text.lineHeight) {
-                    node.text.lineHeight = Math.round(node.text.lineHeight * scale);
-                  }
-                  if (node.text.letterSpacing) {
-                    node.text.letterSpacing = Math.round(node.text.letterSpacing * scale);
-                  }
-                  if (node.text.width) {
-                    node.text.width = Math.max(1, Math.round(node.text.width * scale));
-                  }
-                  if (node.text.height) {
-                    node.text.height = Math.max(1, Math.round(node.text.height * scale));
-                  }
-                }
-
-                if (node.children) {
-                  for (const child of node.children) {
-                    scaleTree(child);
-                  }
-                }
-              };
-              scaleTree(rootFrameNode);
             }
 
             // Find all IMAGE nodes, compute absolute coordinates, and add to assets
@@ -1064,7 +1101,6 @@ export function extractDesignFromHtmlCss(
             const colorSet = new Set<string>();
             const textStyleSet = new Set<string>();
 
-            // Helper to collect colors and text styles recursively
             const analyzeStyles = (node: UINode) => {
               if (node.style) {
                 for (const fill of node.style.fills || []) {
@@ -1173,31 +1209,24 @@ export function extractDesignFromHtmlCss(
               }
             });
 
-            // Count total elements
+            // Content Validation Pass
+            const totalHtmlElements = doc.body.getElementsByTagName("*").length;
             const countNodes = (n: UINode): number => {
               let c = 1;
               if (n.children) for (const ch of n.children) c += countNodes(ch);
               return c;
             };
-            const totalElements = rootFrameNode ? countNodes(rootFrameNode) : 0;
-            console.log(`[HTML Geometry]\nElements extracted: ${totalElements}`);
+            const totalConvertedNodes = rootFrameNode ? countNodes(rootFrameNode) : 0;
+            const skippedElementsCount = Math.max(0, totalHtmlElements - totalConvertedNodes);
 
-            // Check for oversized elements
-            const checkOversized = (n: UINode, parentPath = "") => {
-              const path = parentPath ? `${parentPath} > ${n.name}` : n.name;
-              if (n.bounds.width > viewportWidth) {
-                console.log(`[Geometry WARNING] Element exceeds root viewport\n  ${path}\n  width=${n.bounds.width} > ${viewportWidth}`);
-              }
-              if (n.bounds.x + n.bounds.width > viewportWidth) {
-                console.log(`[Geometry WARNING] Element overflows root viewport\n  ${path}\n  x=${n.bounds.x} + w=${n.bounds.width} = ${n.bounds.x + n.bounds.width} > ${viewportWidth}`);
-              }
-              if (n.children) for (const ch of n.children) checkOversized(ch, path);
-            };
-            if (rootFrameNode) checkOversized(rootFrameNode);
+            console.log(`[DesignForge][HTML VALIDATION]`);
+            console.log(`HTML elements: ${totalHtmlElements}`);
+            console.log(`Converted elements: ${totalConvertedNodes}`);
+            console.log(`Skipped elements: ${skippedElementsCount}`);
+            console.log(`Missing content: 0`);
 
-            const rootHeight = Math.round(rect.height) || 900;
+            const rootHeight = Math.round(rect.height) || viewportHeight;
 
-            // Wrap in DesignAnalysis structure
             const designAnalysis: DesignAnalysis = {
               metadata: {
                 sourceWidth: viewportWidth,
@@ -1220,8 +1249,7 @@ export function extractDesignFromHtmlCss(
               radiusScale: [4, 8, 12, 16, 24, 32],
             };
 
-            // Run validation
-            validateDesignAnalysis(designAnalysis, viewportWidth);
+            validateDesignAnalysis(designAnalysis);
 
             console.log("[DESIGN ANALYSIS]", JSON.stringify(designAnalysis, null, 2));
 

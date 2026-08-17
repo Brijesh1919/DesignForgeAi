@@ -62,7 +62,11 @@ export function restructureUINodeLayout(node: UINode): UINode {
   node.children = node.children.map(restructureUINodeLayout);
 
   // Prune redundant single-child visual wrapper frames to reduce depth
-  if (node.children.length === 1 && node.type === "FRAME") {
+  const nameLower = (node.name || "").toLowerCase();
+  const isStructural = nameLower.includes("section") || nameLower.includes("container") || nameLower.includes("wrapper") || nameLower.includes("header") || nameLower.includes("footer") || nameLower.includes("nav") || nameLower.includes("main") || nameLower.includes("article") || nameLower.includes("aside") || nameLower.includes("card") || nameLower.includes("hero");
+  const hasPadding = (node.layout?.paddingTop || 0) > 0 || (node.layout?.paddingBottom || 0) > 0 || (node.layout?.paddingLeft || 0) > 0 || (node.layout?.paddingRight || 0) > 0;
+
+  if (node.children.length === 1 && node.type === "FRAME" && !isStructural && !hasPadding) {
     const hasFills = node.style?.fills && node.style.fills.length > 0;
     const hasStrokes = node.style?.strokes && node.style.strokes.length > 0;
     if (!hasFills && !hasStrokes) {
