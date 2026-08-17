@@ -371,7 +371,7 @@ function traverseDOM(
   const borderLeftStyle = style.borderLeftStyle;
 
   const bgCol = rgbaToHex(style.backgroundColor, element.ownerDocument);
-  const isBgTransparent = bgCol === "#00000000" || bgCol.endsWith("00") || style.backgroundColor === "transparent";
+  const isBgTransparent = bgCol === "#00000000" || (bgCol.length === 9 && bgCol.endsWith("00")) || style.backgroundColor === "transparent";
 
   const hasBorders = 
     (borderTopW > 0 && borderTopStyle !== "none") ||
@@ -411,6 +411,7 @@ function traverseDOM(
       opacity: bgCol.length > 7 ? parseInt(bgCol.substring(7, 9), 16) / 255 : 1.0,
     });
   }
+  console.log(`[BACKGROUND_FILL_FIDELITY] DOM element: <${element.tagName.toLowerCase()}${element.id ? '#' + element.id : ''}${classNameStr}> → computed backgroundColor: "${style.backgroundColor}" → resolved Figma fill: ${fills.length > 0 ? JSON.stringify(fills[0]) : "none"}`);
 
   // If type is IMAGE and has src
   let imageRef = undefined;
@@ -577,6 +578,57 @@ function traverseDOM(
     else if (ai === "flex-end") alignment = "BOTTOM_LEFT";
     else if (jc === "center") alignment = "TOP_CENTER";
     else if (jc === "flex-end") alignment = "TOP_RIGHT";
+  } else if (element.children.length > 0) {
+    if (element.children.length >= 2) {
+      const child1 = element.children[0].getBoundingClientRect();
+      const child2 = element.children[1].getBoundingClientRect();
+      const isVertical = Math.abs(child2.top - child1.top) > Math.abs(child2.left - child1.left);
+      direction = isVertical ? "VERTICAL" : "HORIZONTAL";
+    } else {
+      direction = "VERTICAL";
+    }
+    itemSpacing = 0;
+    paddingTop = parsePixelValue(style.paddingTop);
+    paddingRight = parsePixelValue(style.paddingRight);
+    paddingBottom = parsePixelValue(style.paddingBottom);
+    paddingLeft = parsePixelValue(style.paddingLeft);
+  }
+
+  // Dynamic Sizing heuristic: Check if container width/height hugs child bounds
+  let primaryAxisSizing = "FIXED";
+  let counterAxisSizing = "FIXED";
+  if (direction !== "NONE" && element.children.length > 0) {
+    let maxChildRight = 0;
+    let maxChildBottom = 0;
+    for (let i = 0; i < element.children.length; i++) {
+      const childEl = element.children[i];
+      const cRect = childEl.getBoundingClientRect();
+      const cRight = cRect.right - rect.left;
+      const cBottom = cRect.bottom - rect.top;
+      if (cRight > maxChildRight) maxChildRight = cRight;
+      if (cBottom > maxChildBottom) maxChildBottom = cBottom;
+    }
+    const contentW = maxChildRight + paddingRight;
+    const contentH = maxChildBottom + paddingBottom;
+
+    const isVertical = direction === "VERTICAL";
+    const primarySize = isVertical ? height : width;
+    const primaryContentSize = isVertical ? contentH : contentW;
+    const counterSize = isVertical ? width : height;
+    const counterContentSize = isVertical ? contentW : contentH;
+
+    primaryAxisSizing = Math.abs(primarySize - primaryContentSize) < 5 ? "HUG" : "FIXED";
+    counterAxisSizing = Math.abs(counterSize - counterContentSize) < 5 ? "HUG" : "FIXED";
+  }
+
+  let layoutAlign = "INHERIT";
+  if (style.alignSelf === "stretch" || style.width === "100%" || style.width.includes("vw")) {
+    layoutAlign = "STRETCH";
+  } else if (element.parentElement) {
+    const parentRect = element.parentElement.getBoundingClientRect();
+    if (Math.abs(rect.width - parentRect.width) < 10) {
+      layoutAlign = "STRETCH";
+    }
   }
 
   // Z-index extraction
@@ -608,8 +660,8 @@ function traverseDOM(
     bounds: { x, y, width, height },
     layout: {
       direction,
-      primaryAxisSizing: "HUG",
-      counterAxisSizing: "HUG",
+      primaryAxisSizing,
+      counterAxisSizing,
       paddingTop,
       paddingRight,
       paddingBottom,
@@ -622,7 +674,7 @@ function traverseDOM(
       alignItems: style.alignItems,
     } as any,
     childLayout: {
-      layoutAlign: style.alignSelf === "stretch" ? "STRETCH" : "INHERIT",
+      layoutAlign,
       layoutGrow: parseFloat(style.flexGrow) || 0,
     },
     constraints,

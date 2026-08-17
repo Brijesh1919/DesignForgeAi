@@ -149,7 +149,7 @@ export function useAnalysis() {
         createPaintStyles: settings.createPaintStyles,
         createTextStyles: settings.createTextStyles,
         generateConstraints: settings.generateConstraints,
-        preserveAbsolutePosition: settings.preserveAbsolutePosition,
+        preserveAbsolutePosition: settings.createAutoLayout ? false : settings.preserveAbsolutePosition,
         optimizeLayerNames: settings.optimizeLayerNames,
         viewportPreset: settings.viewportPreset,
         debugMode: settings.debugMode,
@@ -334,7 +334,7 @@ export function useAnalysis() {
         createPaintStyles: settings.createPaintStyles,
         createTextStyles: settings.createTextStyles,
         generateConstraints: settings.generateConstraints,
-        preserveAbsolutePosition: settings.preserveAbsolutePosition,
+        preserveAbsolutePosition: settings.createAutoLayout ? false : settings.preserveAbsolutePosition,
         optimizeLayerNames: settings.optimizeLayerNames,
         debugMode: settings.debugMode,
       });

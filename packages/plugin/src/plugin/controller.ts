@@ -31,6 +31,9 @@ import {
 import { validateGeometryPostProcess, BaseRect } from "./utils/geometry-validator";
 import { recordBaseRenderBaseline } from "./utils/base-render-logger";
 import { applyFidelityAdapter } from "./fidelity";
+import { restructureUINodeLayout } from "./utils/layout-restructurer";
+import { sanitizeFigmaLayoutTree } from "./utils/layout-validator";
+import { runLayoutEngineTests } from "./utils/layout-test-runner";
 
 // ─── Plugin Init ─────────────────────────────────────────────
 
@@ -40,6 +43,9 @@ figma.showUI(__html__, {
   themeColors: true,
   title: "DesignForge AI",
 });
+
+// Run layout engine validation suite at startup
+runLayoutEngineTests().catch((err) => console.error("Failed to run layout engine tests:", err));
 
 // ─── Message Handler ─────────────────────────────────────────
 
@@ -186,20 +192,45 @@ async function handleGeneration(payload: {
     const baseGeometryMap = new Map<string, BaseRect>();
     const baseTextPropsMap = new Map<string, any>();
 
+    // AUTO-LAYOUT: Pass createAutoLayout directly from canonicalOptions into the tree builder.
+    // When Auto Layout is enabled, preserveAbsolutePosition must be false so the two flags
+    // don't cancel each other out. All other optional enhancement passes remain disabled
+    // here — they run separately as post-processors AFTER the tree is built.
+    if (canonicalOptions.createAutoLayout) {
+      console.log("[AUTO-LAYOUT] enabled — will be applied during frame tree build");
+    }
+
     const baseSettings = {
       ...payload.settings,
-      createAutoLayout: false,
+      createAutoLayout: canonicalOptions.createAutoLayout,          // ← THE FIX: was always false
       createComponents: false,
       createVariables: false,
       createPaintStyles: false,
       createTextStyles: false,
       generateConstraints: false,
-      preserveAbsolutePosition: true,
+      // When Auto Layout is on, preserve-absolute-position must be OFF so the
+      // layoutMode branch in buildFrame() is actually reached.
+      preserveAbsolutePosition: canonicalOptions.createAutoLayout ? false : true,
     };
 
-    const rootFrame = analysis.rootFrame;
+    let rootFrame = analysis.rootFrame;
     if (!rootFrame) {
       throw new Error("No rootFrame in analysis result");
+    }
+
+    if (canonicalOptions.createAutoLayout) {
+      console.log("[Layout Restructuring] Auto Layout is enabled. Running layout restructuring pass on rootFrame...");
+      rootFrame = restructureUINodeLayout(rootFrame);
+      analysis.rootFrame = rootFrame;
+
+      if (analysis.components && analysis.components.length > 0) {
+        console.log("[Layout Restructuring] Running layout restructuring pass on component templates...");
+        for (const comp of analysis.components) {
+          if (comp.template) {
+            comp.template = restructureUINodeLayout(comp.template);
+          }
+        }
+      }
     }
 
     const page = figma.currentPage;
@@ -239,7 +270,10 @@ async function handleGeneration(payload: {
     let styleCount = 0;
 
     if (canonicalOptions.createAutoLayout) {
-      await applyAutoLayout(result, baseGeometryMap);
+      // Auto Layout is applied natively during buildNodeTree (in frame-builder.ts buildFrame).
+      // The post-processor pass is intentionally not used — the frame-builder handles it
+      // recursively using the actual DOM layout data from the analysis JSON.
+      console.log("[AUTO-LAYOUT] native tree-build pass complete — skipping redundant post-processor");
     }
     if (canonicalOptions.createVariables) {
       variableCount = await applyVariables(analysis, canonicalOptions);
@@ -259,7 +293,10 @@ async function handleGeneration(payload: {
     }
 
     // POST-ENHANCEMENT GEOMETRY VALIDATION PASS (Tolerance <= 0.5px)
-    validateGeometryPostProcess(result, baseGeometryMap, baseTextPropsMap);
+    validateGeometryPostProcess(result, baseGeometryMap, baseTextPropsMap, canonicalOptions.createAutoLayout);
+
+    // LAYOUT SANITIZATION PASS
+    sanitizeFigmaLayoutTree(result);
 
     const printFigmaHierarchy = (node: SceneNode, indent = ""): string => {
       let rStr = `${indent}${node.name} (${node.type}) [x=${node.x}, y=${node.y}, w=${node.width}, h=${node.height}]\n`;

@@ -19,7 +19,8 @@ export interface BaseRect {
 export function validateGeometryPostProcess(
   rootNode: SceneNode,
   baseGeometryMap: Map<string, BaseRect>,
-  baseTextPropsMap?: Map<string, any>
+  baseTextPropsMap?: Map<string, any>,
+  createAutoLayout?: boolean
 ): { passCount: number; failCount: number } {
   console.log("[Geometry Validation] Starting post-processor geometry validation pass (tolerance <= 0.5px)...");
 
@@ -36,30 +37,47 @@ export function validateGeometryPostProcess(
         
         let changed = false;
         
-        if (JSON.stringify(textNode.fontName) !== JSON.stringify(baseText.fontName) ||
-            textNode.fontSize !== baseText.fontSize ||
-            JSON.stringify(textNode.lineHeight) !== JSON.stringify(baseText.lineHeight) ||
-            JSON.stringify(textNode.letterSpacing) !== JSON.stringify(baseText.letterSpacing) ||
-            textNode.textAlignHorizontal !== baseText.textAlignHorizontal ||
-            textNode.textCase !== baseText.textCase ||
-            textNode.textDecoration !== baseText.textDecoration ||
-            textNode.characters !== baseText.characters ||
-            textNode.textAutoResize !== baseText.textAutoResize ||
-            JSON.stringify(textNode.fills) !== JSON.stringify(baseText.fills) ||
-            textNode.x !== baseText.x ||
-            textNode.y !== baseText.y ||
-            textNode.width !== baseText.width ||
-            textNode.height !== baseText.height) {
-          changed = true;
+        // When Auto Layout is on, we do NOT validate or restore layout position (x, y), dimensions (width, height), or resize mode
+        if (createAutoLayout) {
+          if (JSON.stringify(textNode.fontName) !== JSON.stringify(baseText.fontName) ||
+              textNode.fontSize !== baseText.fontSize ||
+              JSON.stringify(textNode.lineHeight) !== JSON.stringify(baseText.lineHeight) ||
+              JSON.stringify(textNode.letterSpacing) !== JSON.stringify(baseText.letterSpacing) ||
+              textNode.textAlignHorizontal !== baseText.textAlignHorizontal ||
+              textNode.textCase !== baseText.textCase ||
+              textNode.textDecoration !== baseText.textDecoration ||
+              textNode.characters !== baseText.characters ||
+              JSON.stringify(textNode.fills) !== JSON.stringify(baseText.fills)) {
+            changed = true;
+          }
+        } else {
+          if (JSON.stringify(textNode.fontName) !== JSON.stringify(baseText.fontName) ||
+              textNode.fontSize !== baseText.fontSize ||
+              JSON.stringify(textNode.lineHeight) !== JSON.stringify(baseText.lineHeight) ||
+              JSON.stringify(textNode.letterSpacing) !== JSON.stringify(baseText.letterSpacing) ||
+              textNode.textAlignHorizontal !== baseText.textAlignHorizontal ||
+              textNode.textCase !== baseText.textCase ||
+              textNode.textDecoration !== baseText.textDecoration ||
+              textNode.characters !== baseText.characters ||
+              textNode.textAutoResize !== baseText.textAutoResize ||
+              JSON.stringify(textNode.fills) !== JSON.stringify(baseText.fills) ||
+              textNode.x !== baseText.x ||
+              textNode.y !== baseText.y ||
+              textNode.width !== baseText.width ||
+              textNode.height !== baseText.height) {
+            changed = true;
+          }
         }
 
         if (changed) {
           textGeometryChangedCount++;
-          console.log(`[TEXT] BASE geometry changed — Restoring baseline formatting and bounds for text node "${node.name}"`);
+          console.log(`[TEXT] BASE style/geometry changed — Restoring baseline formatting for text node "${node.name}"`);
           
           try {
             // Restore styles
-            textNode.fontName = baseText.fontName;
+            if (baseText.fontName && baseText.fontName !== figma.mixed) {
+              textNode.fontName = baseText.fontName;
+            }
             textNode.characters = baseText.characters;
             textNode.fontSize = baseText.fontSize;
             textNode.lineHeight = baseText.lineHeight;
@@ -70,11 +88,13 @@ export function validateGeometryPostProcess(
             textNode.textDecoration = baseText.textDecoration;
             textNode.fills = baseText.fills;
             
-            // Restore exact position & size using NONE mode (locked box matches BASE_RENDER)
-            textNode.textAutoResize = "NONE";
-            textNode.resize(Math.max(1, baseText.width), Math.max(1, baseText.height));
-            textNode.x = baseText.x;
-            textNode.y = baseText.y;
+            // ONLY restore layout geometry and locked bounds if Auto Layout is NOT requested
+            if (!createAutoLayout) {
+              textNode.textAutoResize = "NONE";
+              textNode.resize(Math.max(1, baseText.width), Math.max(1, baseText.height));
+              textNode.x = baseText.x;
+              textNode.y = baseText.y;
+            }
           } catch (err) {
             console.warn(`[TEXT WARNING] Failed to restore text style for "${node.name}":`, err);
           }
@@ -99,18 +119,22 @@ export function validateGeometryPostProcess(
         failCount++;
         console.log(`[Geometry Validation]\nNode: ${node.name}\nStatus: FAILED\nRestoring base geometry.\n  Base: ${base.x},${base.y},${base.width},${base.height}\n  Final: ${fx},${fy},${fw},${fh}`);
 
-        // Restore original baseline geometry
-        try {
-          if ("layoutMode" in node && (node as FrameNode).layoutMode !== "NONE") {
-            (node as FrameNode).layoutMode = "NONE";
+        // Restore original baseline geometry (ONLY if Auto Layout is NOT requested)
+        if (!createAutoLayout) {
+          try {
+            if ("layoutMode" in node && (node as FrameNode).layoutMode !== "NONE") {
+              (node as FrameNode).layoutMode = "NONE";
+            }
+            if ("x" in node) node.x = base.x;
+            if ("y" in node) node.y = base.y;
+            if ("resize" in node) {
+              (node as any).resize(Math.max(1, base.width), Math.max(1, base.height));
+            }
+          } catch (err) {
+            console.warn(`[Geometry Validation] Failed to restore bounds for "${node.name}":`, err);
           }
-          if ("x" in node) node.x = base.x;
-          if ("y" in node) node.y = base.y;
-          if ("resize" in node) {
-            (node as any).resize(Math.max(1, base.width), Math.max(1, base.height));
-          }
-        } catch (err) {
-          console.warn(`[Geometry Validation] Failed to restore bounds for "${node.name}":`, err);
+        } else {
+          console.log(`[Geometry Validation] Auto Layout is enabled. Skipping restoration to preserve responsive flows.`);
         }
       } else {
         passCount++;
