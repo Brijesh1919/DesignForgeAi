@@ -1073,11 +1073,13 @@ export function extractDesignFromHtmlCss(
             const collectAssets = (node: UINode, parentX = 0, parentY = 0) => {
               const absX = parentX + node.bounds.x;
               const absY = parentY + node.bounds.y;
-              if (node.type === "IMAGE") {
+              if (node.type === "IMAGE" || node.imageRef) {
                 const assetId = `asset_${assetCounter++}`;
+                const originalSrc = node.imageRef;
                 node.imageRef = assetId;
                 assetsList.push({
                   id: assetId,
+                  src: originalSrc,
                   bounds: {
                     x: absX,
                     y: absY,

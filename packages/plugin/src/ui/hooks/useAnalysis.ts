@@ -155,45 +155,14 @@ export function useAnalysis() {
         debugMode: settings.debugMode,
       });
 
-      // Extract image assets if selectedImage is available and design has image regions
-      const assetsWithImages = designAnalysis.assets?.filter(
-        (a: any) => a.bounds && !a.base64
-      );
-
-      if (selectedImage && assetsWithImages && assetsWithImages.length > 0) {
-        setProcessing("inserting-images", "Extracting images...", 50);
-
-        try {
-          const assetsResponse = await fetch(
-            `${settings.backendUrl}/api/assets/extract`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                imageBase64: selectedImage.base64,
-                regions: assetsWithImages.map((a: any) => ({
-                  id: a.id,
-                  ...a.bounds,
-                })),
-              }),
-            }
-          );
-
-          if (assetsResponse.ok) {
-            const assetsResult = await assetsResponse.json();
-
-            for (const extracted of assetsResult.assets || []) {
-              const asset = designAnalysis.assets.find(
-                (a: any) => a.id === extracted.id
-              );
-              if (asset && extracted.base64) {
-                asset.base64 = extracted.base64;
-              }
-            }
-          }
-        } catch (e) {
-          console.warn("Asset extraction failed — continuing without images", e);
-        }
+      // Resolve image assets (from src URLs, data URIs, SVG, or screenshot crops)
+      if (designAnalysis.assets && designAnalysis.assets.length > 0) {
+        setProcessing("inserting-images", "Resolving image assets...", 50);
+        await resolveImageAssets(
+          designAnalysis.assets,
+          selectedImage?.base64,
+          settings.backendUrl
+        );
       }
 
       setProcessing("creating-nodes", "Sending to Figma...", 75);
@@ -339,45 +308,14 @@ export function useAnalysis() {
         debugMode: settings.debugMode,
       });
 
-      // Crop image assets from screenshot
-      const assetsWithImages = designAnalysis.assets?.filter(
-        (a: any) => a.bounds && !a.base64
-      );
-
-      if (assetsWithImages && assetsWithImages.length > 0) {
-        setProcessing("inserting-images", "Extracting images...", 70);
-
-        try {
-          const assetsResponse = await fetch(
-            `${settings.backendUrl}/api/assets/extract`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                imageBase64: selectedImage.base64,
-                regions: assetsWithImages.map((a: any) => ({
-                  id: a.id,
-                  ...a.bounds,
-                })),
-              }),
-            }
-          );
-
-          if (assetsResponse.ok) {
-            const assetsResult = await assetsResponse.json();
-
-            for (const extracted of assetsResult.assets || []) {
-              const asset = designAnalysis.assets.find(
-                (a: any) => a.id === extracted.id
-              );
-              if (asset && extracted.base64) {
-                asset.base64 = extracted.base64;
-              }
-            }
-          }
-        } catch (e) {
-          console.warn("Asset extraction failed — continuing without images", e);
-        }
+      // Resolve image assets (from src URLs, data URIs, SVG, or screenshot crops)
+      if (designAnalysis.assets && designAnalysis.assets.length > 0) {
+        setProcessing("inserting-images", "Resolving image assets...", 70);
+        await resolveImageAssets(
+          designAnalysis.assets,
+          selectedImage?.base64,
+          settings.backendUrl
+        );
       }
 
       setProcessing("creating-nodes", "Sending to Figma...", 85);
@@ -425,4 +363,176 @@ export function useAnalysis() {
   ]);
 
   return { startAnalysis, generateHtmlFromScreenshot, convertHtmlCssToFigma };
+}
+
+/**
+ * Resolves image assets to base64 data:
+ * - Data URLs (PNG, JPEG, WebP, GIF)
+ * - SVG data URIs (rasterized via HTML5 Canvas)
+ * - Remote HTTP/HTTPS image URLs (direct fetch, or backend proxy fallback if CORS blocks)
+ * - Screenshot region crops (if selectedImage is provided)
+ */
+async function resolveImageAssets(
+  assets: any[],
+  selectedImageBase64: string | undefined,
+  backendUrl: string
+): Promise<void> {
+  if (!assets || assets.length === 0) return;
+
+  for (const asset of assets) {
+    if (asset.base64) continue;
+    const src = asset.src;
+    if (!src || typeof src !== "string") continue;
+
+    try {
+      if (src.startsWith("data:image/")) {
+        if (src.startsWith("data:image/svg+xml")) {
+          // Rasterize SVG data URI to PNG base64 via Canvas
+          const b64 = await rasterizeImageSrc(
+            src,
+            asset.bounds?.width || 100,
+            asset.bounds?.height || 100
+          );
+          if (b64) asset.base64 = b64;
+        } else {
+          // Standard raster data URL
+          const commaIdx = src.indexOf(",");
+          if (commaIdx !== -1) {
+            asset.base64 = src.slice(commaIdx + 1);
+          }
+        }
+      } else if (
+        src.startsWith("http://") ||
+        src.startsWith("https://") ||
+        src.startsWith("//") ||
+        src.startsWith("blob:")
+      ) {
+        const fullUrl = src.startsWith("//") ? `https:${src}` : src;
+        let fetched = false;
+
+        // Attempt 1: Direct fetch in browser
+        try {
+          const res = await fetch(fullUrl);
+          if (res.ok) {
+            const blob = await res.blob();
+            const b64 = await blobToBase64(blob);
+            if (b64) {
+              asset.base64 = b64;
+              fetched = true;
+            }
+          }
+        } catch (_) {
+          // Browser fetch failed (likely CORS)
+        }
+
+        // Attempt 2: Server-side proxy fetch (bypasses browser CORS)
+        if (!fetched && backendUrl) {
+          try {
+            const proxyRes = await fetch(`${backendUrl}/api/assets/fetch-url`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ url: fullUrl }),
+            });
+            if (proxyRes.ok) {
+              const data = await proxyRes.json();
+              if (data.base64) {
+                asset.base64 = data.base64;
+                fetched = true;
+              }
+            }
+          } catch (_) {
+            // Proxy fetch failed
+          }
+        }
+
+        // Attempt 3: Canvas rasterization fallback
+        if (!fetched) {
+          try {
+            const b64 = await rasterizeImageSrc(
+              fullUrl,
+              asset.bounds?.width || 100,
+              asset.bounds?.height || 100
+            );
+            if (b64) asset.base64 = b64;
+          } catch (_) {}
+        }
+      }
+    } catch (err) {
+      console.warn(`[ImageResolver] Failed to resolve asset ${asset.id}:`, err);
+    }
+  }
+
+  // Fallback: Crop from screenshot if selectedImage is available for remaining unresolved assets
+  const unextracted = assets.filter((a) => a.bounds && !a.base64);
+  if (selectedImageBase64 && unextracted.length > 0 && backendUrl) {
+    try {
+      const assetsResponse = await fetch(`${backendUrl}/api/assets/extract`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageBase64: selectedImageBase64,
+          regions: unextracted.map((a) => ({
+            id: a.id,
+            ...a.bounds,
+          })),
+        }),
+      });
+      if (assetsResponse.ok) {
+        const assetsResult = await assetsResponse.json();
+        for (const extracted of assetsResult.assets || []) {
+          const asset = assets.find((a) => a.id === extracted.id);
+          if (asset && extracted.base64) {
+            asset.base64 = extracted.base64;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Asset extraction from screenshot failed — continuing", e);
+    }
+  }
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const res = reader.result as string;
+      const comma = res.indexOf(",");
+      resolve(comma !== -1 ? res.slice(comma + 1) : res);
+    };
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(blob);
+  });
+}
+
+function rasterizeImageSrc(
+  src: string,
+  width: number,
+  height: number
+): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(width || img.naturalWidth || 100));
+        canvas.height = Math.max(
+          1,
+          Math.round(height || img.naturalHeight || 100)
+        );
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL("image/png");
+          const comma = dataUrl.indexOf(",");
+          resolve(comma !== -1 ? dataUrl.slice(comma + 1) : dataUrl);
+          return;
+        }
+      } catch (_) {}
+      resolve("");
+    };
+    img.onerror = () => resolve("");
+    img.src = src;
+  });
 }

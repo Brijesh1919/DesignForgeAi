@@ -87,3 +87,42 @@ assetsRouter.post(
     }
   }
 );
+
+/**
+ * POST /api/assets/fetch-url
+ *
+ * Fetches a remote image URL server-side and returns its base64 encoding.
+ * Used by plugin to bypass browser CORS when importing remote HTML images.
+ */
+assetsRouter.post(
+  "/assets/fetch-url",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { url } = req.body;
+      if (!url || typeof url !== "string") {
+        throw new ValidationError("Missing url in request body");
+      }
+
+      console.log(`[Assets] Fetching remote image: ${url.slice(0, 100)}...`);
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const base64 = Buffer.from(arrayBuffer).toString("base64");
+      const mimeType = response.headers.get("content-type") || "image/png";
+
+      console.log(`[Assets] Remote image fetched successfully (${base64.length} bytes base64)`);
+
+      res.json({
+        success: true,
+        base64,
+        mimeType,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
