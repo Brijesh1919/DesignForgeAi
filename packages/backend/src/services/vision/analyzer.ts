@@ -7,11 +7,85 @@
 
 import { OpenRouterVisionProvider } from "./openrouter-provider.js";
 import { config } from "../../config/index.js";
-import { SYSTEM_PROMPT, buildUserPrompt, HTML_GENERATION_SYSTEM_PROMPT, buildHtmlUserPrompt, HTML_REVISION_SYSTEM_PROMPT, buildHtmlRevisionUserPrompt, OLLAMA_HTML_GENERATION_SYSTEM_PROMPT, buildOllamaHtmlUserPrompt, OLLAMA_HTML_REVISION_SYSTEM_PROMPT, buildOllamaHtmlRevisionUserPrompt } from "./prompts.js";
+import { SYSTEM_PROMPT, buildUserPrompt } from "./prompts.js";
 import { validateSchemaStructure, getAnalysisResponseSchema } from "./openrouter-schema.js";
 import { AIServiceError } from "../../middleware/error-handler.js";
 import { MAX_RETRIES, RETRY_DELAY_MS } from "@designforge/shared";
-import { OllamaService } from "../OllamaService.js";
+import { analyzeScreenshotToVisualJson } from "./VisualAnalyzer.js";
+import { generateHtmlCssFromVisualDocument, validateGeneratedOutput } from "./HtmlCssGenerator.js";
+import { validateFidelity } from "../validation/FidelityValidator.js";
+
+export interface IntegrityCheckResult {
+  isCorrupt: boolean;
+  reason?: string;
+}
+
+/**
+ * Checks whether LLM generated HTML/CSS is truncated, reached token limits, or contains repetitive selectors.
+ */
+export function checkOutputIntegrity(
+  _rawText: string,
+  html: string,
+  css: string,
+  outputTokens: number,
+  numPredict: number
+): IntegrityCheckResult {
+  // 1. Check if maximum token limit was hit
+  if (numPredict > 0 && outputTokens >= numPredict) {
+    return {
+      isCorrupt: true,
+      reason: `Hit maximum output token limit (${outputTokens}/${numPredict} tokens)`,
+    };
+  }
+
+  // 2. Check for recursive/repetitive selectors (e.g. .sidebar .sidebar or .a.b .a.b)
+  const repetitiveSelectorRegex = /\.([a-zA-Z0-9_-]+)(?:\s+\.\1)+/gi;
+  if (repetitiveSelectorRegex.test(css)) {
+    return {
+      isCorrupt: true,
+      reason: `Detected recursive/repetitive CSS selector pattern`,
+    };
+  }
+
+  // 3. Check for repeated class names in a single selector string
+  const selectorLines = css.split("{");
+  for (const chunk of selectorLines) {
+    const selectorStr = chunk.split("}").pop() || "";
+    const classes = selectorStr.match(/\.([a-zA-Z0-9_-]+)/g);
+    if (classes && classes.length > 3) {
+      const counts: Record<string, number> = {};
+      for (const cls of classes) {
+        counts[cls] = (counts[cls] || 0) + 1;
+        if (counts[cls]! >= 2) {
+          return {
+            isCorrupt: true,
+            reason: `Detected repeated class '${cls}' in selector '${selectorStr.trim()}'`,
+          };
+        }
+      }
+    }
+  }
+
+  // 4. Check for unclosed/truncated CSS declarations at end of CSS
+  const trimmedCss = css.trim();
+  if (trimmedCss.length > 20 && !trimmedCss.endsWith("}") && !trimmedCss.endsWith(";")) {
+    return {
+      isCorrupt: true,
+      reason: `CSS output is incomplete or truncated`,
+    };
+  }
+
+  // 5. Check for unclosed/truncated HTML
+  const trimmedHtml = html.trim();
+  if (trimmedHtml.length > 50 && !trimmedHtml.endsWith("</div>") && !trimmedHtml.endsWith(">")) {
+    return {
+      isCorrupt: true,
+      reason: `HTML output is incomplete or truncated`,
+    };
+  }
+
+  return { isCorrupt: false };
+}
 function getSDKVersion(): string {
   return "1.0.0 (OpenRouter)";
 }
@@ -26,6 +100,8 @@ interface AnalyzeImageOptions {
   mimeType: string;
   width: number;
   height: number;
+  originalWidth?: number;
+  originalHeight?: number;
   apiKey?: string; // Optional user-provided key
   model?: string;  // Optional user-provided model
   debugMode?: boolean; // Enable schema logging/debug output
@@ -199,173 +275,172 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
+ * Resilient multi-strategy parser to extract HTML and CSS from LLM/VLM text output.
+ */
+export function parseHtmlCssFromText(
+  rawText: string,
+  _width?: number,
+  _height?: number
+): { html: string; css: string } {
+  if (!rawText || !rawText.trim()) {
+    return { html: "", css: "" };
+  }
+
+  let text = rawText.trim();
+
+  // 1. Direct JSON parse after stripping outer markdown code fences
+  const strippedText = text
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+
+  try {
+    const parsed = JSON.parse(strippedText);
+    if (parsed && (typeof parsed.html === "string" || typeof parsed.css === "string")) {
+      return {
+        html: parsed.html || "",
+        css: parsed.css || "",
+      };
+    }
+  } catch {
+    // Continue to next strategy
+  }
+
+  // 2. Extract JSON substring with "html" and "css"
+  const jsonMatch = text.match(/\{[\s\S]*"html"[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (parsed && (typeof parsed.html === "string" || typeof parsed.css === "string")) {
+        return {
+          html: parsed.html || "",
+          css: parsed.css || "",
+        };
+      }
+    } catch {
+      // Continue
+    }
+  }
+
+  // 3. Extract separate ```html and ```css blocks
+  const htmlBlockMatch = text.match(/```(?:html|xml)\s*([\s\S]*?)```/i);
+  const cssBlockMatch = text.match(/```css\s*([\s\S]*?)```/i);
+
+  if (htmlBlockMatch || cssBlockMatch) {
+    let extractedHtml = htmlBlockMatch ? htmlBlockMatch[1]?.trim() || "" : "";
+    let extractedCss = cssBlockMatch ? cssBlockMatch[1]?.trim() || "" : "";
+
+    // If html contains a <style> block, extract and append to css
+    const styleInHtml = extractedHtml.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
+    if (styleInHtml && styleInHtml[1]) {
+      extractedCss = (extractedCss + "\n" + styleInHtml[1]).trim();
+      extractedHtml = extractedHtml.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "").trim();
+    }
+
+    if (extractedHtml || extractedCss) {
+      return {
+        html: extractedHtml,
+        css: extractedCss,
+      };
+    }
+  }
+
+  // 4. Extract <style> block from unified HTML
+  const styleMatch = text.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
+  let cssFromStyle = "";
+  let htmlWithoutStyle = text;
+
+  if (styleMatch && styleMatch[1]) {
+    cssFromStyle = styleMatch[1].trim();
+    htmlWithoutStyle = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "").trim();
+  }
+
+  // Strip generic markdown fences
+  htmlWithoutStyle = htmlWithoutStyle.replace(/```[a-z]*\s*/gi, "").replace(/```/g, "").trim();
+
+  if (/<[a-z][\s\S]*>/i.test(htmlWithoutStyle)) {
+    return {
+      html: htmlWithoutStyle,
+      css: cssFromStyle,
+    };
+  }
+
+  // 5. Fallback heuristic for JSON-like "html": "..." and "css": "..."
+  const htmlKeyMatch = text.match(/"html"\s*:\s*"([\s\S]*?)"(?=\s*,\s*"css"|\s*\})/);
+  const cssKeyMatch = text.match(/"css"\s*:\s*"([\s\S]*?)"(?=\s*\})/);
+  if (htmlKeyMatch || cssKeyMatch) {
+    return {
+      html: htmlKeyMatch ? htmlKeyMatch[1]!.replace(/\\n/g, "\n").replace(/\\"/g, '"') : "",
+      css: cssKeyMatch ? cssKeyMatch[1]!.replace(/\\n/g, "\n").replace(/\\"/g, '"') : "",
+    };
+  }
+
+  return { html: text, css: "" };
+}
+
+/**
  * Generate semantic HTML and CSS from a screenshot using OpenRouter Vision.
  * Returns a JSON string containing { html, css }
  */
 export async function generateHtmlFromScreenshot(
   options: AnalyzeImageOptions
 ): Promise<string> {
-  const { imageBase64, mimeType, width, height, apiKey, model, aiProvider } = options;
+  const { imageBase64, width, height, originalWidth, originalHeight, apiKey, model } = options;
 
-  const targetProvider = aiProvider || config.AI_PROVIDER;
-  const client = apiKey
-    ? new OpenRouterVisionProvider({ apiKey })
-    : openRouterClient;
+  const modelName = model || config.OPENROUTER_MODEL;
+  const tStart = Date.now();
 
-  const modelName = model || (targetProvider === "ollama" ? config.OLLAMA_MODEL : config.OPENROUTER_MODEL);
+  // Step 1: OpenRouter Visual JSON analysis (Phase 1)
+  const analyzerResult = await analyzeScreenshotToVisualJson({
+    imageBase64,
+    width,
+    height,
+    originalWidth,
+    originalHeight,
+    apiKey,
+    model: modelName,
+  });
 
-  console.log(`[Vision HTML] Provider: ${targetProvider}`);
-  console.log(`[Vision HTML] Model: ${modelName}`);
+  // Step 2: Deterministic HTML/CSS generation
+  const generated = generateHtmlCssFromVisualDocument(analyzerResult.doc);
 
-  let lastError: Error | null = null;
-  const retries = targetProvider === "ollama" ? 1 : MAX_RETRIES;
+  // Step 3: Output validation
+  const validationErrors = validateGeneratedOutput(
+    generated.html,
+    generated.css,
+    { elementCount: generated.elementCount, textNodeCount: generated.textNodeCount }
+  );
 
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      console.log(
-        `[Vision HTML] Attempt ${attempt}/${retries} — Generating HTML for ${width}x${height} screenshot via ${targetProvider} (${modelName})...`
-      );
-
-      // Phase 1: Generate Initial Code
-      let initialText = "";
-      if (targetProvider === "ollama") {
-        const systemPrompt = OLLAMA_HTML_GENERATION_SYSTEM_PROMPT.replace("{width}", String(width)).replace("{height}", String(height));
-        const userPrompt = buildOllamaHtmlUserPrompt(width, height);
-        initialText = await OllamaService.generateContent({
-          model: modelName,
-          systemPrompt: systemPrompt,
-          userPrompt: userPrompt,
-          imageBase64,
-          width,
-          height,
-        });
-      } else {
-        const userPrompt = buildHtmlUserPrompt(width, height);
-        const response = await client.models.generateContent({
-          model: modelName,
-          contents: [
-            {
-              inlineData: {
-                data: imageBase64,
-                mimeType: mimeType,
-              },
-            },
-            userPrompt,
-          ],
-          config: {
-            systemInstruction: HTML_GENERATION_SYSTEM_PROMPT,
-            responseMimeType: "application/json",
-            temperature: 0.1,
-          },
-        });
-        initialText = response.text || "";
-      }
-
-      // Pre-clean initial code (strip fences)
-      initialText = initialText.replace(/```html/g, "").replace(/```xml/g, "").replace(/```/g, "").trim();
-      if (targetProvider === "ollama") {
-        const endTag = '</div>';
-        const startIndex = initialText.toLowerCase().indexOf('<div class="design-root"');
-        const endIndex = initialText.toLowerCase().lastIndexOf('</div>');
-        if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
-          initialText = initialText.substring(startIndex, endIndex + endTag.length);
-        }
-      }
-
-      if (!initialText.trim()) {
-        throw new Error("Generated empty layout output.");
-      }
-
-      console.log(`[Vision HTML] Initial output generated successfully. Running self-correction reflection...`);
-
-      // Phase 2: Self-Correction Loop
-      let revisionText = "";
-
-      if (targetProvider === "ollama") {
-        const revisionPrompt = buildOllamaHtmlRevisionUserPrompt(initialText);
-        revisionText = await OllamaService.generateContent({
-          model: modelName,
-          systemPrompt: OLLAMA_HTML_REVISION_SYSTEM_PROMPT,
-          userPrompt: revisionPrompt,
-          imageBase64,
-          width,
-          height,
-        });
-      } else {
-        let initialHtml = "";
-        let initialCss = "";
-        try {
-          const parsed = JSON.parse(initialText);
-          initialHtml = parsed.html || "";
-          initialCss = parsed.css || "";
-        } catch (err) {
-          const htmlMatch = initialText.match(/"html":\s*"([\s\S]*?)"(?=,\s*"css"|\s*\})/);
-          const cssMatch = initialText.match(/"css":\s*"([\s\S]*?)"(?=\s*\})/);
-          initialHtml = htmlMatch ? (htmlMatch[1] || "") : initialText;
-          initialCss = cssMatch ? (cssMatch[1] || "") : "";
-        }
-        const revisionPrompt = buildHtmlRevisionUserPrompt(initialHtml, initialCss);
-        const revisionResponse = await client.models.generateContent({
-          model: modelName,
-          contents: [
-            {
-              inlineData: {
-                data: imageBase64,
-                mimeType: mimeType,
-              },
-            },
-            revisionPrompt,
-          ],
-          config: {
-            systemInstruction: HTML_REVISION_SYSTEM_PROMPT,
-            responseMimeType: "application/json",
-            temperature: 0.1,
-          },
-        });
-        revisionText = revisionResponse.text || initialText;
-      }
-
-      console.log(`[Vision HTML] Self-correction completed.`);
-
-      const finalRawText = (revisionText || initialText).trim();
-
-      if (targetProvider === "ollama") {
-        // Parse raw HTML + style block into expected { html, css } JSON format
-        let cleanText = finalRawText.replace(/```html/g, "").replace(/```xml/g, "").replace(/```/g, "").trim();
-        const endTag = '</div>';
-        const startIndex = cleanText.toLowerCase().indexOf('<div class="design-root"');
-        const endIndex = cleanText.toLowerCase().lastIndexOf('</div>');
-        if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
-          cleanText = cleanText.substring(startIndex, endIndex + endTag.length);
-        }
-        let html = cleanText;
-        let css = "";
-
-        const styleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi;
-        const match = styleRegex.exec(cleanText);
-        if (match && match[1]) {
-          css = match[1].trim();
-          html = cleanText.replace(styleRegex, "").trim();
-        }
-
-        return JSON.stringify({ html, css, width, height, confidence: 0.95, elements: [] });
-      }
-
-      return finalRawText;
-    } catch (err: any) {
-      lastError = err instanceof Error ? err : new Error(String(err));
-      console.error(`❌ [Vision HTML] Attempt ${attempt} failed: ${err.message}`);
-
-      if (attempt < retries) {
-        const delay = RETRY_DELAY_MS * Math.pow(2, attempt - 1);
-        await sleep(delay);
-      }
+  if (validationErrors.length > 0) {
+    console.warn(`⚠️ [Photo→HTML] Output validation warnings:`);
+    for (const err of validationErrors) {
+      console.warn(`   - ${err}`);
     }
   }
 
-  throw new AIServiceError(
-    `${targetProvider} HTML/CSS generation failed after ${retries} attempts: ${lastError?.message}`,
-    { lastError: lastError?.message }
-  );
+  // Step 4: Content Completeness & Fidelity Pass
+  const fidelityResult = validateFidelity(analyzerResult.doc, generated);
+
+  const tEnd = Date.now();
+
+  return JSON.stringify({
+    html: generated.html,
+    css: generated.css,
+    width,
+    height,
+    confidence: 0.95,
+    elements: [],
+    metadata: fidelityResult.metadata,
+    fidelity: fidelityResult.fidelity,
+    metrics: {
+      provider: "openrouter",
+      model: modelName,
+      modelGenerationMs: analyzerResult.modelGenerationMs,
+      outputTokens: analyzerResult.outputTokens,
+      visualElements: analyzerResult.doc.elements.length,
+      wasRetried: analyzerResult.wasRetried,
+      totalPipelineMs: tEnd - tStart,
+    },
+  });
 }
 

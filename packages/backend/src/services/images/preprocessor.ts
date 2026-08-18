@@ -47,19 +47,10 @@ export async function preprocessImage(
     );
   }
 
-  // 1. Trim transparent/solid borders automatically using Sharp's trim with threshold
-  // We use threshold 10 to clear slight variations in borders.
-  let img = sharp(buffer).trim({ threshold: 10 });
+  let img = sharp(buffer);
 
-  // Get trimmed dimensions
-  const trimmedBuffer = await img.toBuffer();
-  const trimmedMetadata = await sharp(trimmedBuffer).metadata();
-
-  const widthAfterTrim = trimmedMetadata.width || metadata.width;
-  const heightAfterTrim = trimmedMetadata.height || metadata.height;
-
-  let finalWidth = widthAfterTrim;
-  let finalHeight = heightAfterTrim;
+  let finalWidth = metadata.width;
+  let finalHeight = metadata.height;
 
   // 2. Resize extremely large screenshots maintaining aspect ratio
   if (finalWidth > MAX_IMAGE_WIDTH || finalHeight > MAX_IMAGE_HEIGHT) {

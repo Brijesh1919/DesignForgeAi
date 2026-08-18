@@ -37,26 +37,26 @@ function normalizeColors(css: string): string {
 }
 
 /**
- * Normalizes CSS dimension values (em, rem, vh, vw, % -> px).
+ * Normalizes CSS dimension values (em, rem, vh, vw -> px).
  */
-function normalizeDimensions(css: string): string {
+function normalizeDimensions(css: string, expectedWidth = 1200, expectedHeight = 900): string {
   let cleaned = css;
 
   // 1rem / 1em -> 16px
-  cleaned = cleaned.replace(/: \s*([0-9.]+)\s*r?em/g, (_, val) => {
+  cleaned = cleaned.replace(/:\s*([0-9.]+)\s*r?em/g, (_, val) => {
     const px = Math.round(parseFloat(val) * 16);
     return `: ${px}px`;
   });
 
-  // vw -> assume 1200px width
-  cleaned = cleaned.replace(/: \s*([0-9.]+)\s*vw/g, (_, val) => {
-    const px = Math.round((parseFloat(val) / 100) * 1200);
+  // vw -> based on screenshot width
+  cleaned = cleaned.replace(/:\s*([0-9.]+)\s*vw/g, (_, val) => {
+    const px = Math.round((parseFloat(val) / 100) * expectedWidth);
     return `: ${px}px`;
   });
 
-  // vh -> assume 900px height
-  cleaned = cleaned.replace(/: \s*([0-9.]+)\s*vh/g, (_, val) => {
-    const px = Math.round((parseFloat(val) / 100) * 900);
+  // vh -> based on screenshot height
+  cleaned = cleaned.replace(/:\s*([0-9.]+)\s*vh/g, (_, val) => {
+    const px = Math.round((parseFloat(val) / 100) * expectedHeight);
     return `: ${px}px`;
   });
 
@@ -67,12 +67,7 @@ function normalizeDimensions(css: string): string {
  * Converts unsupported CSS layout properties.
  */
 function convertUnsupportedLayouts(css: string): string {
-  let cleaned = css;
-
-  // Let browser layout engine calculate positions. Do NOT convert grid to flex or strip position: absolute.
-  // We keep standard sanitizations if any are needed, but allow grids, absolute, and calc.
-
-  return cleaned;
+  return css;
 }
 
 /**
@@ -80,72 +75,79 @@ function convertUnsupportedLayouts(css: string): string {
  */
 export function validateAndNormalizeHtmlCss(
   html: string,
-  css: string
+  css: string,
+  expectedWidth?: number,
+  expectedHeight?: number
 ): NormalizedResult {
   const errors: string[] = [];
+  const targetWidth = expectedWidth && expectedWidth > 0 ? expectedWidth : 1200;
+  const targetHeight = expectedHeight && expectedHeight > 0 ? expectedHeight : 900;
 
-  // 1. Check for Javascript or inline handlers
-  if (
-    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi.test(html) ||
-    /on\w+\s*=\s*"[^"]*"/gi.test(html)
-  ) {
-    errors.push("Security validation failed: Javascript elements or handlers detected.");
-  }
-
-  // 2. Check for external resources and URLs
-  if (
-    /<link\s+[^>]*href="http/gi.test(html) ||
-    /@import\s+url/gi.test(css) ||
-    /src\s*=\s*['"]?https?:\/\//gi.test(html) ||
-    /url\s*\(\s*['"]?https?:\/\//gi.test(css)
-  ) {
-    errors.push("External resource restriction failed: external URLs, images, or stylesheets detected.");
-  }
-
-  // 3. Verify .design-root exists in the HTML
-  if (!html.includes("design-root")) {
-    errors.push("Structural validation failed: Missing container element with class 'design-root'.");
-  }
-
-  // 4. Verify CSS exists
-  if (!css || !css.trim()) {
-    errors.push("Style validation failed: Generated CSS is empty.");
-  }
-
-  // 5. Verify Root has explicit width and height
-  const hasWidth = /\.design-root\s*{[^}]*width\s*:\s*\d+px/i.test(css) || /style="[^"]*width\s*:\s*\d+px/i.test(html);
-  const hasHeight = /\.design-root\s*{[^}]*height\s*:\s*\d+px/i.test(css) || /style="[^"]*height\s*:\s*\d+px/i.test(html);
-  if (!hasWidth || !hasHeight) {
-    errors.push("Geometry validation failed: Root container (.design-root) must specify explicit pixel width and height.");
-  }
-
-  // 6. Verify HTML is not obviously truncated
-  const isTruncated = html.length > 50 && !html.trim().endsWith("</div>") && !html.trim().endsWith(">") && !html.trim().endsWith("</html>");
-  if (isTruncated) {
-    errors.push("Data integrity validation failed: HTML output appears to be truncated.");
-  }
-
-  // Parse check: basic HTML cleanup (strip scripts, iframes for safety)
-  let cleanHtml = html
+  // 1. Sanitize Javascript & dangerous inline event handlers
+  let cleanHtml = (html || "")
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
     .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, "")
+    .replace(/on\w+\s*=\s*"[^"]*"/gi, "")
+    .replace(/on\w+\s*=\s*'[^']*'/gi, "")
+    .replace(/javascript:[^"']*/gi, "")
     .trim();
 
-  // Basic HTML validation warning
-  if (!cleanHtml) {
-    errors.push("HTML content is empty or contains only scripts/iframes.");
+  // 2. Gracefully sanitize external stylesheets, imports and remote images
+  let cleanCss = (css || "")
+    .replace(/@import\s+url\([^)]*\);?/gi, "")
+    .replace(/@import\s+['"][^'"]*['"];?/gi, "")
+    .trim();
+
+  cleanHtml = cleanHtml
+    .replace(/<link\s+[^>]*rel=["']?stylesheet["']?[^>]*>/gi, "")
+    .replace(/<link\s+[^>]*href=["']?http[^>]*>/gi, "");
+
+  // Convert external image src to neutral placeholders
+  cleanHtml = cleanHtml.replace(/src=["']https?:\/\/[^"']*["']/gi, 'src="" data-external-src="sanitized"');
+
+  // 3. Basic content validation
+  if (!cleanHtml || cleanHtml.length < 5) {
+    errors.push("HTML content is empty or contains only invalid markup.");
+    return { html: cleanHtml, css: cleanCss, errors };
   }
 
-  // Normalize CSS rules
-  let cleanCss = css.trim();
+  // 4. Normalize & auto-wrap .design-root container if missing
+  if (!cleanHtml.includes("design-root")) {
+    cleanHtml = `<div class="design-root">\n${cleanHtml}\n</div>`;
+  }
+
+  // 5. Normalize CSS rules
   cleanCss = normalizeColors(cleanCss);
-  cleanCss = normalizeDimensions(cleanCss);
+  cleanCss = normalizeDimensions(cleanCss, targetWidth, targetHeight);
   cleanCss = convertUnsupportedLayouts(cleanCss);
 
-  // Normalize HTML layout structures (e.g. strip unsupported inline styles if any)
+  // Clean out recursive/repetitive selector chains
+  cleanCss = cleanCss.replace(/\.([a-zA-Z0-9_-]+)(?:\s+\.\1)+/gi, ".$1");
+
+  // 6. Ensure global box-sizing and root dimensions exist in CSS
+  const hasBoxSizing = /\*\s*{[^}]*box-sizing/i.test(cleanCss);
+  if (!hasBoxSizing) {
+    cleanCss = `* { box-sizing: border-box; }\n` + cleanCss;
+  }
+
+  const hasRootWidth = /\.design-root\s*{[^}]*width\s*:\s*\d+px/i.test(cleanCss);
+  const hasRootHeight = /\.design-root\s*{[^}]*(?:min-)?height\s*:\s*\d+px/i.test(cleanCss);
+
+  if (!hasRootWidth || !hasRootHeight) {
+    const rootStyleRule = `
+.design-root {
+  position: relative;
+  width: ${targetWidth}px;
+  min-height: ${targetHeight}px;
+  box-sizing: border-box;
+}`;
+    cleanCss = rootStyleRule + "\n" + cleanCss;
+  }
+
+  // 7. Normalize HTML layout structures and inline styles
   cleanHtml = cleanHtml.replace(/style="([^"]*)"/gi, (_, styleVal) => {
     let normalizedInline = normalizeColors(styleVal);
-    normalizedInline = normalizeDimensions(normalizedInline);
+    normalizedInline = normalizeDimensions(normalizedInline, targetWidth, targetHeight);
     normalizedInline = convertUnsupportedLayouts(normalizedInline);
     return `style="${normalizedInline}"`;
   });

@@ -3,6 +3,8 @@
  *
  * Caches layout analysis JSON payloads locally in backend filesystem.
  * Uses a SHA-256 hash of the screenshot buffer.
+ *
+ * v5: Migrated to Visual JSON pipeline (Screenshot → JSON → Deterministic HTML/CSS)
  */
 
 import * as fs from "fs/promises";
@@ -10,11 +12,12 @@ import * as path from "path";
 import * as crypto from "crypto";
 import type { DesignAnalysis } from "@designforge/shared";
 import { config } from "../../config/index.js";
+import { VISUAL_SCHEMA_VERSION, GENERATOR_VERSION } from "../vision/VisualSchema.js";
 
 const CACHE_DIR = path.resolve(process.cwd(), ".cache");
 
-export const SCREENSHOT_HTML_PROMPT_VERSION = "v3";
-export const SCREENSHOT_HTML_PIPELINE_VERSION = "v3";
+export const SCREENSHOT_HTML_PROMPT_VERSION = "v7";
+export const SCREENSHOT_HTML_PIPELINE_VERSION = "v7";
 
 /**
  * Computes a SHA-256 hash of a buffer.
@@ -31,7 +34,7 @@ export function computeCacheKey(
   provider: string,
   model: string
 ): string {
-  const rawKey = `${imageHash}:${provider}:${model}:${SCREENSHOT_HTML_PROMPT_VERSION}:${SCREENSHOT_HTML_PIPELINE_VERSION}`;
+  const rawKey = `${imageHash}:${provider}:${model}:${SCREENSHOT_HTML_PROMPT_VERSION}:${SCREENSHOT_HTML_PIPELINE_VERSION}:${VISUAL_SCHEMA_VERSION}:${GENERATOR_VERSION}`;
   return crypto.createHash("sha256").update(rawKey).digest("hex");
 }
 

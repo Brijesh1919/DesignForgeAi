@@ -70,7 +70,7 @@ function getSDKVersion(): string {
 app.listen(config.PORT, async () => {
   const sdkVersion = getSDKVersion();
   const backendUrl = `http://localhost:${config.PORT}`;
-  const isOllama = config.AI_PROVIDER === "ollama";
+  const apiKeyStatus = config.OPENROUTER_API_KEY ? "CONFIGURED (hidden)" : "MISSING";
 
   console.log("");
   console.log("  ╔═══════════════════════════════════════════════════════════╗");
@@ -79,21 +79,16 @@ app.listen(config.PORT, async () => {
   console.log(`  ║  🚀 Server URL:       ${backendUrl.padEnd(35)} ║`);
   console.log(`  ║  📦 Environment:      ${config.NODE_ENV.padEnd(35)} ║`);
   console.log(`  ║  🔌 Provider:         ${config.AI_PROVIDER.padEnd(35)} ║`);
-  if (isOllama) {
-    console.log(`  ║  🤖 Ollama Model:     ${config.OLLAMA_MODEL.padEnd(35)} ║`);
-    console.log(`  ║  🌐 Ollama Endpoint:  ${config.OLLAMA_BASE_URL.padEnd(35)} ║`);
-  } else {
-    const apiKeyStatus = config.OPENROUTER_API_KEY ? "CONFIGURED (hidden)" : "MISSING";
-    console.log(`  ║  🤖 OpenRouter Model: ${config.OPENROUTER_MODEL.padEnd(35)} ║`);
-    console.log(`  ║  🔑 API Key Status:   ${apiKeyStatus.padEnd(35)} ║`);
-    console.log(`  ║  📦 SDK Version:      ${sdkVersion.padEnd(35)} ║`);
-  }
+  console.log(`  ║  🤖 OpenRouter Model: ${config.OPENROUTER_MODEL.padEnd(35)} ║`);
+  console.log(`  ║  🔑 API Key Status:   ${apiKeyStatus.padEnd(35)} ║`);
+  console.log(`  ║  📦 SDK Version:      ${sdkVersion.padEnd(35)} ║`);
   console.log("  ╚═══════════════════════════════════════════════════════════╝");
   console.log("");
 
-  if (isOllama) {
-    console.log(`[Startup] Local Ollama backend configured. Verification skipped.`);
-    return;
+  if (config.OPENROUTER_API_KEY) {
+    console.log(`[Startup] OpenRouter vision backend ready.`);
+  } else {
+    console.warn(`[Startup] WARNING: OPENROUTER_API_KEY is not configured in .env.`);
   }
 
   console.log("[Startup] Performing OpenRouter model validation...");

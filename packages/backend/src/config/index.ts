@@ -17,14 +17,14 @@ const envSchema = z.object({
     .enum(["development", "production", "test"])
     .default("development"),
 
-  // OpenRouter
-  AI_PROVIDER: z.string().default("ollama"),
+  // OpenRouter Vision Provider
+  AI_PROVIDER: z.string().default("openrouter"),
   OPENROUTER_API_KEY: z.string().optional(),
   OPENROUTER_MODEL: z.string().default("google/gemini-2.5-flash"),
-
-  // Ollama
-  OLLAMA_BASE_URL: z.string().default("http://localhost:11434"),
-  OLLAMA_MODEL: z.string().default("qwen2.5vl:3b"),
+  VISUAL_ANALYSIS_MAX_TOKENS: z.coerce.number().default(2800),
+  JSON_REPAIR_MAX_TOKENS: z.coerce.number().default(2000),
+  OPENROUTER_VISION_MAX_TOKENS: z.coerce.number().default(2800),
+  OPENROUTER_MAX_TOKENS: z.coerce.number().default(2800),
 
   // Plugin & Cache
   AI_CACHE_ENABLED: z.coerce.boolean().default(false),

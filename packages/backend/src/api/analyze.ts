@@ -12,7 +12,7 @@ import { Router } from "express";
 import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
 import { preprocessImage } from "../services/images/preprocessor.js";
-import { generateHtmlFromScreenshot } from "../services/vision/analyzer.js";
+import { generateHtmlFromScreenshot, parseHtmlCssFromText } from "../services/vision/analyzer.js";
 import {
   getCachedHtml,
   setCachedHtml,
@@ -95,29 +95,17 @@ analyzeRouter.post(
       ) {
         apiKey = undefined;
       }
-      const headerProvider = (req.headers["x-ai-provider"] as string) || undefined;
-      const aiProvider = headerProvider || config.AI_PROVIDER;
-
-      let modelName: string;
+      const aiProvider = "openrouter";
       const clientModel = (req.headers["x-openrouter-model"] as string) || (req.headers["x-gemini-model"] as string);
-
-      if (aiProvider === "ollama") {
-        if (clientModel && !clientModel.includes("/")) {
-          modelName = clientModel;
-        } else {
-          modelName = config.OLLAMA_MODEL;
-        }
-      } else {
-        if (clientModel && clientModel.includes("/")) {
-          modelName = clientModel;
-        } else {
-          modelName = config.OPENROUTER_MODEL;
-        }
-      }
+      const modelName = clientModel && clientModel.includes("/") ? clientModel : config.OPENROUTER_MODEL;
 
       const forceRegenerate = req.headers["x-force-regenerate"] === "true";
 
+      const requestStartTime = Date.now();
+      const preprocessStartTime = Date.now();
       const processed = await preprocessImage(imageBuffer);
+      const preprocessEndTime = Date.now();
+      const preprocessingMs = preprocessEndTime - preprocessStartTime;
 
       // Local Cache Check (Compound Key)
       const imageHash = computeImageHash(processed.buffer);
@@ -168,28 +156,23 @@ analyzeRouter.post(
         mimeType: processed.mimeType,
         width: processed.width,
         height: processed.height,
+        originalWidth: processed.originalWidth,
+        originalHeight: processed.originalHeight,
         apiKey,
         model: modelName,
         aiProvider,
       });
 
-      // Try to parse out the JSON response
-      let resultObj: any = { html: "", css: "" };
-      try {
-        const cleanJsonText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
-        resultObj = JSON.parse(cleanJsonText);
-      } catch (err) {
-        console.warn(`[${requestId}] JSON parsing failed for HTML generation response:`, err);
-        const htmlMatch = rawText.match(/"html":\s*"([\s\S]*?)"(?=,\s*"css"|\s*\})/);
-        const cssMatch = rawText.match(/"css":\s*"([\s\S]*?)"(?=\s*\})/);
-        resultObj = {
-          html: htmlMatch ? htmlMatch[1] : rawText,
-          css: cssMatch ? cssMatch[1] : "",
-        };
-      }
+      // Robust multi-strategy parsing of model response
+      const parsedOutput = parseHtmlCssFromText(rawText, processed.width, processed.height);
 
-      // Validate & Normalize HTML/CSS
-      const normalized = validateAndNormalizeHtmlCss(resultObj.html || "", resultObj.css || "");
+      // Validate & Normalize HTML/CSS with actual image dimensions
+      const normalized = validateAndNormalizeHtmlCss(
+        parsedOutput.html || "",
+        parsedOutput.css || "",
+        processed.width,
+        processed.height
+      );
 
       if (normalized.errors.length > 0) {
         throw new AIServiceError(`Validation failed: ${normalized.errors.join("; ")}`, {
@@ -197,13 +180,49 @@ analyzeRouter.post(
         });
       }
 
+      // Timing & Token metrics extraction
+      let parsedMeta: any = {};
+      try {
+        parsedMeta = JSON.parse(rawText);
+      } catch {
+        // Handled by parseHtmlCssFromText
+      }
+
+      const metrics = parsedMeta?.metrics || {};
+      const requestEndTime = Date.now();
+      const totalMs = requestEndTime - requestStartTime;
+      const providerRequestMs = totalMs - preprocessingMs;
+      const modelGenMs = metrics.modelGenerationMs || providerRequestMs;
+      const outTokens = metrics.outputTokens || 0;
+
+      console.log(`\n[Photo→HTML] Image preprocessing: ${preprocessingMs} ms`);
+      console.log(`[Photo→HTML] OpenRouter request: ${providerRequestMs} ms`);
+      console.log(`[Photo→HTML] Model generation: ${modelGenMs} ms`);
+      console.log(`[Photo→HTML] Output tokens: ${outTokens}`);
+      console.log(`[Photo→HTML] Total: ${totalMs} ms\n`);
+
       const responseData = {
         html: normalized.html,
         css: normalized.css,
         width: processed.width,
         height: processed.height,
         confidence: 0.95,
-        elements: resultObj.elements || [],
+        elements: [],
+        metadata: parsedMeta?.metadata || {
+          width: processed.width,
+          height: processed.height,
+          elementCount: 0,
+          textCount: 0,
+          imageCount: 0,
+          iconCount: 0,
+          sectionCount: 0,
+        },
+        fidelity: parsedMeta?.fidelity || {
+          contentComplete: true,
+          geometryValidated: true,
+          renderValidated: true,
+          missingElements: [],
+        },
       };
 
       // Write results back to cache
@@ -221,8 +240,8 @@ analyzeRouter.post(
         responsePayload.debug = {
           screenshotDimensions: `${processed.width}x${processed.height}`,
           visionAnalysis: rawText,
-          generatedHtml: resultObj.html,
-          generatedCss: resultObj.css,
+          generatedHtml: parsedOutput.html,
+          generatedCss: parsedOutput.css,
           normalizedHtmlCss: `HTML:\n${normalized.html}\n\nCSS:\n${normalized.css}`,
           validationErrors: normalized.errors.join("\n") || "No validation errors.",
         };

@@ -1,4 +1,4 @@
-// Unused imports removed
+import { config as appConfig } from "../../config/index.js";
 
 export interface GenerateContentOptions {
   model: string;
@@ -8,6 +8,7 @@ export interface GenerateContentOptions {
     responseMimeType?: string;
     responseSchema?: any;
     temperature?: number;
+    maxTokens?: number;
   };
 }
 
@@ -74,10 +75,19 @@ export class OpenRouterVisionProvider {
         content: userParts,
       });
 
+      const maxTokens = Number(
+        sdkConfig?.maxTokens ||
+        process.env.OPENROUTER_VISION_MAX_TOKENS ||
+        (appConfig as any).OPENROUTER_VISION_MAX_TOKENS ||
+        appConfig.OPENROUTER_MAX_TOKENS ||
+        2800
+      );
+
       const payload: any = {
         model,
         messages,
         temperature: sdkConfig?.temperature ?? 0.1,
+        max_tokens: maxTokens,
       };
 
       if (sdkConfig?.responseMimeType === "application/json") {
