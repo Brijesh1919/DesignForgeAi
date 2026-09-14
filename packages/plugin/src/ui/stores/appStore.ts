@@ -74,10 +74,14 @@ interface AppState {
   // HTML & CSS
   htmlContent: string;
   cssContent: string;
-  inputMode: "screenshot" | "html-css";
+  inputMode: "screenshot" | "html-css" | "generate-ai" | "website-url";
+  aiPrompt: string;
+  isGeneratingAi: boolean;
   setHtmlContent: (html: string) => void;
   setCssContent: (css: string) => void;
-  setInputMode: (mode: "screenshot" | "html-css") => void;
+  setInputMode: (mode: "screenshot" | "html-css" | "generate-ai" | "website-url") => void;
+  setAiPrompt: (prompt: string) => void;
+  setIsGeneratingAi: (isGenerating: boolean) => void;
 
   // Error
   error: string | null;
@@ -141,9 +145,13 @@ export const useAppStore = create<AppState>((set) => ({
   htmlContent: "",
   cssContent: "",
   inputMode: "screenshot",
+  aiPrompt: "",
+  isGeneratingAi: false,
   setHtmlContent: (html) => set({ htmlContent: html }),
   setCssContent: (css) => set({ cssContent: css }),
   setInputMode: (mode) => set({ inputMode: mode }),
+  setAiPrompt: (prompt) => set({ aiPrompt: prompt }),
+  setIsGeneratingAi: (isGenerating) => set({ isGeneratingAi: isGenerating }),
 
   // Error
   error: null,

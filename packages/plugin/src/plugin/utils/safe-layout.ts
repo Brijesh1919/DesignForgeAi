@@ -162,6 +162,33 @@ export function safeSetFixedVertical(node: SceneNode): boolean {
 }
 
 /**
+ * Safely sets layoutWrap = "WRAP" or "NO_WRAP" on a frame.
+ * In Figma API, layoutWrap can ONLY be set to "WRAP" when layoutMode === "HORIZONTAL".
+ */
+export function safeSetLayoutWrap(frame: FrameNode | ComponentNode, wrap: boolean): boolean {
+  if (!frame || !("layoutWrap" in frame)) return false;
+  if (!wrap) {
+    try {
+      (frame as any).layoutWrap = "NO_WRAP";
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+  if (frame.layoutMode !== "HORIZONTAL") {
+    // Figma throws: "Can only set layoutWrap = WRAP on nodes with layoutMode === HORIZONTAL"
+    return false;
+  }
+  try {
+    frame.layoutWrap = "WRAP";
+    return true;
+  } catch (error) {
+    console.warn(`[DesignForge] Failed to set layoutWrap on "${frame.name}"`, error);
+    return false;
+  }
+}
+
+/**
  * Safely sets layoutPositioning = "ABSOLUTE".
  */
 export function safeSetAbsolute(node: SceneNode): boolean {
@@ -371,29 +398,53 @@ export function determineSizingBehavior(
     horizontal = "FIXED";
     reason = `Explicit CSS fixed width: ${cssWidth}`;
   } else if (parentIsAutoLayout) {
+    const layoutAlign = element.childLayout?.layoutAlign;
+    const isStretch = layoutAlign === "STRETCH" || element.style?.alignSelf === "stretch";
+    const hasFlexGrow = flexGrow > 0 || (element.childLayout?.layoutGrow ?? 0) > 0;
+
     if (cssWidth === "100%") {
       horizontal = "FILL";
       reason = "Explicit CSS width: 100% inside Auto Layout";
-    } else if (nameLower.includes("card")) {
+    } else if (isStretch && parentLayoutMode === "VERTICAL") {
       horizontal = "FILL";
-      reason = "Individual card horizontal sizing -> FILL";
-    } else if (flexGrow > 0 && widthRatio > 0.4) {
+      reason = "layoutAlign STRETCH in VERTICAL parent -> FILL";
+    } else if (nameLower.includes("card") || nameLower.includes("step") || nameLower.includes("feature-item") || nameLower.includes("tool")) {
+      // In a horizontal row of cards (e.g. 3-step cards, tools grid), fill or keep fixed width
+      if (parentLayoutMode === "HORIZONTAL" && (hasFlexGrow || (parent?.children?.length || 1) >= 2)) {
+        horizontal = "FILL";
+        reason = "Multi-column card row -> FILL";
+      } else {
+        horizontal = sourceWidth > 0 ? "FIXED" : "HUG";
+        reason = "Card with explicit width -> FIXED";
+      }
+    } else if (hasFlexGrow && parentLayoutMode === "HORIZONTAL") {
       horizontal = "FILL";
-      reason = "flex-grow > 0 with substantial parent width ratio -> FILL";
+      reason = "flex-grow > 0 in HORIZONTAL parent -> FILL";
+    } else if (classification === "FILL_CHILD") {
+      if (parentLayoutMode === "VERTICAL") {
+        horizontal = "FILL";
+        reason = "FILL_CHILD container in VERTICAL parent -> FILL";
+      } else if (hasFlexGrow || widthRatio > 0.3) {
+        horizontal = "FILL";
+        reason = "FILL_CHILD in HORIZONTAL parent -> FILL";
+      } else {
+        horizontal = "HUG";
+        reason = "FILL_CHILD fallback -> HUG";
+      }
+    } else if (hasFlexGrow && widthRatio > 0.2) {
+      horizontal = "FILL";
+      reason = "flex-grow > 0 with parent width ratio -> FILL";
     } else if (isCapsuleOrPillShape && widthRatio < 0.85) {
       horizontal = "HUG";
       reason = "Capsule / Pill shape with content-driven width -> HUG";
     } else if (isSmallContainer) {
       horizontal = "HUG";
       reason = "Small compact container / icon group -> HUG";
-    } else if (widthRatio < 0.60) {
-      horizontal = "HUG";
-      reason = `Intrinsic content-sized element (widthRatio: ${widthRatio.toFixed(2)} < 0.60) -> HUG`;
     } else if (widthRatio >= 0.85) {
       horizontal = "FILL";
       reason = `Full-width container (widthRatio: ${widthRatio.toFixed(2)} >= 0.85) -> FILL`;
     } else if (classification === "TEXT") {
-      const isExplicitFullWidth = cssWidth === "100%" || (flexGrow > 0 && widthRatio >= 0.85);
+      const isExplicitFullWidth = cssWidth === "100%" || isStretch || (hasFlexGrow && widthRatio >= 0.85);
       const isConstrainedWrappedText = sourceWidth > 0 && sourceWidth < parentWidth - 40 && sourceHeight > 36;
 
       if (isExplicitFullWidth) {
@@ -406,6 +457,9 @@ export function determineSizingBehavior(
         horizontal = "HUG";
         reason = "Content-sized text -> HUG width";
       }
+    } else if (widthRatio < 0.60) {
+      horizontal = "HUG";
+      reason = `Intrinsic content-sized element (widthRatio: ${widthRatio.toFixed(2)} < 0.60) -> HUG`;
     } else {
       horizontal = "HUG";
       reason = "Default to HUG for Auto Layout child";
@@ -425,8 +479,11 @@ export function determineSizingBehavior(
   } else if (cssHeight && cssHeight !== "auto" && !cssHeight.includes("%") && cssHeight !== "initial") {
     vertical = "FIXED";
   } else if (parentIsAutoLayout) {
-    const isFullHeightFlexColumn = flexGrow > 0 && parentLayoutMode === "VERTICAL" && cssHeight === "100%";
-    if (isFullHeightFlexColumn) {
+    const isStretchV = element.childLayout?.layoutAlign === "STRETCH" || element.style?.alignSelf === "stretch";
+    const hasFlexGrowV = flexGrow > 0 || (element.childLayout?.layoutGrow ?? 0) > 0;
+    if (isStretchV && parentLayoutMode === "HORIZONTAL") {
+      vertical = "FILL";
+    } else if (hasFlexGrowV && parentLayoutMode === "VERTICAL" && (cssHeight === "100%" || cssHeight === "auto")) {
       vertical = "FILL";
     } else {
       vertical = "HUG";

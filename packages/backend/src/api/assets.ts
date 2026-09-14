@@ -6,6 +6,7 @@
  */
 
 import { Router } from "express";
+import sharp from "sharp";
 import { extractAssetRegion } from "../services/images/asset-extractor.js";
 import { ValidationError } from "../middleware/error-handler.js";
 import type { Request, Response, NextFunction } from "express";
@@ -105,16 +106,49 @@ assetsRouter.post(
 
       console.log(`[Assets] Fetching remote image: ${url.slice(0, 100)}...`);
 
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        },
+      });
       if (!response.ok) {
         throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
       }
 
       const arrayBuffer = await response.arrayBuffer();
-      const base64 = Buffer.from(arrayBuffer).toString("base64");
-      const mimeType = response.headers.get("content-type") || "image/png";
+      let buffer: any = Buffer.from(arrayBuffer);
+      let mimeType = response.headers.get("content-type") || "image/png";
 
-      console.log(`[Assets] Remote image fetched successfully (${base64.length} bytes base64)`);
+      const isSvg = mimeType.includes("svg") || url.toLowerCase().includes(".svg");
+
+      if (!isSvg) {
+        // Figma ONLY decodes PNG, JPEG, and GIF.
+        // Convert WebP, AVIF, or unknown formats to standard PNG using sharp for 100% Figma compatibility.
+        const needsConversion =
+          mimeType.includes("webp") ||
+          mimeType.includes("avif") ||
+          url.toLowerCase().includes(".webp") ||
+          url.toLowerCase().includes(".avif") ||
+          (!mimeType.includes("png") &&
+            !mimeType.includes("jpeg") &&
+            !mimeType.includes("jpg") &&
+            !mimeType.includes("gif"));
+
+        if (needsConversion) {
+          try {
+            buffer = await sharp(buffer).png().toBuffer();
+            mimeType = "image/png";
+            console.log(`[Assets] Converted WebP/AVIF image to PNG for Figma compatibility`);
+          } catch (convErr) {
+            console.warn(`[Assets] Sharp conversion warning, keeping original buffer: ${convErr}`);
+          }
+        }
+      }
+
+      const base64 = buffer.toString("base64");
+      console.log(`[Assets] Remote image fetched successfully (${base64.length} bytes base64, mime: ${mimeType})`);
 
       res.json({
         success: true,

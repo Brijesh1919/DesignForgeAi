@@ -60,6 +60,18 @@ export function errorHandler(
     return;
   }
 
+  // OpenRouter credit/quota error (HTTP 402)
+  if ((err as any).status === 402 || err.message?.includes("credits") || err.message?.includes("can only afford")) {
+    res.status(402).json({
+      success: false,
+      error: {
+        code: "PAYMENT_REQUIRED",
+        message: "OpenRouter does not have enough credits for the requested AI output. Reduce max_tokens or add OpenRouter credits.",
+      },
+    });
+    return;
+  }
+
   // Multer file size error
   if (err.message?.includes("File too large")) {
     res.status(413).json({

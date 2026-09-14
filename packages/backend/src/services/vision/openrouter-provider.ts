@@ -77,11 +77,16 @@ export class OpenRouterVisionProvider {
 
       const maxTokens = Number(
         sdkConfig?.maxTokens ||
-        process.env.OPENROUTER_VISION_MAX_TOKENS ||
-        (appConfig as any).OPENROUTER_VISION_MAX_TOKENS ||
+        process.env.AI_MAX_TOKENS ||
+        (appConfig as any).AI_MAX_TOKENS ||
+        appConfig.GENERATE_MAX_TOKENS ||
+        process.env.GENERATE_MAX_TOKENS ||
         appConfig.OPENROUTER_MAX_TOKENS ||
-        2800
+        2500
       );
+
+      console.log(`[OpenRouter] Model: ${model}`);
+      console.log(`[OpenRouter] max_tokens: ${maxTokens}`);
 
       const payload: any = {
         model,
@@ -95,8 +100,8 @@ export class OpenRouterVisionProvider {
           payload.response_format = {
             type: "json_schema",
             json_schema: {
-              name: "DesignAnalysis",
-              strict: false,
+              name: (sdkConfig as any).responseSchemaName || "design_response",
+              strict: true,
               schema: sdkConfig.responseSchema,
             }
           };
@@ -122,10 +127,15 @@ export class OpenRouterVisionProvider {
         }
 
         const status = response.status;
-        const errorMsg = typeof errorBody === "object" ? (errorBody.error?.message || JSON.stringify(errorBody)) : errorBody;
+        const errorMsg = typeof errorBody === "object" ? (errorBody.error?.message || JSON.stringify(errorBody)) : String(errorBody);
 
         let parsedError = `OpenRouter API request failed with status ${status}: ${errorMsg}`;
-        if (status === 401) {
+        if (
+          status === 402 ||
+          (typeof errorMsg === "string" && (errorMsg.includes("credits") || errorMsg.includes("can only afford")))
+        ) {
+          parsedError = `OpenRouter does not have enough credits for the requested AI output. Reduce max_tokens or add OpenRouter credits.`;
+        } else if (status === 401) {
           parsedError = `Unauthorized: Invalid or missing OpenRouter API key.`;
         } else if (status === 404) {
           parsedError = `Not Found: Configured model "${model}" is not found or unsupported on OpenRouter.`;

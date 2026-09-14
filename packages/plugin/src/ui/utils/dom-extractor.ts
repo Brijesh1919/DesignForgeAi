@@ -988,6 +988,96 @@ function validateDesignAnalysis(analysis: DesignAnalysis): void {
 }
 
 /**
+ * Sanitizes and normalizes HTML/CSS input for the DOM extractor:
+ * - Unwraps any JSON wrapper or markdown code fences
+ * - Decodes escaped quotes on HTML/SVG attributes (e.g. viewBox=\"0 0 24 24\" -> viewBox="0 0 24 24")
+ * - Extracts inline <style> into CSS
+ * - Preserves all SVG tags and attributes
+ */
+function cleanAndNormalizeHtml(html: string): { html: string; cssFromHtml: string } {
+  if (!html) return { html: "", cssFromHtml: "" };
+  let cleaned = html.trim();
+
+  // Strip generic markdown fences
+  cleaned = cleaned.replace(/^```(?:html|xml|json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+
+  // If JSON object format:
+  if (cleaned.startsWith("{") && /"html"\s*:/i.test(cleaned)) {
+    try {
+      const parsed = JSON.parse(cleaned);
+      if (parsed && typeof parsed.html === "string") {
+        return {
+          html: cleanAndNormalizeHtml(parsed.html).html,
+          cssFromHtml: typeof parsed.css === "string" ? parsed.css : "",
+        };
+      }
+    } catch {
+      const htmlMatch = cleaned.match(/"html"\s*:\s*"((?:[^"\\]|\\.)*)"/s);
+      if (htmlMatch) {
+        try {
+          cleaned = JSON.parse(`"${htmlMatch[1]}"`);
+        } catch {
+          cleaned = htmlMatch[1].replace(/\\"/g, '"').replace(/\\n/g, "\n");
+        }
+      }
+    }
+  }
+
+  // Strip accidental leading JSON wrapper residue like `{\n  "html": "`
+  cleaned = cleaned.replace(/^\s*\{\s*"html"\s*:\s*"/i, "");
+  cleaned = cleaned.replace(/"\s*(?:,\s*"css"\s*:\s*"[\s\S]*")?\s*\}\s*$/i, "");
+
+  // If the string starts with `"` and ends with `"`, strip the outer string quotes
+  if (cleaned.startsWith('"') && cleaned.endsWith('"') && cleaned.length > 2) {
+    cleaned = cleaned.slice(1, -1);
+  }
+
+  // Extract <style> if present
+  let cssFromHtml = "";
+  const styleMatch = cleaned.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
+  if (styleMatch && styleMatch[1]) {
+    cssFromHtml = styleMatch[1].trim();
+    cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "").trim();
+  }
+
+  // Fix escaped quotes in HTML attributes:
+  // e.g. class=\"btn\" -> class="btn"
+  // e.g. viewBox=\"0 0 24 24\" -> viewBox="0 0 24 24"
+  // e.g. d=\"M12 2L2 7l10 5...\" -> d="M12 2L2 7l10 5..."
+  cleaned = cleaned.replace(/([a-zA-Z0-9_-]+)=\\"([^"\\]*(?:\\.[^"\\]*)*)\\"/g, '$1="$2"');
+
+  // Fix double-escaped quotes inside attribute values:
+  // e.g. viewBox="\"0 0 24 24\"" -> viewBox="0 0 24 24"
+  cleaned = cleaned.replace(/([a-zA-Z0-9_-]+)="\\+"([^"]*?)\\*"/g, '$1="$2"');
+
+  // Fix any remaining `=\"` or `\"` at attribute boundaries in tags
+  cleaned = cleaned.replace(/<([a-zA-Z0-9]+)\s+([^>]+)>/g, (_match, tagName, attrs) => {
+    let fixedAttrs = attrs;
+    fixedAttrs = fixedAttrs.replace(/=\\"(.*?)\\"/g, '="$1"');
+    fixedAttrs = fixedAttrs.replace(/=\\"(.*?)\"/g, '="$1"');
+    fixedAttrs = fixedAttrs.replace(/="(.*?)\\"/g, '="$1"');
+    return `<${tagName} ${fixedAttrs}>`;
+  });
+
+  // Ensure empty or sanitized img src has fallback placeholder
+  const DEFAULT_IMAGE_PLACEHOLDER =
+    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='100%25' height='100%25' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='16' fill='%2364748b'%3EImage%3C/text%3E%3C/svg%3E";
+
+  cleaned = cleaned.replace(/<img\b([^>]*?)(\/?>)/gi, (_match, attrs, endTag) => {
+    let newAttrs = attrs;
+    if (/src=["']\s*["']/i.test(newAttrs) || /data-external-src=["']sanitized["']/i.test(newAttrs)) {
+      newAttrs = newAttrs.replace(/src=["']\s*["']/i, `src="${DEFAULT_IMAGE_PLACEHOLDER}"`);
+      newAttrs = newAttrs.replace(/data-external-src=["']sanitized["']/gi, "");
+    } else if (!/src=/i.test(newAttrs)) {
+      newAttrs = `src="${DEFAULT_IMAGE_PLACEHOLDER}" ` + newAttrs;
+    }
+    return `<img ${newAttrs.trim()}${endTag}`;
+  });
+
+  return { html: cleaned.trim(), cssFromHtml };
+}
+
+/**
  * Main function to load HTML and CSS inside an iframe and extract the design tree.
  */
 export function extractDesignFromHtmlCss(
@@ -997,15 +1087,44 @@ export function extractDesignFromHtmlCss(
 ): Promise<DesignAnalysis> {
   return new Promise((resolve, reject) => {
     try {
-      const cleanHtml = html
-        .replace(/```html/gi, "")
-        .replace(/```xml/gi, "")
-        .replace(/```/g, "")
+      const { html: cleanHtml, cssFromHtml } = cleanAndNormalizeHtml(html);
+      const combinedCss = (css + (cssFromHtml ? "\n" + cssFromHtml : ""))
+        .replace(/^```css\s*/i, "")
+        .replace(/\s*```$/i, "")
         .trim();
 
-      const viewportWidth = detectViewportWidth(cleanHtml, css, options.viewportPreset);
+      if (!cleanHtml.trim()) {
+        reject(new Error("HTML content is empty"));
+        return;
+      }
+
+      // Check if CSS is completely missing or empty
+      const rawRules = (combinedCss.match(/\{[\s\S]*?\}/g) || []).length;
+      const strippedFallbackCss = combinedCss
+        .replace(/\.design-root\s*\{[\s\S]*?\}|\*\s*\{[\s\S]*?\}/gi, "")
+        .trim();
+
+      // If HTML contains semantic classes, verify CSS is not empty/fallback only
+      const classMatches = cleanHtml.matchAll(/class=["']([^"']*)["']/gi);
+      const detectedClasses = new Set<string>();
+      for (const m of classMatches) {
+        if (m[1]) {
+          for (const t of m[1].trim().split(/\s+/)) {
+            if (t && t !== "design-root") detectedClasses.add(t);
+          }
+        }
+      }
+
+      if (detectedClasses.size > 2 && (rawRules === 0 || strippedFallbackCss.length < 5)) {
+        reject(new Error("CSS generation failed: AI returned HTML without usable CSS."));
+        return;
+      }
+
+      const viewportWidth = detectViewportWidth(cleanHtml, combinedCss, options.viewportPreset);
       const viewportHeight = options.viewportPreset ? parseInt(options.viewportPreset.split("x")[1] || "900", 10) : 900;
       console.log(`[DOM Extractor]\nRoot: ${viewportWidth} x ${viewportHeight} [target viewport]`);
+
+      console.log(`[CSS DEBUG] Stylesheet count before extraction: 0`);
 
       // Create sandbox iframe sized to the viewport height (so 100vh evaluates correctly to viewport height)
       const iframe = document.createElement("iframe");
@@ -1025,20 +1144,21 @@ export function extractDesignFromHtmlCss(
         return;
       }
 
-      // Inject HTML and CSS
+      // Inject HTML and CSS into the preview document
       doc.open();
       doc.write(`
         <!DOCTYPE html>
         <html>
         <head>
+          <meta charset="UTF-8">
           <style>
             html, body { margin: 0; padding: 0; box-sizing: border-box; min-height: ${viewportHeight}px; }
             * { box-sizing: border-box; }
-            ${css}
+            ${combinedCss}
           </style>
         </head>
         <body>
-          <div id="designforge-root" style="width: ${viewportWidth}px; overflow: hidden;">
+          <div id="designforge-root" style="width: ${viewportWidth}px; min-height: ${viewportHeight}px; position: relative;">
             ${cleanHtml}
           </div>
         </body>
@@ -1046,23 +1166,88 @@ export function extractDesignFromHtmlCss(
       `);
       doc.close();
 
-      iframe.onload = () => {
-        setTimeout(() => {
-          try {
-            const rootEl = doc.getElementById("designforge-root");
-            if (!rootEl) {
-              document.body.removeChild(iframe);
-              reject(new Error("Root element not found in iframe"));
-              return;
-            }
+      console.log(`[CSS DEBUG] Stylesheet count after injection: ${doc.styleSheets.length}`);
+      console.log(`[CSS DEBUG] document.styleSheets.length: ${doc.styleSheets.length}`);
+      console.log(`[CSS DEBUG] document.head.innerHTML:\n${doc.head?.innerHTML || ""}`);
 
-            const win = iframe.contentWindow!;
-            const rect = rootEl.getBoundingClientRect();
+      if (doc.styleSheets.length === 0) {
+        document.body.removeChild(iframe);
+        reject(new Error("CSS generation failed: AI returned HTML without usable CSS."));
+        return;
+      }
 
-            const rootFrameNode = traverseDOM(rootEl, win, { left: rect.left, top: rect.top }, options);
+      let executed = false;
+      const performExtraction = () => {
+        if (executed) return;
+        executed = true;
+
+        try {
+          const rootEl = doc.getElementById("designforge-root");
+          if (!rootEl) {
             document.body.removeChild(iframe);
+            reject(new Error("Root element not found in iframe"));
+            return;
+          }
 
-            if (!rootFrameNode) {
+          const win = iframe.contentWindow!;
+          const rect = rootEl.getBoundingClientRect();
+
+          // Log computed styles for representative elements to verify CSS application
+          const debugSelectors = [
+            ".navbar",
+            ".hero",
+            ".features",
+            ".feature-card",
+            ".pricing-card",
+            ".btn-primary",
+            ".btn",
+            ".logo",
+            "header",
+            "section",
+          ];
+
+          for (const sel of debugSelectors) {
+            const el = doc.querySelector(sel) as HTMLElement;
+            if (el) {
+              const s = win.getComputedStyle(el);
+              console.log(
+                `[CSS DEBUG] computed style for ${sel}:\n` +
+                `background: ${s.backgroundColor}\n` +
+                `color: ${s.color}\n` +
+                `fontSize: ${s.fontSize}\n` +
+                `fontWeight: ${s.fontWeight}\n` +
+                `padding: ${s.padding}\n` +
+                `margin: ${s.margin}\n` +
+                `borderRadius: ${s.borderRadius}\n` +
+                `boxShadow: ${s.boxShadow}\n` +
+                `display: ${s.display}\n` +
+                `width: ${s.width}\n` +
+                `height: ${s.height}\n` +
+                `gap: ${s.gap}`
+              );
+              console.log(
+                `[DesignForge][COMPUTED STYLES]\n` +
+                `${sel}\n` +
+                `background: ${s.backgroundColor}\n` +
+                `color: ${s.color}\n` +
+                `fontSize: ${s.fontSize}\n` +
+                `fontWeight: ${s.fontWeight}\n` +
+                `padding: ${s.padding}\n` +
+                `margin: ${s.margin}\n` +
+                `borderRadius: ${s.borderRadius}\n` +
+                `boxShadow: ${s.boxShadow}\n` +
+                `display: ${s.display}\n` +
+                `width: ${s.width}\n` +
+                `height: ${s.height}\n` +
+                `gap: ${s.gap}`
+              );
+            }
+          }
+
+          const rootFrameNode = traverseDOM(rootEl, win, { left: rect.left, top: rect.top }, options);
+          document.body.removeChild(iframe);
+
+          if (!rootFrameNode) {
               reject(new Error("Extraction generated empty scene graph"));
               return;
             }
@@ -1260,10 +1445,16 @@ export function extractDesignFromHtmlCss(
             document.body.removeChild(iframe);
             reject(err);
           }
-        }, 100);
+        };
+
+      iframe.onload = () => {
+        setTimeout(performExtraction, 50);
       };
+      // Fallback in case onload already fired synchronously upon doc.close()
+      setTimeout(performExtraction, 150);
     } catch (err) {
       reject(err);
     }
   });
 }
+

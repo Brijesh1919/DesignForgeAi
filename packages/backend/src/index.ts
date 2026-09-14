@@ -9,10 +9,12 @@ import morgan from "morgan";
 import { OpenRouterVisionProvider } from "./services/vision/openrouter-provider.js";
 import { config } from "./config/index.js";
 import { analyzeRouter } from "./api/analyze.js";
+import { generateRouter } from "./api/generate.js";
 import { assetsRouter } from "./api/assets.js";
 import { healthRouter } from "./api/health.js";
 import { cacheRouter } from "./api/cache.js";
 import { debugRouter } from "./api/debug.js";
+import { websiteRouter } from "./api/website.js";
 import { errorHandler } from "./middleware/error-handler.js";
 
 const app: Express = express();
@@ -29,7 +31,15 @@ app.use(
   cors({
     origin: config.CORS_ORIGINS === "*" ? "*" : config.CORS_ORIGINS.split(","),
     methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-API-Key", "X-Gemini-Model", "X-Debug-Mode"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-API-Key",
+      "X-Gemini-Model",
+      "X-OpenRouter-Model",
+      "X-AI-Provider",
+      "X-Debug-Mode",
+    ],
     maxAge: 86400,
   })
 );
@@ -53,9 +63,11 @@ app.use(
 
 app.use("/api", healthRouter);
 app.use("/api", analyzeRouter);
+app.use("/api", generateRouter);
 app.use("/api", assetsRouter);
 app.use("/api", cacheRouter);
 app.use("/api", debugRouter);
+app.use("/api", websiteRouter);
 
 // ─── Error Handler (must be last) ────────────────────────────
 
@@ -79,7 +91,8 @@ app.listen(config.PORT, async () => {
   console.log(`  ║  🚀 Server URL:       ${backendUrl.padEnd(35)} ║`);
   console.log(`  ║  📦 Environment:      ${config.NODE_ENV.padEnd(35)} ║`);
   console.log(`  ║  🔌 Provider:         ${config.AI_PROVIDER.padEnd(35)} ║`);
-  console.log(`  ║  🤖 OpenRouter Model: ${config.OPENROUTER_MODEL.padEnd(35)} ║`);
+  console.log(`  ║  🤖 Screenshot Model: ${config.OPENROUTER_MODEL.padEnd(35)} ║`);
+  console.log(`  ║  ✨ AI Design Model:  ${config.AI_DESIGN_MODEL.padEnd(35)} ║`);
   console.log(`  ║  🔑 API Key Status:   ${apiKeyStatus.padEnd(35)} ║`);
   console.log(`  ║  📦 SDK Version:      ${sdkVersion.padEnd(35)} ║`);
   console.log("  ╚═══════════════════════════════════════════════════════════╝");
@@ -99,16 +112,18 @@ app.listen(config.PORT, async () => {
     const availableModels = rawList.map((m: any) => m.name);
 
     if (availableModels.includes(config.OPENROUTER_MODEL)) {
-      console.log(`[Startup] ✓ OpenRouter model "${config.OPENROUTER_MODEL}" found`);
+      console.log(`[Startup] ✓ Screenshot model "${config.OPENROUTER_MODEL}" verified on OpenRouter`);
     } else {
-      console.error(`[Startup] ✗ Model "${config.OPENROUTER_MODEL}" not found in available models list.`);
-      console.error("[Startup] CRITICAL: Startup validation failed. Terminating process.");
-      process.exit(1);
+      console.warn(`[Startup] ⚠️ Screenshot model "${config.OPENROUTER_MODEL}" not found in available models list.`);
+    }
+
+    if (availableModels.includes(config.AI_DESIGN_MODEL)) {
+      console.log(`[Startup] ✓ AI Design model "${config.AI_DESIGN_MODEL}" verified on OpenRouter`);
+    } else {
+      console.warn(`[Startup] ⚠️ AI Design model "${config.AI_DESIGN_MODEL}" not found in available models list.`);
     }
   } catch (err: any) {
-    console.error(`[Startup] ✗ Model validation failed to connect to OpenRouter API: ${err.message}`);
-    console.error("[Startup] CRITICAL: Startup validation failed. Terminating process.");
-    process.exit(1);
+    console.warn(`[Startup] ⚠️ Model validation warning (continuing startup): ${err.message}`);
   }
 });
 

@@ -17,14 +17,17 @@ const envSchema = z.object({
     .enum(["development", "production", "test"])
     .default("development"),
 
-  // OpenRouter Vision Provider
+  // OpenRouter Vision & AI Design Providers
   AI_PROVIDER: z.string().default("openrouter"),
   OPENROUTER_API_KEY: z.string().optional(),
   OPENROUTER_MODEL: z.string().default("google/gemini-2.5-flash"),
-  VISUAL_ANALYSIS_MAX_TOKENS: z.coerce.number().default(2800),
+  AI_DESIGN_MODEL: z.string().default("google/gemini-2.5-flash-lite"),
+  AI_MAX_TOKENS: z.coerce.number().default(2500),
+  VISUAL_ANALYSIS_MAX_TOKENS: z.coerce.number().default(2500),
   JSON_REPAIR_MAX_TOKENS: z.coerce.number().default(2000),
-  OPENROUTER_VISION_MAX_TOKENS: z.coerce.number().default(2800),
-  OPENROUTER_MAX_TOKENS: z.coerce.number().default(2800),
+  OPENROUTER_VISION_MAX_TOKENS: z.coerce.number().default(2500),
+  OPENROUTER_MAX_TOKENS: z.coerce.number().default(2500),
+  GENERATE_MAX_TOKENS: z.coerce.number().default(2500),
 
   // Plugin & Cache
   AI_CACHE_ENABLED: z.coerce.boolean().default(false),

@@ -25,6 +25,7 @@ import {
   safeSetFixedVertical,
   safeSetAbsolute,
   safeSetAutoPositioning,
+  safeSetLayoutWrap,
   classifyElement,
   determineSizingBehavior,
 } from "../utils/safe-layout";
@@ -160,17 +161,20 @@ export async function buildNodeTreeWithAutoLayout(
   configureAutoLayoutRecursively(figmaNode, node, null, pass2Context);
 
   // FINAL TEXT NORMALIZATION PASS (TEXT ONLY):
-  // Force every TEXT node inside an Auto Layout parent to HUG horizontally and vertically.
+  // Ensure single-line text nodes inside Auto Layout hug content, but PRESERVE wrapped multi-line text!
   const normalizeTextNodes = (figmaChild: SceneNode) => {
     if (figmaChild.type === "TEXT") {
       const textNode = figmaChild as TextNode;
-      if ("layoutSizingHorizontal" in textNode && "layoutSizingVertical" in textNode) {
-        try {
-          textNode.layoutSizingHorizontal = "HUG";
-          textNode.layoutSizingVertical = "HUG";
-          textNode.textAutoResize = "WIDTH_AND_HEIGHT";
-        } catch (e) {
-          // Ignore if parent is not Auto Layout
+      // Do NOT override multi-line wrapped text (HEIGHT auto-resize or FILL horizontal)
+      if (textNode.textAutoResize !== "HEIGHT" && (textNode as any).layoutSizingHorizontal !== "FILL") {
+        if ("layoutSizingHorizontal" in textNode && "layoutSizingVertical" in textNode) {
+          try {
+            textNode.layoutSizingHorizontal = "HUG";
+            textNode.layoutSizingVertical = "HUG";
+            textNode.textAutoResize = "WIDTH_AND_HEIGHT";
+          } catch (e) {
+            // Ignore if parent is not Auto Layout
+          }
         }
       }
     }
@@ -239,7 +243,7 @@ function configureAutoLayoutRecursively(
       frame.counterAxisAlignItems = counterAlign;
 
       if (uiNode.layout.wrap) {
-        frame.layoutWrap = "WRAP";
+        safeSetLayoutWrap(frame, true);
       }
 
       // Centered content & Grouped card row alignment mapping (Requirement 2 & Requirement 3)
@@ -831,7 +835,7 @@ left: ${leftW}px ${firstStroke.color || ""}`);
 
     // Wrap
     if (node.layout.wrap) {
-      frame.layoutWrap = "WRAP";
+      safeSetLayoutWrap(frame, true);
     }
   }
 

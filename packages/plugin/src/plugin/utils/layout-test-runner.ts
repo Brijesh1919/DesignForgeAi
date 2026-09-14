@@ -6,7 +6,7 @@
 
 import { restructureUINodeLayout } from "./layout-restructurer";
 import { sanitizeFigmaLayoutTree } from "./layout-validator";
-import { safeSetFillHorizontal, safeSetFillVertical } from "./safe-layout";
+import { safeSetFillHorizontal, safeSetFillVertical, safeSetLayoutWrap } from "./safe-layout";
 
 export async function runLayoutEngineTests(): Promise<void> {
   console.log("\n=============================================");
@@ -230,6 +230,30 @@ export async function runLayoutEngineTests(): Promise<void> {
       );
 
       parent.remove();
+    }
+
+    // TEST 9: safeSetLayoutWrap prevents setting WRAP on VERTICAL, allows on HORIZONTAL
+    {
+      const verticalFrame = figma.createFrame();
+      verticalFrame.name = "Test9_Vertical";
+      verticalFrame.layoutMode = "VERTICAL";
+
+      const vertWrapResult = safeSetLayoutWrap(verticalFrame, true);
+
+      const horizontalFrame = figma.createFrame();
+      horizontalFrame.name = "Test9_Horizontal";
+      horizontalFrame.layoutMode = "HORIZONTAL";
+
+      const horizWrapResult = safeSetLayoutWrap(horizontalFrame, true);
+
+      assert(
+        "TEST 9",
+        !vertWrapResult && horizWrapResult && (horizontalFrame as any).layoutWrap === "WRAP",
+        "safeSetLayoutWrap prevents setting WRAP on VERTICAL and allows WRAP on HORIZONTAL frames."
+      );
+
+      verticalFrame.remove();
+      horizontalFrame.remove();
     }
 
   } catch (err) {

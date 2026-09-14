@@ -24,6 +24,7 @@ export function useAnalysis() {
     addToast,
     setError,
     setDebugData,
+    setIsGeneratingAi,
   } = useAppStore();
 
   const { sendMessage } = useFigmaMessages();
@@ -362,7 +363,101 @@ export function useAnalysis() {
     setCssContent,
   ]);
 
-  return { startAnalysis, generateHtmlFromScreenshot, convertHtmlCssToFigma };
+  // Workflow 3: Generate HTML & CSS from Natural Language Prompt
+  const generateFromPrompt = useCallback(async (promptText: string) => {
+    if (!promptText || !promptText.trim()) {
+      addToast("error", "Please enter a design prompt");
+      return;
+    }
+
+    if (!settings.backendUrl) {
+      addToast("error", "Backend URL not configured. Check Settings.");
+      return;
+    }
+
+    try {
+      setIsGeneratingAi(true);
+      setError(null);
+
+      const apiUrl = `${settings.backendUrl}/api/generate`;
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+
+      if (settings.apiKey) {
+        headers["X-API-Key"] = settings.apiKey;
+      }
+
+      if (settings.geminiModel) {
+        const isOllama = settings.aiProvider === "ollama";
+        const isCloudModel = settings.geminiModel.includes("/");
+        if (!(isOllama && isCloudModel) && !(!isOllama && !isCloudModel)) {
+          headers["X-Gemini-Model"] = settings.geminiModel;
+        }
+      }
+
+      if (settings.aiProvider) {
+        headers["X-AI-Provider"] = settings.aiProvider;
+      }
+
+      if (settings.debugMode) {
+        headers["X-Debug-Mode"] = "true";
+      }
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          prompt: promptText.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(
+          errorBody?.error?.message || `Server error: ${response.status}`
+        );
+      }
+
+      const result = await response.json();
+
+      if (!result.success || !result.data) {
+        throw new Error(result.error?.message || "Design generation failed");
+      }
+
+      const { html, css } = result.data;
+      setHtmlContent(html || "");
+      setCssContent(css || "");
+
+      if (result.debug) {
+        setDebugData({
+          generatedHtml: result.debug.generatedHtml,
+          generatedCss: result.debug.generatedCss,
+          normalizedHtmlCss: result.debug.normalizedHtmlCss,
+          validationErrors: result.debug.validationErrors,
+        });
+      }
+
+      addToast("success", "AI Design generated successfully!");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Design generation failed";
+      setError(message);
+      addToast("error", message);
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  }, [
+    settings,
+    setHtmlContent,
+    setCssContent,
+    addToast,
+    setError,
+    setIsGeneratingAi,
+    setDebugData,
+  ]);
+
+  return { startAnalysis, generateHtmlFromScreenshot, convertHtmlCssToFigma, generateFromPrompt };
 }
 
 /**
@@ -490,6 +585,39 @@ async function resolveImageAssets(
       console.warn("Asset extraction from screenshot failed — continuing", e);
     }
   }
+
+  // Final fallback: For any remaining unextracted assets, generate a clean canvas placeholder
+  for (const asset of assets) {
+    if (!asset.base64 && asset.bounds) {
+      const fallback = generateFallbackPlaceholder(
+        asset.bounds.width || 100,
+        asset.bounds.height || 100
+      );
+      if (fallback) {
+        asset.base64 = fallback;
+      }
+    }
+  }
+}
+
+function generateFallbackPlaceholder(width: number, height: number): string {
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(width || 100));
+    canvas.height = Math.max(1, Math.round(height || 100));
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      grad.addColorStop(0, "#e2e8f0");
+      grad.addColorStop(1, "#cbd5e1");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL("image/png");
+      const comma = dataUrl.indexOf(",");
+      return comma !== -1 ? dataUrl.slice(comma + 1) : dataUrl;
+    }
+  } catch (_) {}
+  return "";
 }
 
 function blobToBase64(blob: Blob): Promise<string> {

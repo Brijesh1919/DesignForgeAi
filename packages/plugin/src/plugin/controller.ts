@@ -218,7 +218,7 @@ async function handleGeneration(payload: {
       throw new Error("No rootFrame in analysis result");
     }
 
-    if (canonicalOptions.createAutoLayout) {
+    if (canonicalOptions.createAutoLayout && !analysis.metadata?.isWebsite) {
       console.log("[Layout Restructuring] Auto Layout is enabled. Running layout restructuring pass on rootFrame...");
       rootFrame = restructureUINodeLayout(rootFrame);
       analysis.rootFrame = rootFrame;
@@ -231,6 +231,8 @@ async function handleGeneration(payload: {
           }
         }
       }
+    } else if (analysis.metadata?.isWebsite) {
+      console.log("[Layout Restructuring] Website import detected — preserving native DOM flex/grid layout structure.");
     }
 
     const page = figma.currentPage;

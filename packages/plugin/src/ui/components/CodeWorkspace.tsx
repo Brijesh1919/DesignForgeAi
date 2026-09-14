@@ -199,7 +199,7 @@ export const CodeWorkspace: React.FC = () => {
     <div className="code-workspace fade-in" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       {/* Workspace Tabs */}
       <div className="tabs" style={{ display: "flex", borderBottom: "1px solid var(--border-default)", gap: "4px", alignItems: "center" }}>
-        {inputMode === "screenshot" && (htmlContent || cssContent) && (
+        {(inputMode === "screenshot" || inputMode === "generate-ai") && (htmlContent || cssContent) && (
           <button
             onClick={() => {
               clearImage();

@@ -10,6 +10,8 @@ import { HistoryPanel } from "./components/HistoryPanel";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { DebugConsole } from "./components/DebugConsole";
 import { CodeWorkspace } from "./components/CodeWorkspace";
+import { GenerateAIView } from "./components/GenerateAIView";
+import { WebsiteUrlView } from "./components/WebsiteUrlView";
 import "./styles/theme.css";
 
 const ToastItem: React.FC<{ toast: any; onRemove: (id: string) => void }> = ({ toast, onRemove }) => {
@@ -100,39 +102,77 @@ export const App: React.FC = () => {
                   borderRadius: "8px",
                   padding: "4px",
                   border: "1px solid var(--border-default)",
+                  gap: "4px",
                 }}
               >
                 <button
                   onClick={() => setInputMode("screenshot")}
                   style={{
                     flex: 1,
-                    padding: "8px",
+                    padding: "8px 4px",
                     borderRadius: "6px",
                     border: "none",
                     background: inputMode === "screenshot" ? "var(--accent-primary)" : "transparent",
                     color: inputMode === "screenshot" ? "#ffffff" : "var(--text-secondary)",
                     cursor: "pointer",
                     fontWeight: 600,
+                    fontSize: "12px",
                     transition: "var(--transition-fast)",
                   }}
                 >
-                  📸 Screenshot Mode
+                  📸 Screenshot
                 </button>
                 <button
                   onClick={() => setInputMode("html-css")}
                   style={{
                     flex: 1,
-                    padding: "8px",
+                    padding: "8px 4px",
                     borderRadius: "6px",
                     border: "none",
                     background: inputMode === "html-css" ? "var(--accent-primary)" : "transparent",
                     color: inputMode === "html-css" ? "#ffffff" : "var(--text-secondary)",
                     cursor: "pointer",
                     fontWeight: 600,
+                    fontSize: "12px",
                     transition: "var(--transition-fast)",
                   }}
                 >
-                  📄 HTML / CSS Mode
+                  📄 HTML / CSS
+                </button>
+                <button
+                  onClick={() => setInputMode("generate-ai")}
+                  style={{
+                    flex: 1,
+                    padding: "8px 4px",
+                    borderRadius: "6px",
+                    border: "none",
+                    background: inputMode === "generate-ai" ? "var(--accent-primary)" : "transparent",
+                    color: inputMode === "generate-ai" ? "#ffffff" : "var(--text-secondary)",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    fontSize: "12px",
+                    transition: "var(--transition-fast)",
+                  }}
+                >
+                  ✨ Generate with AI
+                </button>
+                <button
+                  id="tab-website-url"
+                  onClick={() => setInputMode("website-url")}
+                  style={{
+                    flex: 1,
+                    padding: "8px 4px",
+                    borderRadius: "6px",
+                    border: "none",
+                    background: inputMode === "website-url" ? "var(--accent-primary)" : "transparent",
+                    color: inputMode === "website-url" ? "#ffffff" : "var(--text-secondary)",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    fontSize: "12px",
+                    transition: "var(--transition-fast)",
+                  }}
+                >
+                  🌐 Website URL
                 </button>
               </div>
             )}
@@ -152,6 +192,10 @@ export const App: React.FC = () => {
                   </div>
                 )}
               </>
+            ) : inputMode === "generate-ai" && !htmlContent && !cssContent ? (
+              <GenerateAIView />
+            ) : inputMode === "website-url" && !htmlContent && !cssContent ? (
+              <WebsiteUrlView />
             ) : selectedImage && (htmlContent || cssContent) ? (
               <div style={{ display: "flex", gap: "16px", height: "620px", width: "100%", overflow: "hidden" }}>
                 {/* Left Pane: Original Screenshot */}
