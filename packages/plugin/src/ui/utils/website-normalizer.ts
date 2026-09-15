@@ -206,7 +206,19 @@ function convertNode(
       }
     }
 
-    if (isCollapsedStub || isMultiColumn || isOverlapping || (isTextContainer && hasInlineChildren && !isFlex)) {
+    // Carousel / slider track detection (e.g. slick, swiper, testimonials, product sliders)
+    // In carousels, slides are placed with transforms or negative offsets; Auto Layout breaks them.
+    const nameLower = (node.name || "").toLowerCase();
+    const isCarouselOrSlider =
+      nameLower.includes("slider") ||
+      nameLower.includes("carousel") ||
+      nameLower.includes("slick") ||
+      nameLower.includes("swiper") ||
+      nameLower.includes("splide") ||
+      nameLower.includes("marquee") ||
+      (node.style?.overflow === "hidden" && node.children && node.children.some(c => c.bounds.x < -10 || c.bounds.x >= width));
+
+    if (isCollapsedStub || isMultiColumn || isOverlapping || isCarouselOrSlider || (isTextContainer && hasInlineChildren && !isFlex)) {
       direction = "NONE";
     } else if (isGrid) {
       // Determine CSS Grid direction by analyzing columns and child positions
@@ -332,11 +344,28 @@ function convertNode(
         layoutAlign = "STRETCH";
       }
       const siblingsCount = parentNode.children?.length || 1;
-      const isParentWrapping = parentNode.layout?.flexWrap === "wrap" || parentNode.layout?.display === "grid" || parentNode.layout?.display === "inline-grid";
-      // IMPORTANT: In wrapped containers (grids or flex-wrap), children MUST retain layoutGrow = 0 so they can wrap!
-      if (siblingsCount >= 2 && isParentFlexOrGrid && !isParentWrapping) {
-        const isSmallOrIcon = width <= 120 && height <= 120;
-        if (layoutGrow === 0 && !isSmallOrIcon && ((l.flexGrow || 0) > 0 || (width > 200 && (parentNode.bounds?.width || 0) >= 500))) {
+      
+      // Check if parent actually wrapped across multiple rows in the browser
+      let isParentActuallyWrapping = false;
+      if (parentNode.layout?.display === "grid" || parentNode.layout?.display === "inline-grid") {
+        const pCols = (parentNode.layout?.gridTemplateColumns || "").trim().split(/\s+/).length || 1;
+        isParentActuallyWrapping = pCols > 1 && (parentNode.children?.length || 0) > pCols;
+      } else if (parentNode.layout?.flexWrap === "wrap" && parentNode.children && parentNode.children.length >= 2) {
+        for (let i = 1; i < parentNode.children.length; i++) {
+          const prev = parentNode.children[i - 1];
+          const curr = parentNode.children[i];
+          if (curr?.bounds && prev?.bounds && curr.bounds.y > prev.bounds.y + 15 && curr.bounds.x < prev.bounds.x) {
+            isParentActuallyWrapping = true;
+            break;
+          }
+        }
+      }
+
+      // In non-wrapping horizontal rows, allow column/card items to stretch to fill the row
+      if (siblingsCount >= 2 && isParentFlexOrGrid && !isParentActuallyWrapping) {
+        const nodeNameLower = (node.name || "").toLowerCase();
+        const isSmallOrIcon = (width <= 80 && height <= 80) || nodeNameLower.includes("icon");
+        if (layoutGrow === 0 && !isSmallOrIcon && ((l.flexGrow || 0) > 0 || (width > 150 && (parentNode.bounds?.width || 0) >= 400))) {
           layoutGrow = 1; // Stretch wide column items to fill available horizontal width
         }
       }
@@ -348,13 +377,27 @@ function convertNode(
     .map((child) => convertNode(child, node, options, assets, resultAssets, depth + 1))
     .filter(Boolean) as UINode[];
 
+  // Visual wrap check: does this flex container actually wrap across multiple rows in the browser?
+  let doesFlexActuallyWrap = false;
+  if (l.flexWrap === "wrap" && direction === "HORIZONTAL" && node.children && node.children.length >= 2) {
+    for (let i = 1; i < node.children.length; i++) {
+      const prev = node.children[i - 1];
+      const curr = node.children[i];
+      // An item wrapped to a new line if it starts to the LEFT of the previous item AND below it
+      if (curr?.bounds && prev?.bounds && curr.bounds.y > prev.bounds.y + 15 && curr.bounds.x < prev.bounds.x) {
+        doesFlexActuallyWrap = true;
+        break;
+      }
+    }
+  }
+
   // Multi-row grid check: a grid wraps IF AND ONLY IF children count exceeds columns count
   const cols = (l.gridTemplateColumns || "").trim();
   const colTokens = cols && cols !== "none" ? cols.split(/\s+/) : [];
   const numCols = colTokens.length || 1;
   const numChildren = node.children?.length || 0;
   const isMultiRowGrid = isGrid && numCols > 1 && numChildren > numCols;
-  const shouldWrap = (l.flexWrap === "wrap" || isMultiRowGrid) && direction === "HORIZONTAL";
+  const shouldWrap = (doesFlexActuallyWrap || isMultiRowGrid) && direction === "HORIZONTAL";
 
   // ─── Assemble UINode ─────────────────────────────────────────
   const uiNode: UINode = {

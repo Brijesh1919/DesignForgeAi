@@ -244,9 +244,21 @@ function configureAutoLayoutRecursively(
       if ("children" in frame && frame.children.length > 1) {
         if (uiNode.layout.wrap) {
           // In 2D grids and flex-wrap containers, sort in row-major reading order: row first, then column
+          const areInSameVisualRow = (a: SceneNode, b: SceneNode): boolean => {
+            const aTop = a.y;
+            const aBottom = a.y + a.height;
+            const bTop = b.y;
+            const bBottom = b.y + b.height;
+            const overlap = Math.min(aBottom, bBottom) - Math.max(aTop, bTop);
+            const minH = Math.min(Math.max(1, a.height), Math.max(1, b.height));
+            return overlap > Math.min(25, minH * 0.35);
+          };
+
           const sorted = [...frame.children].sort((a, b) => {
-            if (Math.abs(a.y - b.y) > 50) return a.y - b.y;
-            return a.x - b.x;
+            if (areInSameVisualRow(a, b)) {
+              return a.x - b.x;
+            }
+            return a.y - b.y;
           });
           for (const c of sorted) {
             frame.appendChild(c);
@@ -376,35 +388,49 @@ function configureAutoLayoutRecursively(
 
     // Sticky / fixed header scrolling wrapper configuration for the main page frame
     if (parentUiNode === null) {
-      // NOTE: We configure the root frame to be VERTICAL Auto Layout, anchored at MIN (top-left)
-      frame.layoutMode = "VERTICAL";
-      frame.primaryAxisSizingMode = "AUTO"; // HUG vertically
-      frame.counterAxisSizingMode = "FIXED"; // Width is fixed to source width (1440)
-      frame.primaryAxisAlignItems = "MIN";
-      frame.counterAxisAlignItems = "MIN";
-      frame.itemSpacing = 0;
-      frame.paddingTop = 0;
-      frame.paddingRight = 0;
-      frame.paddingBottom = 0;
-      frame.paddingLeft = 0;
-      frame.overflowDirection = "VERTICAL";
-      let fixedCount = 0;
+      try {
+        // NOTE: We configure the root frame to be VERTICAL Auto Layout, anchored at MIN (top-left)
+        frame.layoutMode = "VERTICAL";
+        frame.primaryAxisSizingMode = "AUTO"; // HUG vertically
+        frame.counterAxisSizingMode = "FIXED"; // Width is fixed to source width (1440)
+        frame.primaryAxisAlignItems = "MIN";
+        frame.counterAxisAlignItems = "MIN";
+        frame.itemSpacing = 0;
+        frame.paddingTop = 0;
+        frame.paddingRight = 0;
+        frame.paddingBottom = 0;
+        frame.paddingLeft = 0;
+        try {
+          frame.overflowDirection = "VERTICAL";
+        } catch (_) {}
 
-      const children = frame.children;
-      for (const child of children) {
-        const nameLower = (child.name || "").toLowerCase();
-        const isNavbar = nameLower.includes("navbar") || nameLower.includes("header") || nameLower.includes("nav");
-        if (isNavbar && "layoutPositioning" in child) {
-          (child as any).layoutPositioning = "ABSOLUTE";
-          child.x = 0;
-          child.y = 0;
-          if ("resize" in child) {
-            child.resize(frame.width, child.height);
+        let fixedCount = 0;
+        const children = frame.children;
+        for (const child of children) {
+          const childUiNode = context.uiNodeMap?.get(child.id);
+          const isFixedInCss = childUiNode?.style?.position === "fixed" || childUiNode?.style?.position === "sticky";
+          if (isFixedInCss && "layoutPositioning" in child) {
+            try {
+              (child as any).layoutPositioning = "ABSOLUTE";
+              child.x = 0;
+              child.y = 0;
+              if ("resize" in child) {
+                child.resize(frame.width, child.height);
+              }
+              fixedCount++;
+              console.log(`[FIXED NAV] scrollContainer: ${frame.name}, fixedChild: ${child.name}`);
+            } catch (childErr) {
+              console.warn(`[FIXED NAV] Failed to configure fixed child ${child.name}:`, childErr);
+            }
           }
-          (child as any).scrollBehavior = "FIXED";
-          fixedCount++;
-          console.log(`[FIXED NAV] scrollContainer: ${frame.name}, fixedChild: ${child.name}, numberOfFixedChildren: ${fixedCount}`);
         }
+        if (fixedCount > 0) {
+          try {
+            frame.numberOfFixedChildren = fixedCount;
+          } catch (_) {}
+        }
+      } catch (err) {
+        console.warn(`[AutoLayout] Failed to configure root frame layout:`, err);
       }
     }
   }
@@ -525,7 +551,11 @@ reason: ${isAbsolute ? "absolute positioning overlay" : sizing.reason}`);
       }
 
       if (figmaChild && uiChild) {
-        configureAutoLayoutRecursively(figmaChild, uiChild, uiNode, context);
+        try {
+          configureAutoLayoutRecursively(figmaChild, uiChild, uiNode, context);
+        } catch (childErr) {
+          console.warn(`[AutoLayout] Error configuring child ${figmaChild.name || "unknown"}:`, childErr);
+        }
       }
     }
   }

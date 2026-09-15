@@ -115,6 +115,22 @@ gradient: ${gradientVal}`);
       const bw = Math.max(1, options.bounds.width);
       const bh = Math.max(1, options.bounds.height);
 
+      // Ensure all child shapes, paths, and groups inside the SVG frame have SCALE constraints
+      // so that resizing the frame scales the vector contents rather than cropping/clipping them.
+      const setScaleConstraints = (n: SceneNode) => {
+        if ("constraints" in n) {
+          try {
+            n.constraints = { horizontal: "SCALE", vertical: "SCALE" };
+          } catch (_) {}
+        }
+        if ("children" in n) {
+          for (const ch of (n as any).children) {
+            setScaleConstraints(ch);
+          }
+        }
+      };
+      setScaleConstraints(figmaVector);
+
       if (figmaVector.width > 0 && figmaVector.height > 0) {
         figmaVector.resize(bw, bh);
       }

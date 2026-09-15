@@ -360,6 +360,7 @@ export function determineSizingBehavior(
   const cssWidth = computedStyle?.width || element.style?.width || "";
   const cssHeight = computedStyle?.height || element.style?.height || "";
   const nameLower = String(element.name || "").toLowerCase();
+  const roleLower = String(element.role || "").toLowerCase();
 
   const sourceWidth = element.bounds?.width || 0;
   const sourceHeight = element.bounds?.height || 0;
@@ -429,8 +430,8 @@ export function determineSizingBehavior(
     } else if (isStretch && parentLayoutMode === "VERTICAL") {
       horizontal = "FILL";
       reason = "layoutAlign STRETCH in VERTICAL parent -> FILL";
-    } else if (nameLower.includes("card") || nameLower.includes("step") || nameLower.includes("feature-item") || nameLower.includes("tool")) {
-      // In a horizontal row of cards (e.g. 3-step cards, tools grid), fill or keep fixed width
+    } else if (nameLower.includes("card") || nameLower.includes("step") || nameLower.includes("feature-item") || nameLower.includes("tool") || nameLower.includes("col") || nameLower.includes("item")) {
+      // In a horizontal row of cards/columns (e.g. 3-step cards, tools grid, col-4), fill or keep fixed width
       if (parentLayoutMode === "HORIZONTAL" && !parentIsWrapping && (hasFlexGrow || (parent?.children?.length || 1) >= 2)) {
         horizontal = "FILL";
         reason = "Multi-column card row -> FILL";
@@ -459,10 +460,10 @@ export function determineSizingBehavior(
       horizontal = "HUG";
       reason = "Capsule / Pill shape with content-driven width -> HUG";
     } else if (isSmallContainer) {
-      const hasBgOrBorder = (element.style?.fills?.length || 0) > 0 || (element.style?.strokes?.length || 0) > 0;
-      if (hasBgOrBorder && Math.abs(sourceWidth - sourceHeight) <= 4) {
+      const isIconOrSquare = Math.abs(sourceWidth - sourceHeight) <= 12 || nameLower.includes("icon") || nameLower.includes("avatar") || roleLower === "icon";
+      if (isIconOrSquare) {
         horizontal = "FIXED";
-        reason = "Square icon container with background/border -> FIXED to preserve shape";
+        reason = "Square / icon container -> FIXED to preserve shape and geometry";
       } else {
         horizontal = "HUG";
         reason = "Small compact container / icon group -> HUG";
@@ -513,7 +514,7 @@ export function determineSizingBehavior(
     vertical = "FIXED";
   } else if (isVectorOrChart) {
     vertical = "FIXED";
-  } else if (isSmallContainer && ((element.style?.fills?.length || 0) > 0 || (element.style?.strokes?.length || 0) > 0) && Math.abs(sourceWidth - sourceHeight) <= 4) {
+  } else if (isSmallContainer && (Math.abs(sourceWidth - sourceHeight) <= 12 || nameLower.includes("icon") || nameLower.includes("avatar") || roleLower === "icon")) {
     vertical = "FIXED";
   } else if (cssHeight && cssHeight !== "auto" && !cssHeight.includes("%") && cssHeight !== "initial") {
     vertical = "FIXED";
@@ -523,6 +524,10 @@ export function determineSizingBehavior(
     // Full-width website sections (≥1200px) in a VERTICAL auto layout container should be FIXED height
     // so their browser-measured pixel heights are preserved. Without this they HUG and collapse.
     const isFullWidthWebSection = sourceWidth >= 1200 && parentLayoutMode === "VERTICAL";
+    // Large hero cards, dropzones, or containers with measured fixed height >= 180px:
+    // If the container has an explicit height or is a dropzone/hero card, keep FIXED to prevent collapsing.
+    const isLargeCardOrDropzone = (nameLower.includes("dropzone") || nameLower.includes("upload") || nameLower.includes("hero") || nameLower.includes("card") || sourceHeight >= 200) && sourceHeight >= 180;
+
     if (element.layout?.wrap === true) {
       // Wrapping containers dynamically grow to fit their wrapped rows
       vertical = "HUG";
@@ -532,6 +537,8 @@ export function determineSizingBehavior(
       vertical = "FILL";
     } else if (isFullWidthWebSection && sourceHeight > 50) {
       // For tall full-width sections, use FIXED to preserve their measured height
+      vertical = "FIXED";
+    } else if (isLargeCardOrDropzone) {
       vertical = "FIXED";
     } else {
       vertical = "HUG";
