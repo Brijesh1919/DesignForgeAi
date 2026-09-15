@@ -32,8 +32,16 @@ export function normalizeExtractionResult(
   };
 }
 
-function normalizeNode(node: WebsiteNode, baseUrl: string, depth: number): WebsiteNode {
+function normalizeNode(node: WebsiteNode, baseUrl: string, depth: number): WebsiteNode | null {
   if (depth > 60) return node;
+
+  // Filter out invisible tiny stubs / offscreen sr-only links / tracking elements
+  const isOffscreenSrOnly = (node.bounds.x < 0 && node.bounds.y < 0 && node.bounds.width <= 10) ||
+    (node.bounds.width <= 1 && node.bounds.height <= 1);
+  const isZeroSize = node.bounds.width <= 0 || node.bounds.height <= 0;
+  if ((isOffscreenSrOnly || isZeroSize) && node.tagName !== "body" && node.tagName !== "html") {
+    return null;
+  }
 
   // Validate bounds
   let { x, y, width, height } = node.bounds;
@@ -68,9 +76,19 @@ function normalizeNode(node: WebsiteNode, baseUrl: string, depth: number): Websi
     .map((child) => normalizeNode(child, baseUrl, depth + 1))
     .filter(Boolean) as WebsiteNode[];
 
+  // Enforce VERTICAL layout direction on root containers
+  const tagLower = (node.tagName || "").toLowerCase();
+  const layout = { ...node.layout };
+  if (tagLower === "body" || tagLower === "html" || tagLower === "main") {
+    if (layout.display !== "flex" && layout.display !== "inline-flex") {
+      layout.direction = "VERTICAL";
+    }
+  }
+
   return {
     ...node,
     bounds: { x, y, width, height },
+    layout,
     style: { ...node.style, fills, opacity },
     imageRef,
     children,

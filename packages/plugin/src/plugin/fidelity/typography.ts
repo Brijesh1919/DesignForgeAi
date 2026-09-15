@@ -147,12 +147,23 @@ letterSpacing: ${props.letterSpacing || 0}
 width: ${w}
 height: ${h}`);
 
-  // === AUTO WIDTH: content-driven sizing ===
-  // Use WIDTH_AND_HEIGHT so Figma computes the natural text width from content.
-  // No fixed width is applied — the text node grows to fit its content on one line
-  // unless Figma's own line-breaking logic wraps it (which mirrors the browser).
+  // === TEXT SIZING & AUTO-RESIZE ===
+  // If the browser measured multi-line text (h > estLineH * 1.4 or content > 40 chars with w > 100),
+  // set textAutoResize = "HEIGHT" and width = w so Figma wraps the text naturally.
+  // Otherwise, for short single-line labels, buttons, or badges, use WIDTH_AND_HEIGHT.
   const estLineH = props.lineHeight && props.lineHeight > 0 ? props.lineHeight : textNode.fontSize * 1.2;
-  textNode.textAutoResize = "WIDTH_AND_HEIGHT";
+  const isMultiLine = (h > estLineH * 1.4) || ((props.content || "").length > 40 && w > 100);
+
+  if (isMultiLine && w > 0) {
+    try {
+      textNode.resize(Math.max(1, w), Math.max(1, h));
+      textNode.textAutoResize = "HEIGHT";
+    } catch (_) {
+      textNode.textAutoResize = "WIDTH_AND_HEIGHT";
+    }
+  } else {
+    textNode.textAutoResize = "WIDTH_AND_HEIGHT";
+  }
 
   const figmaAfterW = textNode.width;
   const figmaAfterH = textNode.height;

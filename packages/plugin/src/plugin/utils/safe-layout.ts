@@ -401,8 +401,13 @@ export function determineSizingBehavior(
     const layoutAlign = element.childLayout?.layoutAlign;
     const isStretch = layoutAlign === "STRETCH" || element.style?.alignSelf === "stretch";
     const hasFlexGrow = flexGrow > 0 || (element.childLayout?.layoutGrow ?? 0) > 0;
+    const parentIsWrapping = parent?.layout?.wrap === true;
 
-    if (cssWidth === "100%") {
+    if (parentIsWrapping && parentLayoutMode === "HORIZONTAL") {
+      // In Figma, children along the primary axis of a WRAP container CANNOT be FILL
+      horizontal = sourceWidth > 0 ? "FIXED" : "HUG";
+      reason = "Wrapping HORIZONTAL parent -> FIXED/HUG width to allow wrapping";
+    } else if (cssWidth === "100%") {
       horizontal = "FILL";
       reason = "Explicit CSS width: 100% inside Auto Layout";
     } else if (isStretch && parentLayoutMode === "VERTICAL") {
@@ -410,7 +415,7 @@ export function determineSizingBehavior(
       reason = "layoutAlign STRETCH in VERTICAL parent -> FILL";
     } else if (nameLower.includes("card") || nameLower.includes("step") || nameLower.includes("feature-item") || nameLower.includes("tool")) {
       // In a horizontal row of cards (e.g. 3-step cards, tools grid), fill or keep fixed width
-      if (parentLayoutMode === "HORIZONTAL" && (hasFlexGrow || (parent?.children?.length || 1) >= 2)) {
+      if (parentLayoutMode === "HORIZONTAL" && !parentIsWrapping && (hasFlexGrow || (parent?.children?.length || 1) >= 2)) {
         horizontal = "FILL";
         reason = "Multi-column card row -> FILL";
       } else {
@@ -444,15 +449,23 @@ export function determineSizingBehavior(
       horizontal = "FILL";
       reason = `Full-width container (widthRatio: ${widthRatio.toFixed(2)} >= 0.85) -> FILL`;
     } else if (classification === "TEXT") {
-      const isExplicitFullWidth = cssWidth === "100%" || isStretch || (hasFlexGrow && widthRatio >= 0.85);
-      const isConstrainedWrappedText = sourceWidth > 0 && sourceWidth < parentWidth - 40 && sourceHeight > 36;
+      const content = String(element.text?.content || element.name || "");
+      const isShortLabel = content.length < 25 && sourceHeight <= 30 && !nameLower.includes("p") && !nameLower.includes("desc");
+      const isButtonOrBadgeChild = parent?.name?.toLowerCase().includes("btn") || parent?.name?.toLowerCase().includes("button") || parent?.name?.toLowerCase().includes("badge") || parent?.name?.toLowerCase().includes("pill");
 
-      if (isExplicitFullWidth) {
+      if (isButtonOrBadgeChild || (isShortLabel && widthRatio < 0.5 && !isStretch)) {
+        horizontal = "HUG";
+        reason = "Short content-sized label / button text -> HUG width";
+      } else if (parentLayoutMode === "VERTICAL") {
+        // In vertical Auto Layout, text must FILL container width so it wraps naturally!
         horizontal = "FILL";
-        reason = "Explicit full-width paragraph text -> FILL";
-      } else if (isConstrainedWrappedText) {
+        reason = "Text in VERTICAL container -> FILL width + auto wrap";
+      } else if (hasFlexGrow || widthRatio >= 0.7) {
+        horizontal = "FILL";
+        reason = "Text with flex-grow or wide ratio in row -> FILL width";
+      } else if (sourceWidth > 100 && (content.length > 25 || sourceHeight > 28)) {
         horizontal = "FIXED";
-        reason = `Constrained width wrapped text (${Math.round(sourceWidth)}px) -> FIXED width + natural height`;
+        reason = `Wrapped text with fixed width (${Math.round(sourceWidth)}px) -> FIXED width`;
       } else {
         horizontal = "HUG";
         reason = "Content-sized text -> HUG width";
@@ -497,6 +510,9 @@ export function determineSizingBehavior(
     if (!cssWidth.includes("%")) {
       horizontal = "FIXED";
     }
+  }
+  if (horizontal === "FILL" && parent?.layout?.wrap === true && parentLayoutMode === "HORIZONTAL") {
+    horizontal = sourceWidth > 0 ? "FIXED" : "HUG";
   }
   if (vertical === "FILL" && (!parentIsAutoLayout || isVectorOrChart || classification === "ABSOLUTE_CHILD")) {
     vertical = "HUG";

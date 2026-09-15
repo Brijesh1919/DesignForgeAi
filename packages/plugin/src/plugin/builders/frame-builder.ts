@@ -189,19 +189,21 @@ export async function buildNodeTreeWithAutoLayout(
   return figmaNode;
 }
 
-function applyHorizontalFillSafely(node: SceneNode, parent: BaseNode | null) {
+function applyHorizontalFillSafely(node: SceneNode, parent: BaseNode | null): boolean {
   if (parent && "layoutMode" in parent && (parent as any).layoutMode !== "NONE") {
-    safeSetFillHorizontal(node);
+    return safeSetFillHorizontal(node);
   } else {
     safeSetFixedHorizontal(node);
+    return false;
   }
 }
 
-function applyVerticalFillSafely(node: SceneNode, parent: BaseNode | null) {
+function applyVerticalFillSafely(node: SceneNode, parent: BaseNode | null): boolean {
   if (parent && "layoutMode" in parent && (parent as any).layoutMode !== "NONE") {
-    safeSetFillVertical(node);
+    return safeSetFillVertical(node);
   } else {
     safeSetHugVertical(node);
+    return false;
   }
 }
 
@@ -235,33 +237,36 @@ function configureAutoLayoutRecursively(
       else if (jc === "space-between") primaryAlign = "SPACE_BETWEEN";
       frame.primaryAxisAlignItems = primaryAlign;
 
-      let counterAlign: "MIN" | "CENTER" | "MAX" | "STRETCH" = "MIN";
+      let counterAlign: "MIN" | "CENTER" | "MAX" | "BASELINE" = "MIN";
       const ai = (uiNode.layout as any).alignItems || "";
       if (ai === "center") counterAlign = "CENTER";
       else if (ai === "flex-end" || ai === "end") counterAlign = "MAX";
-      else if (ai === "stretch") counterAlign = "STRETCH";
-      frame.counterAxisAlignItems = counterAlign;
+      else if (ai === "baseline") counterAlign = "BASELINE";
+      try {
+        frame.counterAxisAlignItems = counterAlign;
+      } catch (err) {
+        console.warn(`[AutoLayout] Failed to set counterAxisAlignItems on "${frame.name}":`, err);
+      }
 
       if (uiNode.layout.wrap) {
         safeSetLayoutWrap(frame, true);
       }
 
-      // Centered content & Grouped card row alignment mapping (Requirement 2 & Requirement 3)
+      // Centered content & Grouped card row alignment mapping
       const isCenteredInStyle =
         (uiNode.style as any)?.textAlign === "center" ||
         jc === "center" ||
         ai === "center" ||
         (uiNode.layout as any)?.alignment === "CENTER" ||
         uiNode.name?.includes("RowGroup");
-      const hasCenteredChildText = uiNode.children?.some(
-        c => (c.style as any)?.textAlign === "center" || c.text?.textAlign === "CENTER"
-      );
 
-      if (isCenteredInStyle || hasCenteredChildText) {
+      if (isCenteredInStyle) {
         if (frame.layoutMode === "HORIZONTAL") {
           frame.primaryAxisAlignItems = "CENTER";
         } else if (frame.layoutMode === "VERTICAL") {
-          frame.counterAxisAlignItems = "CENTER";
+          if (ai === "center" || (uiNode.layout as any)?.alignment === "CENTER") {
+            frame.counterAxisAlignItems = "CENTER";
+          }
           if (jc === "center") {
             frame.primaryAxisAlignItems = "CENTER";
           }
@@ -288,10 +293,12 @@ function configureAutoLayoutRecursively(
 
     // Sticky / fixed header scrolling wrapper configuration for the main page frame
     if (parentUiNode === null) {
-      // NOTE: We configure the root frame to be VERTICAL Auto Layout, and it hugs its children vertically!
+      // NOTE: We configure the root frame to be VERTICAL Auto Layout, anchored at MIN (top-left)
       frame.layoutMode = "VERTICAL";
       frame.primaryAxisSizingMode = "AUTO"; // HUG vertically
       frame.counterAxisSizingMode = "FIXED"; // Width is fixed to source width (1440)
+      frame.primaryAxisAlignItems = "MIN";
+      frame.counterAxisAlignItems = "MIN";
       frame.itemSpacing = 0;
       frame.paddingTop = 0;
       frame.paddingRight = 0;
@@ -362,12 +369,15 @@ function configureAutoLayoutRecursively(
         if (uiNode.type === "TEXT" && "textAutoResize" in figmaNode) {
           const textNode = figmaNode as TextNode;
           if (sizing.horizontal === "FILL") {
-            applyHorizontalFillSafely(textNode, parentFigma);
+            const filled = applyHorizontalFillSafely(textNode, parentFigma);
+            if (!filled && uiNode.bounds.width > 0) {
+              try { textNode.resize(Math.max(1, uiNode.bounds.width), textNode.height); } catch (_) {}
+            }
             textNode.textAutoResize = "HEIGHT";
             safeSetHugVertical(textNode);
           } else if (sizing.horizontal === "FIXED") {
             safeSetFixedHorizontal(textNode);
-            textNode.resize(Math.max(1, uiNode.bounds.width), textNode.height);
+            try { textNode.resize(Math.max(1, uiNode.bounds.width), textNode.height); } catch (_) {}
             textNode.textAutoResize = "HEIGHT";
             safeSetHugVertical(textNode);
           } else {

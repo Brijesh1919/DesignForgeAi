@@ -117,6 +117,15 @@ function convertNode(
 ): UINode {
   const { x, y, width, height } = node.bounds;
 
+  // ─── Filter out invisible stubs / tracking anchors ──────────────────
+  const isOffscreenSrOnly = (node.bounds.x < 0 && node.bounds.y < 0 && node.bounds.width <= 10) ||
+    (node.bounds.width <= 1 && node.bounds.height <= 1);
+  const isZeroSize = node.bounds.width <= 0 || node.bounds.height <= 0;
+  const isTrackingStub = (node.name || "").includes("hs-web-interactives") || (node.name || "").includes("didomi");
+  if ((isOffscreenSrOnly || isZeroSize || isTrackingStub) && (!node.children || node.children.length === 0) && node.tagName !== "body" && node.tagName !== "html") {
+    return null as any;
+  }
+
   // ─── Type ──────────────────────────────────────────────────
   let type: UINode["type"] = "FRAME";
   if (node.type === "TEXT")   type = "TEXT";
@@ -151,12 +160,18 @@ function convertNode(
   const l = node.layout;
   const isFlex = l.display === "flex" || l.display === "inline-flex";
   const isGrid = l.display === "grid" || l.display === "inline-grid";
+  const tagLower = (node.tagName || "").toLowerCase();
 
   let direction: LayoutDirection = "NONE";
   let itemSpacing = 0;
   let alignment: Alignment = "TOP_LEFT";
 
-  if (options.createAutoLayout && (isFlex || isGrid)) {
+  if (tagLower === "body" || tagLower === "html" || tagLower === "main") {
+    // Root block containers in HTML flow are strictly VERTICAL
+    if (!isFlex || (l.flexDirection || "").includes("column")) {
+      direction = "VERTICAL";
+    }
+  } else if (options.createAutoLayout && (isFlex || isGrid)) {
     direction = (l.flexDirection || "").includes("column") ? "VERTICAL" : "HORIZONTAL";
     itemSpacing = l.gap || l.columnGap || l.rowGap || 0;
     alignment = mapAlignment(l.justifyContent || "flex-start", l.alignItems || "flex-start");
@@ -244,8 +259,10 @@ function convertNode(
         layoutAlign = "STRETCH";
       }
       const siblingsCount = parentNode.children?.length || 1;
-      if (siblingsCount >= 2 && isParentFlexOrGrid) {
-        if (layoutGrow === 0 && (l.flexShrink > 0 || isGrid || width > 100)) {
+      const isParentWrapping = parentNode.layout?.flexWrap === "wrap" || parentNode.layout?.display === "grid" || parentNode.layout?.display === "inline-grid";
+      // IMPORTANT: In wrapped containers (grids or flex-wrap), children MUST retain layoutGrow = 0 so they can wrap!
+      if (siblingsCount >= 2 && isParentFlexOrGrid && !isParentWrapping) {
+        if (layoutGrow === 0 && (l.flexShrink > 0 || width > 100)) {
           layoutGrow = 1; // Stretch column items to fill available horizontal width
         }
       }
