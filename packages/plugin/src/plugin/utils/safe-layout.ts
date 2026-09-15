@@ -108,6 +108,10 @@ export function safeSetHugHorizontal(node: SceneNode): boolean {
     safeSetFixedHorizontal(node);
     return false;
   }
+  if ("layoutMode" in node && (node as any).layoutMode === "NONE") {
+    safeSetFixedHorizontal(node);
+    return false;
+  }
   try {
     (node as any).layoutSizingHorizontal = "HUG";
     return true;
@@ -123,6 +127,10 @@ export function safeSetHugHorizontal(node: SceneNode): boolean {
 export function safeSetHugVertical(node: SceneNode): boolean {
   if (!("layoutSizingVertical" in node)) return false;
   if (!canUseAutoLayoutSizing(node)) {
+    safeSetFixedVertical(node);
+    return false;
+  }
+  if ("layoutMode" in node && (node as any).layoutMode === "NONE") {
     safeSetFixedVertical(node);
     return false;
   }
@@ -403,10 +411,18 @@ export function determineSizingBehavior(
     const hasFlexGrow = flexGrow > 0 || (element.childLayout?.layoutGrow ?? 0) > 0;
     const parentIsWrapping = parent?.layout?.wrap === true;
 
-    if (parentIsWrapping && parentLayoutMode === "HORIZONTAL") {
+    if (element.layout?.wrap === true) {
+      // A wrapping container in Figma MUST have a FIXED width to define its wrap boundary.
+      horizontal = "FIXED";
+      reason = "Wrapping container -> FIXED width to enforce wrapping boundary";
+    } else if (parentIsWrapping && parentLayoutMode === "HORIZONTAL") {
       // In Figma, children along the primary axis of a WRAP container CANNOT be FILL
       horizontal = sourceWidth > 0 ? "FIXED" : "HUG";
       reason = "Wrapping HORIZONTAL parent -> FIXED/HUG width to allow wrapping";
+    } else if (sourceWidth >= 1000 && parentLayoutMode === "VERTICAL") {
+      // Major desktop containers (e.g. mx-auto 1200px) in a VERTICAL section
+      horizontal = widthRatio >= 0.85 ? "FILL" : "FIXED";
+      reason = `Major content container (${sourceWidth}px) in VERTICAL parent -> ${horizontal}`;
     } else if (cssWidth === "100%") {
       horizontal = "FILL";
       reason = "Explicit CSS width: 100% inside Auto Layout";
@@ -443,8 +459,14 @@ export function determineSizingBehavior(
       horizontal = "HUG";
       reason = "Capsule / Pill shape with content-driven width -> HUG";
     } else if (isSmallContainer) {
-      horizontal = "HUG";
-      reason = "Small compact container / icon group -> HUG";
+      const hasBgOrBorder = (element.style?.fills?.length || 0) > 0 || (element.style?.strokes?.length || 0) > 0;
+      if (hasBgOrBorder && Math.abs(sourceWidth - sourceHeight) <= 4) {
+        horizontal = "FIXED";
+        reason = "Square icon container with background/border -> FIXED to preserve shape";
+      } else {
+        horizontal = "HUG";
+        reason = "Small compact container / icon group -> HUG";
+      }
     } else if (widthRatio >= 0.85) {
       horizontal = "FILL";
       reason = `Full-width container (widthRatio: ${widthRatio.toFixed(2)} >= 0.85) -> FILL`;
@@ -483,21 +505,34 @@ export function determineSizingBehavior(
   }
 
   // Sizing Vertically:
-  if (classification === "TEXT") {
+  if (sourceHeight <= 4) {
+    vertical = "FIXED";
+  } else if (classification === "TEXT") {
     vertical = "HUG";
   } else if (classification === "ABSOLUTE_CHILD") {
     vertical = "FIXED";
   } else if (isVectorOrChart) {
+    vertical = "FIXED";
+  } else if (isSmallContainer && ((element.style?.fills?.length || 0) > 0 || (element.style?.strokes?.length || 0) > 0) && Math.abs(sourceWidth - sourceHeight) <= 4) {
     vertical = "FIXED";
   } else if (cssHeight && cssHeight !== "auto" && !cssHeight.includes("%") && cssHeight !== "initial") {
     vertical = "FIXED";
   } else if (parentIsAutoLayout) {
     const isStretchV = element.childLayout?.layoutAlign === "STRETCH" || element.style?.alignSelf === "stretch";
     const hasFlexGrowV = flexGrow > 0 || (element.childLayout?.layoutGrow ?? 0) > 0;
-    if (isStretchV && parentLayoutMode === "HORIZONTAL") {
+    // Full-width website sections (≥1200px) in a VERTICAL auto layout container should be FIXED height
+    // so their browser-measured pixel heights are preserved. Without this they HUG and collapse.
+    const isFullWidthWebSection = sourceWidth >= 1200 && parentLayoutMode === "VERTICAL";
+    if (element.layout?.wrap === true) {
+      // Wrapping containers dynamically grow to fit their wrapped rows
+      vertical = "HUG";
+    } else if (isStretchV && parentLayoutMode === "HORIZONTAL") {
       vertical = "FILL";
     } else if (hasFlexGrowV && parentLayoutMode === "VERTICAL" && (cssHeight === "100%" || cssHeight === "auto")) {
       vertical = "FILL";
+    } else if (isFullWidthWebSection && sourceHeight > 50) {
+      // For tall full-width sections, use FIXED to preserve their measured height
+      vertical = "FIXED";
     } else {
       vertical = "HUG";
     }
@@ -515,7 +550,18 @@ export function determineSizingBehavior(
     horizontal = sourceWidth > 0 ? "FIXED" : "HUG";
   }
   if (vertical === "FILL" && (!parentIsAutoLayout || isVectorOrChart || classification === "ABSOLUTE_CHILD")) {
-    vertical = "HUG";
+    vertical = "FIXED";
+  }
+
+  // Safety check for non-Auto Layout containers: a frame with layoutMode === "NONE" CANNOT HUG!
+  const isSelfAutoLayout = classification === "TEXT" || (element.layout?.direction && element.layout.direction !== "NONE");
+  if (!isSelfAutoLayout) {
+    if (horizontal === "HUG") {
+      horizontal = (parentIsAutoLayout && parentLayoutMode === "VERTICAL" && widthRatio >= 0.85) ? "FILL" : "FIXED";
+    }
+    if (vertical === "HUG") {
+      vertical = "FIXED";
+    }
   }
 
   const hAlign = (element.layout?.justifyContent || element.style?.textAlign || "MIN").toString().toUpperCase();

@@ -171,12 +171,85 @@ function convertNode(
     if (!isFlex || (l.flexDirection || "").includes("column")) {
       direction = "VERTICAL";
     }
-  } else if (options.createAutoLayout && (isFlex || isGrid)) {
-    direction = (l.flexDirection || "").includes("column") ? "VERTICAL" : "HORIZONTAL";
-    itemSpacing = l.gap || l.columnGap || l.rowGap || 0;
-    alignment = mapAlignment(l.justifyContent || "flex-start", l.alignItems || "flex-start");
-  } else if (options.createAutoLayout && l.direction !== "NONE") {
-    direction = l.direction as LayoutDirection;
+  } else if (options.createAutoLayout) {
+    // Inline text containers (e.g. paragraphs containing links or spans) must remain NONE
+    // because Figma Auto Layout does not support inline text wrapping.
+    const isTextContainer = ["p", "span", "h1", "h2", "h3", "h4", "h5", "h6", "a", "label"].includes(tagLower);
+    const hasInlineChildren = node.children && node.children.some(c => (c.tagName || "").toLowerCase() === "a" || (c.tagName || "").toLowerCase() === "span" || c.name === "#text" || c.type === "TEXT");
+    
+    // Collapsed/hidden accordion or zero-height elements should not be Auto Layout
+    const isCollapsedStub = height <= 4 && (node.style.clipsContent || (node.style.overflow || "").includes("hidden"));
+
+    // Overlapping elements check (e.g. single-cell CSS grid dropzone overlay where children share bounds)
+    let isOverlapping = false;
+    if (node.children && node.children.length >= 2) {
+      const c0 = node.children[0];
+      const c1 = node.children[1];
+      if (Math.abs(c1.bounds.x - c0.bounds.x) < 5 && Math.abs(c1.bounds.y - c0.bounds.y) < 5) {
+        isOverlapping = true;
+      }
+    }
+
+    // Multi-column layout check (e.g. CSS columns: 4 where items span multiple columns and rows)
+    let isMultiColumn = false;
+    if (!isFlex && !isGrid && node.children && node.children.length >= 3) {
+      const xBuckets = new Set<number>();
+      const yBuckets = new Set<number>();
+      for (const c of node.children) {
+        const xb = Math.round((c.bounds?.x || 0) / 25) * 25;
+        const yb = Math.round((c.bounds?.y || 0) / 25) * 25;
+        xBuckets.add(xb);
+        yBuckets.add(yb);
+      }
+      if (xBuckets.size >= 2 && yBuckets.size >= 2) {
+        isMultiColumn = true;
+      }
+    }
+
+    if (isCollapsedStub || isMultiColumn || isOverlapping || (isTextContainer && hasInlineChildren && !isFlex)) {
+      direction = "NONE";
+    } else if (isGrid) {
+      // Determine CSS Grid direction by analyzing columns and child positions
+      const cols = (l.gridTemplateColumns || "").trim();
+      const colTokens = cols && cols !== "none" ? cols.split(/\s+/) : [];
+      let isVisuallyVertical = colTokens.length === 1;
+
+      if (node.children && node.children.length >= 2) {
+        const c0 = node.children[0];
+        const c1 = node.children[1];
+        const dx = Math.abs(c1.bounds.x - c0.bounds.x);
+        const dy = Math.abs(c1.bounds.y - c0.bounds.y);
+        if (dy > 15 && dx < 25) {
+          isVisuallyVertical = true;
+        } else if (dx > 15 && dy < 25) {
+          isVisuallyVertical = false;
+        }
+      }
+
+      direction = isVisuallyVertical ? "VERTICAL" : "HORIZONTAL";
+      itemSpacing = direction === "HORIZONTAL" ? (l.columnGap || l.gap || 0) : (l.rowGap || l.gap || 0);
+      alignment = mapAlignment(l.justifyContent || "flex-start", l.alignItems || "flex-start");
+    } else if (isFlex) {
+      if ((l.flexDirection || "").includes("column")) {
+        direction = "VERTICAL";
+      } else if ((l.flexDirection || "").includes("row")) {
+        direction = "HORIZONTAL";
+      } else if (node.children && node.children.length >= 2) {
+        const c0 = node.children[0];
+        const c1 = node.children[1];
+        if (Math.abs(c1.bounds.y - c0.bounds.y) > 15 && Math.abs(c1.bounds.x - c0.bounds.x) < 25) {
+          direction = "VERTICAL";
+        } else {
+          direction = "HORIZONTAL";
+        }
+      } else {
+        direction = "HORIZONTAL";
+      }
+      itemSpacing = direction === "HORIZONTAL" ? (l.columnGap || l.gap || 0) : (l.rowGap || l.gap || 0);
+      alignment = mapAlignment(l.justifyContent || "flex-start", l.alignItems || "flex-start");
+    } else if (l.direction !== "NONE") {
+      direction = l.direction as LayoutDirection;
+    }
   }
 
   // ─── Image Ref ──────────────────────────────────────────────
@@ -262,8 +335,9 @@ function convertNode(
       const isParentWrapping = parentNode.layout?.flexWrap === "wrap" || parentNode.layout?.display === "grid" || parentNode.layout?.display === "inline-grid";
       // IMPORTANT: In wrapped containers (grids or flex-wrap), children MUST retain layoutGrow = 0 so they can wrap!
       if (siblingsCount >= 2 && isParentFlexOrGrid && !isParentWrapping) {
-        if (layoutGrow === 0 && (l.flexShrink > 0 || width > 100)) {
-          layoutGrow = 1; // Stretch column items to fill available horizontal width
+        const isSmallOrIcon = width <= 120 && height <= 120;
+        if (layoutGrow === 0 && !isSmallOrIcon && ((l.flexGrow || 0) > 0 || (width > 200 && (parentNode.bounds?.width || 0) >= 500))) {
+          layoutGrow = 1; // Stretch wide column items to fill available horizontal width
         }
       }
     }
@@ -273,6 +347,14 @@ function convertNode(
   const children: UINode[] = node.children
     .map((child) => convertNode(child, node, options, assets, resultAssets, depth + 1))
     .filter(Boolean) as UINode[];
+
+  // Multi-row grid check: a grid wraps IF AND ONLY IF children count exceeds columns count
+  const cols = (l.gridTemplateColumns || "").trim();
+  const colTokens = cols && cols !== "none" ? cols.split(/\s+/) : [];
+  const numCols = colTokens.length || 1;
+  const numChildren = node.children?.length || 0;
+  const isMultiRowGrid = isGrid && numCols > 1 && numChildren > numCols;
+  const shouldWrap = (l.flexWrap === "wrap" || isMultiRowGrid) && direction === "HORIZONTAL";
 
   // ─── Assemble UINode ─────────────────────────────────────────
   const uiNode: UINode = {
@@ -290,7 +372,7 @@ function convertNode(
       paddingLeft:         l.paddingLeft   || 0,
       itemSpacing,
       alignment,
-      wrap:                (l.flexWrap === "wrap" || isGrid) && direction === "HORIZONTAL",
+      wrap:                shouldWrap,
       justifyContent:      l.justifyContent,
       alignItems:          l.alignItems,
       marginTop:           l.marginTop    || 0,
@@ -310,8 +392,8 @@ function convertNode(
       effects,
       cornerRadius,
       opacity:       node.style.opacity ?? 1.0,
-      clipsContent:  node.style.clipsContent,
-      visible:       node.style.visible,
+      clipsContent:  Boolean(node.style.clipsContent || (node.style.overflow || "").includes("hidden") || (node.style.overflow || "").includes("clip")),
+      visible:       node.style.visible !== false && !(height <= 4 && (node.style.clipsContent || (node.style.overflow || "").includes("hidden"))),
       position:      node.style.position || "static",
       zIndex:        node.style.zIndex   || 0,
     } as any,

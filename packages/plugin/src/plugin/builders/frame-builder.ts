@@ -161,20 +161,35 @@ export async function buildNodeTreeWithAutoLayout(
   configureAutoLayoutRecursively(figmaNode, node, null, pass2Context);
 
   // FINAL TEXT NORMALIZATION PASS (TEXT ONLY):
-  // Ensure single-line text nodes inside Auto Layout hug content, but PRESERVE wrapped multi-line text!
+  // Text nodes in VERTICAL Auto Layout containers should be FILL+HEIGHT (wraps to width).
+  // Text nodes in HORIZONTAL Auto Layout containers or root-level should be HUG+HUG.
+  // Do NOT change text that was already given FILL/FIXED sizing (those are correct).
   const normalizeTextNodes = (figmaChild: SceneNode) => {
     if (figmaChild.type === "TEXT") {
       const textNode = figmaChild as TextNode;
-      // Do NOT override multi-line wrapped text (HEIGHT auto-resize or FILL horizontal)
-      if (textNode.textAutoResize !== "HEIGHT" && (textNode as any).layoutSizingHorizontal !== "FILL") {
-        if ("layoutSizingHorizontal" in textNode && "layoutSizingVertical" in textNode) {
-          try {
-            textNode.layoutSizingHorizontal = "HUG";
-            textNode.layoutSizingVertical = "HUG";
-            textNode.textAutoResize = "WIDTH_AND_HEIGHT";
-          } catch (e) {
-            // Ignore if parent is not Auto Layout
-          }
+      const parentNode = textNode.parent as any;
+      const parentIsAL = parentNode && parentNode.layoutMode && parentNode.layoutMode !== "NONE";
+      const parentIsVertical = parentIsAL && parentNode.layoutMode === "HORIZONTAL" === false;
+      const alreadyFill = (textNode as any).layoutSizingHorizontal === "FILL";
+      const alreadyFixed = (textNode as any).layoutSizingHorizontal === "FIXED";
+      const alreadyHeight = textNode.textAutoResize === "HEIGHT";
+
+      if (alreadyFill || alreadyFixed || alreadyHeight) {
+        // Already correctly sized — ensure HEIGHT auto-resize for text that has FILL width
+        if (alreadyFill && textNode.textAutoResize !== "HEIGHT") {
+          try { textNode.textAutoResize = "HEIGHT"; } catch (_) {}
+        }
+        return;
+      }
+
+      // For short single-word labels, hug in both axes
+      if ("layoutSizingHorizontal" in textNode && "layoutSizingVertical" in textNode) {
+        try {
+          (textNode as any).layoutSizingHorizontal = "HUG";
+          (textNode as any).layoutSizingVertical = "HUG";
+          textNode.textAutoResize = "WIDTH_AND_HEIGHT";
+        } catch (e) {
+          // Ignore if parent is not Auto Layout
         }
       }
     }
@@ -222,6 +237,33 @@ function configureAutoLayoutRecursively(
     const isFlex = uiNode.layout?.direction !== "NONE";
 
     if (isFlex) {
+      // Reorder children to match their visual coordinates before turning on Auto Layout.
+      // In Figma, Auto Layout strictly orders children by array index, so DOM order
+      // discrepancies (such as CSS order, flex-direction reverse, or grid column placement)
+      // would otherwise swap rows or columns.
+      if ("children" in frame && frame.children.length > 1) {
+        if (uiNode.layout.wrap) {
+          // In 2D grids and flex-wrap containers, sort in row-major reading order: row first, then column
+          const sorted = [...frame.children].sort((a, b) => {
+            if (Math.abs(a.y - b.y) > 50) return a.y - b.y;
+            return a.x - b.x;
+          });
+          for (const c of sorted) {
+            frame.appendChild(c);
+          }
+        } else if (uiNode.layout.direction === "HORIZONTAL") {
+          const sorted = [...frame.children].sort((a, b) => a.x - b.x);
+          for (const c of sorted) {
+            frame.appendChild(c);
+          }
+        } else if (uiNode.layout.direction === "VERTICAL") {
+          const sorted = [...frame.children].sort((a, b) => a.y - b.y);
+          for (const c of sorted) {
+            frame.appendChild(c);
+          }
+        }
+      }
+
       frame.layoutMode = uiNode.layout.direction;
 
       frame.paddingTop = Math.max(0, uiNode.layout.paddingTop ?? 0);
@@ -237,11 +279,12 @@ function configureAutoLayoutRecursively(
       else if (jc === "space-between") primaryAlign = "SPACE_BETWEEN";
       frame.primaryAxisAlignItems = primaryAlign;
 
+      // BASELINE is only valid on HORIZONTAL frames in Figma; skip it for VERTICAL
       let counterAlign: "MIN" | "CENTER" | "MAX" | "BASELINE" = "MIN";
       const ai = (uiNode.layout as any).alignItems || "";
       if (ai === "center") counterAlign = "CENTER";
       else if (ai === "flex-end" || ai === "end") counterAlign = "MAX";
-      else if (ai === "baseline") counterAlign = "BASELINE";
+      else if (ai === "baseline" && frame.layoutMode === "HORIZONTAL") counterAlign = "BASELINE";
       try {
         frame.counterAxisAlignItems = counterAlign;
       } catch (err) {
@@ -250,6 +293,20 @@ function configureAutoLayoutRecursively(
 
       if (uiNode.layout.wrap) {
         safeSetLayoutWrap(frame, true);
+      }
+
+      // Check if child elements were horizontally centered in the browser (e.g. mx-auto container inside section)
+      if (frame.layoutMode === "VERTICAL" && frame.width >= 1000 && counterAlign === "MIN") {
+        const hasCenteredChild = uiNode.children?.some((c: any) => {
+          if (c.bounds.width > 0 && c.bounds.width < uiNode.bounds.width - 40) {
+            const expectedCenter = (uiNode.bounds.width - c.bounds.width) / 2;
+            return Math.abs(expectedCenter - c.bounds.x) < 25;
+          }
+          return false;
+        });
+        if (hasCenteredChild) {
+          frame.counterAxisAlignItems = "CENTER";
+        }
       }
 
       // Centered content & Grouped card row alignment mapping
@@ -273,21 +330,47 @@ function configureAutoLayoutRecursively(
         }
       }
     } else {
-      // Force Auto Layout vertical default for any container that contains flow children and has layoutMode = NONE
+      // Only force VERTICAL Auto Layout if the parent is already VERTICAL Auto Layout
+      // and this frame is a full-width block container that needs to pass sizing through.
+      // DO NOT force it on containers that the DOM didn't mark as flex — this causes
+      // items to stack when they should overlap or be independently positioned.
+      const parentFigmaNode = frame.parent as any;
+      const parentIsAL = parentFigmaNode && parentFigmaNode.layoutMode && parentFigmaNode.layoutMode !== "NONE";
       const children = frame.children;
-      const hasFlowChildren = children.some(child => {
+      const hasFlowChildren = children.some((child: any) => {
         return !("layoutPositioning" in child && (child as any).layoutPositioning === "ABSOLUTE");
       });
       const classification = classifyElement(uiNode, parentUiNode);
       const isAbsoluteOrDecorative = classification === "ABSOLUTE_CHILD" || classification === "DECORATIVE";
+      const isFullWidth = uiNode.bounds?.width >= 1200; // Only force on full-width website sections
 
-      if (hasFlowChildren && !isAbsoluteOrDecorative) {
+      if (hasFlowChildren && !isAbsoluteOrDecorative && parentIsAL && isFullWidth) {
+        if ("children" in frame && frame.children.length > 1) {
+          const sorted = [...frame.children].sort((a, b) => a.y - b.y);
+          for (const c of sorted) {
+            frame.appendChild(c);
+          }
+        }
         frame.layoutMode = "VERTICAL";
-        frame.itemSpacing = 8; // Default spacing
+        frame.itemSpacing = 0; // Website sections have no extra spacing — margins come from the DOM
         frame.paddingTop = 0;
         frame.paddingRight = 0;
         frame.paddingBottom = 0;
         frame.paddingLeft = 0;
+
+        // Check if child elements were horizontally centered in the browser (e.g. mx-auto container inside section)
+        if (frame.width >= 1000) {
+          const hasCenteredChild = uiNode.children?.some((c: any) => {
+            if (c.bounds.width > 0 && c.bounds.width < uiNode.bounds.width - 40) {
+              const expectedCenter = (uiNode.bounds.width - c.bounds.width) / 2;
+              return Math.abs(expectedCenter - c.bounds.x) < 25;
+            }
+            return false;
+          });
+          if (hasCenteredChild) {
+            frame.counterAxisAlignItems = "CENTER";
+          }
+        }
       }
     }
 
