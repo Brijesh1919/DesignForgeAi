@@ -87,10 +87,48 @@ figma.ui.onmessage = async (msg: UIToPluginMessage) => {
       figma.ui.resize(msg.payload.width, msg.payload.height);
       break;
 
+    case "GET_CANVAS_SELECTION":
+      handleGetCanvasSelection(msg.payload?.requestId);
+      break;
+
     default:
       break;
   }
 };
+
+function handleGetCanvasSelection(requestId?: string): void {
+  try {
+    const selection = figma.currentPage.selection;
+    const nodes = selection.map((node) => ({
+      id: node.id,
+      name: node.name,
+      type: node.type,
+      width: node.width,
+      height: node.height,
+      layoutMode: "layoutMode" in node ? (node as any).layoutMode : "NONE",
+      layoutSizingHorizontal: "layoutSizingHorizontal" in node ? (node as any).layoutSizingHorizontal : undefined,
+      layoutSizingVertical: "layoutSizingVertical" in node ? (node as any).layoutSizingVertical : undefined,
+      childrenCount: "children" in node ? (node as any).children.length : 0,
+    }));
+
+    figma.ui.postMessage({
+      type: "CANVAS_SELECTION_RESULT",
+      payload: {
+        requestId,
+        selection: nodes,
+      },
+    });
+  } catch (err: any) {
+    console.warn("[Controller] Failed to read canvas selection:", err);
+    figma.ui.postMessage({
+      type: "CANVAS_SELECTION_RESULT",
+      payload: {
+        requestId,
+        selection: [],
+      },
+    });
+  }
+}
 
 // Handle relaunch
 if (figma.command === "regenerate") {
@@ -110,6 +148,13 @@ async function handleGeneration(payload: {
   settings: PluginSettings;
 }) {
   const startTime = Date.now();
+
+  // Capture canvas selection immediately before any async operations
+  const currentSelection = figma.currentPage.selection;
+  const selectedFrame =
+    currentSelection.length === 1 && currentSelection[0].type === "FRAME"
+      ? (currentSelection[0] as FrameNode)
+      : null;
 
   const canonicalOptions: GenerationOptions = {
     createAutoLayout: payload.settings.createAutoLayout === true,
@@ -237,6 +282,8 @@ async function handleGeneration(payload: {
 
     const page = figma.currentPage;
 
+
+
     // STAGE 1: BASE_RENDER (Created FIRST and remains unchanged)
     console.log("[BASE_RENDER] Started");
     sendProgress("creating-nodes", "Building BASE_RENDER design tree...", 40);
@@ -320,21 +367,67 @@ Skipped ${counts.skipped} elements`);
     // Run post-generation fidelity validation pass
     validateFidelity(rootFrame, result);
 
-    // Step 7: Position and finalize
-    sendProgress("finalizing", "Finalizing design...", 90);
+    // If a frame was selected on the canvas, transfer the generated design into it
+    let finalNode: SceneNode = result;
+    if (selectedFrame && selectedFrame.type === "FRAME") {
+      console.log(`[Target Frame] Populating generated design directly into selected frame "${selectedFrame.name}" (${selectedFrame.id})`);
+      if (result.type === "FRAME") {
+        const frameResult = result as FrameNode;
+        selectedFrame.name = frameResult.name;
+        selectedFrame.resize(frameResult.width, frameResult.height);
+        selectedFrame.fills = frameResult.fills;
+        selectedFrame.strokes = frameResult.strokes;
+        selectedFrame.strokeWeight = frameResult.strokeWeight;
+        selectedFrame.strokeAlign = frameResult.strokeAlign;
+        selectedFrame.cornerRadius = frameResult.cornerRadius;
+        selectedFrame.effects = frameResult.effects;
+        selectedFrame.layoutMode = frameResult.layoutMode;
+        selectedFrame.primaryAxisSizingMode = frameResult.primaryAxisSizingMode;
+        selectedFrame.counterAxisSizingMode = frameResult.counterAxisSizingMode;
+        selectedFrame.primaryAxisAlignItems = frameResult.primaryAxisAlignItems;
+        selectedFrame.counterAxisAlignItems = frameResult.counterAxisAlignItems;
+        selectedFrame.paddingTop = frameResult.paddingTop;
+        selectedFrame.paddingRight = frameResult.paddingRight;
+        selectedFrame.paddingBottom = frameResult.paddingBottom;
+        selectedFrame.paddingLeft = frameResult.paddingLeft;
+        selectedFrame.itemSpacing = frameResult.itemSpacing;
+        selectedFrame.clipsContent = frameResult.clipsContent;
+
+        // Clear existing children from selected frame before transferring new children
+        const oldChildren = [...selectedFrame.children];
+        for (const oldChild of oldChildren) {
+          oldChild.remove();
+        }
+
+        const childrenToMove = [...frameResult.children];
+        for (const child of childrenToMove) {
+          selectedFrame.appendChild(child);
+        }
+        frameResult.remove();
+        finalNode = selectedFrame;
+      } else {
+        const oldChildren = [...selectedFrame.children];
+        for (const oldChild of oldChildren) {
+          oldChild.remove();
+        }
+        selectedFrame.appendChild(result);
+        finalNode = selectedFrame;
+      }
+    }
 
     // Set relaunch data on the root frame
-    if ("setRelaunchData" in result) {
-      (result as FrameNode).setRelaunchData({
+    if ("setRelaunchData" in finalNode) {
+      (finalNode as FrameNode).setRelaunchData({
         regenerate: "Regenerate this design with DesignForge AI",
       });
     }
 
-    // Zoom viewport to the result
-    figma.viewport.scrollAndZoomIntoView([result]);
+    // Zoom viewport to the result and keep selected
+    figma.currentPage.selection = [finalNode];
+    figma.viewport.scrollAndZoomIntoView([finalNode]);
 
     // Count nodes
-    const nodeCount = countNodes(result);
+    const nodeCount = countNodes(finalNode);
     const elapsed = Date.now() - startTime;
 
     // Save to history

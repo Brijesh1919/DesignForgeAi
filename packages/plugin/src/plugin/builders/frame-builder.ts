@@ -8,7 +8,7 @@
 import { hexToFigmaRGB, createSolidPaint } from "../utils/color-utils";
 import { buildTextNode } from "./text-builder";
 import { isComponentInstance } from "./component-builder";
-import { insertImage } from "./image-builder";
+import { insertImage, insertImageFromUrl } from "./image-builder";
 import { cssGradientToFigmaPaint } from "../utils/css-gradient-converter";
 import { renderSVGNode } from "../fidelity/svg";
 import { renderImageNode } from "../fidelity/images";
@@ -389,10 +389,10 @@ function configureAutoLayoutRecursively(
     // Sticky / fixed header scrolling wrapper configuration for the main page frame
     if (parentUiNode === null) {
       try {
-        // NOTE: We configure the root frame to be VERTICAL Auto Layout, anchored at MIN (top-left)
-        frame.layoutMode = "VERTICAL";
-        frame.primaryAxisSizingMode = "AUTO"; // HUG vertically
-        frame.counterAxisSizingMode = "FIXED"; // Width is fixed to source width (1440)
+        const isHorizontalRoot = uiNode.layout?.direction === "HORIZONTAL";
+        frame.layoutMode = isHorizontalRoot ? "HORIZONTAL" : "VERTICAL";
+        frame.primaryAxisSizingMode = isHorizontalRoot ? "FIXED" : "AUTO";
+        frame.counterAxisSizingMode = "FIXED";
         frame.primaryAxisAlignItems = "MIN";
         frame.counterAxisAlignItems = "MIN";
         frame.itemSpacing = 0;
@@ -762,9 +762,11 @@ export async function buildNodeTree(
   } else {
     figmaNode.name = node.name;
   }
-  figmaNode.visible = node.style.visible;
+  if (node.style?.visible === false) {
+    figmaNode.visible = false;
+  }
 
-  if ("opacity" in figmaNode) {
+  if ("opacity" in figmaNode && typeof node.style?.opacity === "number") {
     figmaNode.opacity = node.style.opacity;
   }
 
@@ -878,6 +880,10 @@ async function buildFrame(
   // Apply fills
   frame.fills = buildFills(node.style.fills);
 
+  if ((node as any).imageUrl) {
+    await insertImageFromUrl(frame, (node as any).imageUrl, context.debugMode);
+  }
+
   // Apply corner radius
   applyCornerRadius(frame, node.style.cornerRadius);
 
@@ -915,7 +921,9 @@ left: ${leftW}px ${firstStroke.color || ""}`);
   frame.effects = buildEffects(node.style.effects, node.name);
 
   // Clip content
-  frame.clipsContent = node.style.clipsContent;
+  if (node.style?.clipsContent === true) {
+    frame.clipsContent = true;
+  }
 
   // Set Auto Layout ONLY when:
   // 1. The node's layout direction is not NONE (i.e., flex container)
@@ -1079,6 +1087,8 @@ async function buildImageFrame(
   if (node.imageRef && context.imageAssets.has(node.imageRef)) {
     const imageData = context.imageAssets.get(node.imageRef)!;
     await insertImage(frame, imageData, context.debugMode);
+  } else if ((node as any).imageUrl) {
+    await insertImageFromUrl(frame, (node as any).imageUrl, context.debugMode);
   } else {
     console.log(`[ImageFallback] Missing image source: ${node.name || node.type}`);
     frame.fills = [createSolidPaint("#E0E0E0")];

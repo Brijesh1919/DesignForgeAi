@@ -54,6 +54,10 @@ export type UIToPluginMessage =
   | {
       type: "RESIZE_WINDOW";
       payload: { width: number; height: number };
+    }
+  | {
+      type: "GET_CANVAS_SELECTION";
+      payload?: { requestId?: string };
     };
 
 // ─── Plugin → UI Messages ────────────────────────────────────
@@ -85,6 +89,23 @@ export type PluginToUIMessage =
   | {
       type: "HISTORY_LOADED";
       payload: HistoryItem[];
+    }
+  | {
+      type: "CANVAS_SELECTION_RESULT";
+      payload: {
+        requestId?: string;
+        selection: Array<{
+          id: string;
+          name: string;
+          type: string;
+          width: number;
+          height: number;
+          layoutMode?: string;
+          layoutSizingHorizontal?: string;
+          layoutSizingVertical?: string;
+          childrenCount: number;
+        }>;
+      };
     }
   | {
       type: "NOTIFICATION";

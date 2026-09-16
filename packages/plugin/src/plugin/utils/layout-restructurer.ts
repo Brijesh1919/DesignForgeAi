@@ -54,8 +54,39 @@ export interface UINode {
  * Restructures absolute layout coordinates into structured vertical and horizontal Auto Layout.
  */
 export function restructureUINodeLayout(node: UINode): UINode {
+  if (!node) return node;
+
+  // Defensive initialization for bounds and layout
+  if (!node.bounds) {
+    node.bounds = { x: (node as any).x || 0, y: (node as any).y || 0, width: (node as any).width || 0, height: (node as any).height || 0 };
+  }
+  if (!node.layout) {
+    node.layout = {
+      direction: "NONE",
+      primaryAxisSizing: "HUG",
+      counterAxisSizing: "HUG",
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
+      itemSpacing: 0,
+      alignment: "TOP_LEFT",
+      wrap: false,
+    };
+  }
+  if (!node.childLayout) {
+    node.childLayout = { layoutAlign: "INHERIT", layoutGrow: 0 };
+  }
+
   if (!node.children || node.children.length === 0) {
     return node;
+  }
+
+  // Ensure all children have bounds
+  for (const child of node.children) {
+    if (child && !child.bounds) {
+      child.bounds = { x: (child as any).x || 0, y: (child as any).y || 0, width: (child as any).width || 0, height: (child as any).height || 0 };
+    }
   }
 
   // 1. Process children first (bottom-up traversal)

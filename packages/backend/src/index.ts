@@ -3,6 +3,7 @@
  */
 
 import express, { Express } from "express";
+import http from "http";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -15,9 +16,13 @@ import { healthRouter } from "./api/health.js";
 import { cacheRouter } from "./api/cache.js";
 import { debugRouter } from "./api/debug.js";
 import { websiteRouter } from "./api/website.js";
+import { bridgeRouter } from "./api/bridge.js";
+import { BridgeHub } from "./services/bridge/bridge-hub.js";
 import { errorHandler } from "./middleware/error-handler.js";
 
 const app: Express = express();
+const server = http.createServer(app);
+BridgeHub.getInstance().attach(server);
 
 // ─── Middleware ───────────────────────────────────────────────
 
@@ -68,6 +73,7 @@ app.use("/api", assetsRouter);
 app.use("/api", cacheRouter);
 app.use("/api", debugRouter);
 app.use("/api", websiteRouter);
+app.use("/api/bridge", bridgeRouter);
 
 // ─── Error Handler (must be last) ────────────────────────────
 
@@ -79,7 +85,7 @@ function getSDKVersion(): string {
 
 // ─── Start Server ────────────────────────────────────────────
 
-app.listen(config.PORT, async () => {
+server.listen(config.PORT, async () => {
   const sdkVersion = getSDKVersion();
   const backendUrl = `http://localhost:${config.PORT}`;
   const apiKeyStatus = config.OPENROUTER_API_KEY ? "CONFIGURED (hidden)" : "MISSING";

@@ -41,14 +41,18 @@ export function useFigmaMessages() {
         case "GENERATION_COMPLETE":
           setGenerationResult(msg.payload);
           setProcessing("complete", "Design generated!", 100);
-          setView("result");
+          if (useAppStore.getState().inputMode !== "agent-bridge") {
+            setView("result");
+          }
           break;
 
         case "GENERATION_ERROR":
           setError(msg.payload.message);
           setProcessing("error", msg.payload.message, 0);
           addToast("error", msg.payload.message);
-          setView("upload");
+          if (useAppStore.getState().inputMode !== "agent-bridge") {
+            setView("upload");
+          }
           break;
 
         case "SETTINGS_LOADED":

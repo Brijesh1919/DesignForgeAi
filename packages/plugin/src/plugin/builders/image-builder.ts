@@ -42,6 +42,48 @@ export async function insertImage(
 }
 
 /**
+ * Insert an image from a URL or base64 data URL into a frame as an image fill.
+ */
+export async function insertImageFromUrl(
+  frame: FrameNode | RectangleNode,
+  url: string,
+  debugMode?: boolean
+): Promise<void> {
+  if (!url || typeof url !== "string") return;
+
+  try {
+    let imageHash: string | undefined;
+
+    if (url.startsWith("data:")) {
+      const bytes = base64ToUint8Array(url);
+      const image = figma.createImage(bytes);
+      imageHash = image.hash;
+    } else {
+      const image = await (figma as any).createImageAsync(url);
+      imageHash = image.hash;
+    }
+
+    if (imageHash) {
+      frame.fills = [
+        {
+          type: "IMAGE",
+          imageHash: imageHash,
+          scaleMode: "FILL",
+        },
+      ];
+      if (debugMode) {
+        console.log(`Creating Image Fill from URL for "${frame.name}"... ✓`);
+      }
+    }
+  } catch (err) {
+    console.error(`Failed to insert image from URL (${url}): ${err}`);
+    if (debugMode) {
+      console.log(`Creating Image Fill from URL for "${frame.name}"... ❌\nReason: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+}
+
+/**
  * Convert a base64 string to a Uint8Array.
  */
 export function base64ToUint8Array(base64: string): Uint8Array {
