@@ -160,6 +160,14 @@ export async function runMcpServer(): Promise<void> {
           required: [],
         },
       },
+      {
+        name: "designforge_remove_bg",
+        description: "Removes the background from the currently selected image or layer in Figma, replacing it with a clean transparent cutout.",
+        inputSchema: {
+          type: "object",
+          properties: {},
+        },
+      },
     ];
 
     return { tools };
@@ -267,6 +275,19 @@ export async function runMcpServer(): Promise<void> {
               {
                 type: "text",
                 text: `🎨 **Design Applied in Figma!**\n\n- **Frame Name**: ${data?.frameName || "Custom Code Frame"}\n- **Nodes Created**: ${data?.nodesCreated || "All layers"}\n- **Status**: Design is now visible and editable in Figma.`,
+              },
+            ],
+          };
+        }
+
+        case "designforge_remove_bg": {
+          const data = await executeBridgeCommand("REMOVE_BACKGROUND", {});
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: `✂️ **Background Removed!**\n\n- **Target Layer**: ${data?.nodeName || "Selected Layer"}\n- **Status**: Background successfully removed and applied directly to the layer in Figma.`,
               },
             ],
           };

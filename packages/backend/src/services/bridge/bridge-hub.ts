@@ -9,7 +9,7 @@ import type { Server as HttpServer } from "http";
 
 export interface BridgeCommand {
   id: string;
-  type: "PING" | "EXECUTE_URL_TO_DESIGN" | "GET_CANVAS_SELECTION" | "EXECUTE_AI_PROMPT" | "EXECUTE_HTML_CSS";
+  type: "PING" | "EXECUTE_URL_TO_DESIGN" | "GET_CANVAS_SELECTION" | "EXECUTE_AI_PROMPT" | "EXECUTE_HTML_CSS" | "REMOVE_BACKGROUND";
   payload?: any;
   timestamp: number;
 }

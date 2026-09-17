@@ -17,7 +17,7 @@ import { generateStyles } from "./generators/style-generator";
 import { generateVariables } from "./generators/variable-generator";
 import { buildComponents } from "./builders/component-builder";
 import { buildNodeTree } from "./builders/frame-builder";
-import { processAssets } from "./builders/image-builder";
+import { processAssets, base64ToUint8Array } from "./builders/image-builder";
 import { validateFidelity } from "./utils/fidelity-validator";
 import {
   applyAutoLayout,
@@ -88,7 +88,15 @@ figma.ui.onmessage = async (msg: UIToPluginMessage) => {
       break;
 
     case "GET_CANVAS_SELECTION":
-      handleGetCanvasSelection(msg.payload?.requestId);
+      await handleGetCanvasSelection(msg.payload?.requestId);
+      break;
+
+    case "EXECUTE_REMOVE_BACKGROUND":
+      await handleRemoveBackground(msg.payload?.requestId, msg.payload?.nodeId);
+      break;
+
+    case "APPLY_REMOVE_BACKGROUND_RESULT":
+      await handleApplyRemoveBackgroundResult(msg.payload);
       break;
 
     default:
@@ -96,9 +104,17 @@ figma.ui.onmessage = async (msg: UIToPluginMessage) => {
   }
 };
 
-function handleGetCanvasSelection(requestId?: string): void {
+let lastGeneratedFrameId: string | null = null;
+
+async function handleGetCanvasSelection(requestId?: string): Promise<void> {
   try {
-    const selection = figma.currentPage.selection;
+    let selection = figma.currentPage.selection;
+    if (selection.length === 0 && lastGeneratedFrameId) {
+      const node = await figma.getNodeByIdAsync(lastGeneratedFrameId);
+      if (node && "type" in node && node.type === "FRAME") {
+        selection = [node as FrameNode];
+      }
+    }
     const nodes = selection.map((node) => ({
       id: node.id,
       name: node.name,
@@ -125,6 +141,122 @@ function handleGetCanvasSelection(requestId?: string): void {
       payload: {
         requestId,
         selection: [],
+      },
+    });
+  }
+}
+
+async function handleRemoveBackground(requestId?: string, nodeId?: string): Promise<void> {
+  try {
+    let targetNodes: SceneNode[] = [];
+    if (nodeId) {
+      const singleNode = (await figma.getNodeByIdAsync(nodeId)) as SceneNode;
+      if (singleNode) targetNodes.push(singleNode);
+    }
+    if (targetNodes.length === 0) {
+      targetNodes = [...figma.currentPage.selection];
+    }
+    if (targetNodes.length === 0) {
+      throw new Error("No layers selected. Please select one or more images or layers first.");
+    }
+
+    figma.notify(`Exporting ${targetNodes.length} layer(s) for background removal...`, { timeout: 2000 });
+
+    const items: Array<{ nodeId: string; nodeName: string; imageBase64: string }> = [];
+
+    for (const node of targetNodes) {
+      const bytes = await node.exportAsync({
+        format: "PNG",
+        constraint: { type: "SCALE", value: 1 },
+      });
+
+      let imageBase64 = "";
+      if (typeof (figma as any).base64Encode === "function") {
+        imageBase64 = (figma as any).base64Encode(bytes);
+      } else {
+        let binary = "";
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        imageBase64 = btoa(binary);
+      }
+
+      items.push({
+        nodeId: node.id,
+        nodeName: node.name,
+        imageBase64,
+      });
+    }
+
+    figma.ui.postMessage({
+      type: "REMOVE_BACKGROUND_EXPORT_READY",
+      payload: {
+        requestId,
+        items,
+        nodeId: items[0]?.nodeId,
+        nodeName: items[0]?.nodeName,
+        imageBase64: items[0]?.imageBase64,
+      },
+    });
+  } catch (err: any) {
+    console.error("[Controller] Remove background export failed:", err);
+    figma.ui.postMessage({
+      type: "REMOVE_BACKGROUND_RESULT",
+      payload: {
+        requestId,
+        success: false,
+        error: err.message || "Failed to export image",
+      },
+    });
+  }
+}
+
+async function handleApplyRemoveBackgroundResult(payload: {
+  requestId?: string;
+  nodeId?: string;
+  transparentBase64?: string;
+  results?: Array<{ nodeId: string; transparentBase64: string }>;
+}): Promise<void> {
+  try {
+    const list = payload.results || (payload.nodeId && payload.transparentBase64 ? [{ nodeId: payload.nodeId, transparentBase64: payload.transparentBase64 }] : []);
+    if (!list.length) throw new Error("No processed image data provided");
+
+    let updatedCount = 0;
+    for (const item of list) {
+      const node = (await figma.getNodeByIdAsync(item.nodeId)) as GeometryMixin & SceneNode;
+      if (node && "fills" in node && item.transparentBase64) {
+        const bytes = base64ToUint8Array(item.transparentBase64);
+        const newImage = figma.createImage(bytes);
+        node.fills = [
+          {
+            type: "IMAGE",
+            imageHash: newImage.hash,
+            scaleMode: "FIT",
+          },
+        ];
+        updatedCount++;
+      }
+    }
+
+    figma.notify(`✂️ Background removed from ${updatedCount} layer(s)!`, { timeout: 3500 });
+
+    figma.ui.postMessage({
+      type: "REMOVE_BACKGROUND_RESULT",
+      payload: {
+        requestId: payload.requestId,
+        success: true,
+        nodeName: `${updatedCount} layer(s)`,
+      },
+    });
+  } catch (err: any) {
+    console.error("[Controller] Failed to apply transparent image:", err);
+    figma.ui.postMessage({
+      type: "REMOVE_BACKGROUND_RESULT",
+      payload: {
+        requestId: payload.requestId,
+        success: false,
+        error: err.message || "Failed to apply image fill",
       },
     });
   }
@@ -415,6 +547,8 @@ Skipped ${counts.skipped} elements`);
       }
     }
 
+    lastGeneratedFrameId = finalNode.id;
+
     // Set relaunch data on the root frame
     if ("setRelaunchData" in finalNode) {
       (finalNode as FrameNode).setRelaunchData({
@@ -560,7 +694,7 @@ async function clearHistory() {
 
 async function zoomToNode(nodeId: string) {
   try {
-    const node = figma.getNodeById(nodeId);
+    const node = await figma.getNodeByIdAsync(nodeId);
     if (node && "type" in node) {
       // Ensure the page containing this node is loaded
       let parent = node.parent;

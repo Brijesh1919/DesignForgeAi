@@ -58,6 +58,19 @@ export type UIToPluginMessage =
   | {
       type: "GET_CANVAS_SELECTION";
       payload?: { requestId?: string };
+    }
+  | {
+      type: "EXECUTE_REMOVE_BACKGROUND";
+      payload?: { requestId?: string; nodeId?: string };
+    }
+  | {
+      type: "APPLY_REMOVE_BACKGROUND_RESULT";
+      payload: {
+        requestId?: string;
+        nodeId?: string;
+        transparentBase64?: string;
+        results?: Array<{ nodeId: string; transparentBase64: string }>;
+      };
     };
 
 // ─── Plugin → UI Messages ────────────────────────────────────
@@ -105,6 +118,25 @@ export type PluginToUIMessage =
           layoutSizingVertical?: string;
           childrenCount: number;
         }>;
+      };
+    }
+  | {
+      type: "REMOVE_BACKGROUND_EXPORT_READY";
+      payload: {
+        requestId?: string;
+        nodeId?: string;
+        nodeName?: string;
+        imageBase64?: string;
+        items?: Array<{ nodeId: string; nodeName: string; imageBase64: string }>;
+      };
+    }
+  | {
+      type: "REMOVE_BACKGROUND_RESULT";
+      payload: {
+        requestId?: string;
+        success: boolean;
+        nodeName?: string;
+        error?: string;
       };
     }
   | {

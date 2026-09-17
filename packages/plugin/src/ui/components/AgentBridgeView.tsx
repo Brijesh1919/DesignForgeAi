@@ -62,6 +62,15 @@ export const AgentBridgeView: React.FC = () => {
         }
       }
 
+      if (msg.type === "REMOVE_BACKGROUND_EXPORT_READY" || msg.type === "REMOVE_BACKGROUND_RESULT") {
+        const requestId = msg.payload?.requestId;
+        if (requestId && pendingRequestsRef.current.has(requestId)) {
+          const resolver = pendingRequestsRef.current.get(requestId)!;
+          pendingRequestsRef.current.delete(requestId);
+          resolver(msg.payload);
+        }
+      }
+
       if (msg.type === "GENERATION_COMPLETE") {
         const pendingKey = "CURRENT_GENERATION";
         if (pendingRequestsRef.current.has(pendingKey)) {
@@ -100,6 +109,9 @@ export const AgentBridgeView: React.FC = () => {
 
     ws.onclose = () => {
       setConnectionStatus("disconnected");
+      setTimeout(() => {
+        connectBridge();
+      }, 2500);
     };
 
     ws.onerror = () => {
@@ -246,7 +258,90 @@ export const AgentBridgeView: React.FC = () => {
             ws.send(JSON.stringify({ id, success: false, error: err.message }));
           }
           return;
-        }        if (type === "EXECUTE_HTML_CSS") {
+        }
+
+        if (type === "REMOVE_BACKGROUND") {
+          const logId = Math.random().toString(36).substring(2, 9);
+          addLog("Remove BG", "pending", "Exporting selected layer(s) from Figma...");
+
+          try {
+            // 1. Ask controller to export selected layer(s) as PNG base64
+            const exportResult = await new Promise<any>((resolve) => {
+              pendingRequestsRef.current.set(id, resolve);
+              sendMessage({ type: "EXECUTE_REMOVE_BACKGROUND", payload: { requestId: id } });
+              setTimeout(() => {
+                if (pendingRequestsRef.current.has(id)) {
+                  pendingRequestsRef.current.delete(id);
+                  resolve({ success: false, error: "Timed out waiting for layer export" });
+                }
+              }, 25000);
+            });
+
+            const items: Array<{ nodeId: string; nodeName: string; imageBase64: string }> =
+              exportResult.items || (exportResult.imageBase64 ? [exportResult] : []);
+
+            if (!items.length) {
+              throw new Error(exportResult?.error || "No layers selected or failed to export images");
+            }
+
+            updateLog(logId, "pending", `Removing background from ${items.length} layer(s) via AI...`);
+
+            // 2. Process all items with backend /api/assets/remove-bg
+            const results: Array<{ nodeId: string; transparentBase64: string }> = [];
+
+            for (let i = 0; i < items.length; i++) {
+              const item = items[i];
+              updateLog(logId, "pending", `Removing background ${i + 1}/${items.length}: "${item.nodeName}"...`);
+
+              const res = await fetch("http://localhost:3001/api/assets/remove-bg", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ imageBase64: item.imageBase64 }),
+              });
+              const data = await res.json();
+              if (data.success && data.transparentBase64) {
+                results.push({ nodeId: item.nodeId, transparentBase64: data.transparentBase64 });
+              }
+            }
+
+            if (!results.length) {
+              throw new Error("Background removal failed for all selected layers");
+            }
+
+            updateLog(logId, "pending", `Applying transparent cutouts to ${results.length} layer(s)...`);
+
+            // 3. Ask controller to apply transparent image fills
+            const applyResult = await new Promise<any>((resolve) => {
+              pendingRequestsRef.current.set(id, resolve);
+              sendMessage({
+                type: "APPLY_REMOVE_BACKGROUND_RESULT",
+                payload: {
+                  requestId: id,
+                  results,
+                },
+              });
+              setTimeout(() => {
+                if (pendingRequestsRef.current.has(id)) {
+                  pendingRequestsRef.current.delete(id);
+                  resolve({ success: false, error: "Timed out applying transparent images" });
+                }
+              }, 15000);
+            });
+
+            if (!applyResult || !applyResult.success) {
+              throw new Error(applyResult?.error || "Failed to apply transparent images");
+            }
+
+            updateLog(logId, "success", `Background removed from ${results.length} layer(s)!`);
+            ws.send(JSON.stringify({ id, success: true, data: { count: results.length } }));
+          } catch (err: any) {
+            updateLog(logId, "error", err.message);
+            ws.send(JSON.stringify({ id, success: false, error: err.message }));
+          }
+          return;
+        }
+
+        if (type === "EXECUTE_HTML_CSS") {
           const logId = Math.random().toString(36).substring(2, 9);
           addLog("Apply Code", "pending", "Rendering HTML/CSS design in Figma...");
 

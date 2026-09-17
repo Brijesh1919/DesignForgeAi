@@ -160,3 +160,66 @@ assetsRouter.post(
     }
   }
 );
+
+/**
+ * POST /api/assets/remove-bg
+ * Removes background from an input base64 image and returns transparent PNG base64.
+ */
+assetsRouter.post(
+  "/assets/remove-bg",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { imageBase64 } = req.body;
+      if (!imageBase64) {
+        throw new ValidationError("Missing imageBase64 in request body");
+      }
+
+      console.log(`[Assets] Removing background (input base64 length: ${imageBase64.length})...`);
+
+      const { spawn } = await import("child_process");
+      const path = await import("path");
+      const scriptPath = path.resolve(process.cwd(), "packages/backend/src/services/images/remove_bg.py");
+
+      const py = spawn("python", ["-u", scriptPath]);
+      let stdout = "";
+      let stderr = "";
+
+      py.stdout.on("data", (chunk) => {
+        stdout += chunk.toString();
+      });
+
+      py.stderr.on("data", (chunk) => {
+        stderr += chunk.toString();
+      });
+
+      const exitCode = await new Promise<number>((resolve) => {
+        py.on("close", resolve);
+        py.on("error", (err) => {
+          stderr += " " + err.message;
+          resolve(1);
+        });
+
+        // Strip data url prefix if needed and send to stdin
+        const cleanBase64 = imageBase64.includes(",") ? imageBase64.split(",")[1] : imageBase64;
+        py.stdin.write(cleanBase64);
+        py.stdin.end();
+      });
+
+      if (exitCode !== 0 || !stdout.trim()) {
+        console.error(`[Assets] Python remove_bg error: ${stderr}`);
+        throw new Error(`Background removal failed: ${stderr || "Process exited with error"}`);
+      }
+
+      const transparentBase64 = stdout.trim();
+      console.log(`[Assets] Background removed successfully! (Output length: ${transparentBase64.length})`);
+
+      res.json({
+        success: true,
+        transparentBase64,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
