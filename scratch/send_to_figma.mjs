@@ -2,17 +2,17 @@ import fs from "fs";
 import path from "path";
 
 async function main() {
-  const htmlPath = path.join("scratch", "portfolio_final.html");
+  const htmlPath = path.join("scratch", "visawala_mobile_page.html");
   const html = fs.readFileSync(htmlPath, "utf-8");
 
-  console.log(`Sending HTML (${html.length} bytes) to Figma bridge...`);
+  console.log(`Sending Mobile HTML (${html.length} bytes) to Figma bridge...`);
 
   const response = await fetch("http://localhost:3001/api/bridge/execute", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       type: "EXECUTE_HTML_CSS",
-      payload: { html, css: "", autoLayout: true },
+      payload: { html, css: "", autoLayout: true, width: 390 },
       timeoutMs: 120000,
     }),
   });

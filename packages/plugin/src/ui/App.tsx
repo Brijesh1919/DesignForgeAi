@@ -13,6 +13,7 @@ import { CodeWorkspace } from "./components/CodeWorkspace";
 import { GenerateAIView } from "./components/GenerateAIView";
 import { WebsiteUrlView } from "./components/WebsiteUrlView";
 import { AgentBridgeView } from "./components/AgentBridgeView";
+import { ExportCodeView } from "./components/ExportCodeView";
 import "./styles/theme.css";
 
 const ToastItem: React.FC<{ toast: any; onRemove: (id: string) => void }> = ({ toast, onRemove }) => {
@@ -64,10 +65,12 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (currentView === "upload" && (htmlContent || cssContent)) {
       sendMessage({ type: "RESIZE_WINDOW", payload: { width: 980, height: 720 } });
+    } else if (currentView === "upload" && inputMode === "export-code") {
+      // Handled internally by ExportCodeView
     } else {
       sendMessage({ type: "RESIZE_WINDOW", payload: { width: 380, height: 620 } });
     }
-  }, [currentView, htmlContent, cssContent, sendMessage]);
+  }, [currentView, htmlContent, cssContent, inputMode, sendMessage]);
 
   const handleSaveSettings = (newSettings: typeof settings) => {
     sendMessage({ type: "SAVE_SETTINGS", payload: newSettings });
@@ -91,9 +94,28 @@ export const App: React.FC = () => {
   return (
     <div className="app" data-theme={settings.theme === "system" ? "dark" : settings.theme}>
       <Header />
-      <main className="app__content" style={{ padding: "16px" }}>
+      <main
+        className="app__content"
+        style={{
+          padding: inputMode === "export-code" ? "10px 14px" : "16px",
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+          height: "calc(100vh - 48px)",
+          overflow: inputMode === "export-code" ? "hidden" : "auto",
+        }}
+      >
         {currentView === "upload" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: inputMode === "export-code" ? "8px" : "16px",
+              flex: 1,
+              height: "100%",
+              minHeight: 0,
+            }}
+          >
             {/* Input Mode Selector */}
             {(!htmlContent && !cssContent) && (
               <div
@@ -198,6 +220,25 @@ export const App: React.FC = () => {
                 >
                   🔌 Agent
                 </button>
+                <button
+                  id="tab-export-code"
+                  onClick={() => setInputMode("export-code")}
+                  style={{
+                    flex: 1,
+                    padding: "7px 2px",
+                    borderRadius: "6px",
+                    border: "none",
+                    background: inputMode === "export-code" ? "var(--accent-primary)" : "transparent",
+                    color: inputMode === "export-code" ? "#ffffff" : "var(--text-secondary)",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    fontSize: "10.5px",
+                    transition: "var(--transition-fast)",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  &lt;/&gt; Export
+                </button>
               </div>
             )}
 
@@ -222,6 +263,8 @@ export const App: React.FC = () => {
               <WebsiteUrlView />
             ) : inputMode === "agent-bridge" && !htmlContent && !cssContent ? (
               <AgentBridgeView />
+            ) : inputMode === "export-code" && !htmlContent && !cssContent ? (
+              <ExportCodeView />
             ) : selectedImage && (htmlContent || cssContent) ? (
               <div style={{ display: "flex", gap: "16px", height: "620px", width: "100%", overflow: "hidden" }}>
                 {/* Left Pane: Original Screenshot */}

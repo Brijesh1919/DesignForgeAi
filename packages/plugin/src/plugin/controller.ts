@@ -34,6 +34,7 @@ import { applyFidelityAdapter } from "./fidelity";
 import { restructureUINodeLayout } from "./utils/layout-restructurer";
 import { sanitizeFigmaLayoutTree } from "./utils/layout-validator";
 import { runLayoutEngineTests } from "./utils/layout-test-runner";
+import { generateCodeFromFigmaNode } from "./generators/figma-to-code";
 
 // ─── Plugin Init ─────────────────────────────────────────────
 
@@ -99,33 +100,60 @@ figma.ui.onmessage = async (msg: UIToPluginMessage) => {
       await handleApplyRemoveBackgroundResult(msg.payload);
       break;
 
+    case "EXECUTE_RECOLOR_THEME":
+      await handleRecolorTheme(msg.payload);
+      break;
+
+    case "EXPORT_FRAME_CODE":
+      await handleExportFrameCode(msg.payload?.requestId, msg.payload?.nodeId);
+      break;
+
     default:
       break;
   }
 };
 
+// Listen for selection changes on canvas and notify UI
+figma.on("selectionchange", () => {
+  handleGetCanvasSelection().catch((err) => console.warn("[Controller] selectionchange error:", err));
+});
+
 let lastGeneratedFrameId: string | null = null;
 
 async function handleGetCanvasSelection(requestId?: string): Promise<void> {
   try {
-    let selection = figma.currentPage.selection;
-    if (selection.length === 0 && lastGeneratedFrameId) {
-      const node = await figma.getNodeByIdAsync(lastGeneratedFrameId);
-      if (node && "type" in node && node.type === "FRAME") {
-        selection = [node as FrameNode];
+    let selection = [...figma.currentPage.selection];
+    if (selection.length === 0) {
+      const topFrames = figma.currentPage.children.filter((n) => n.type === "FRAME") as FrameNode[];
+      if (topFrames.length > 0) {
+        selection = [topFrames[topFrames.length - 1]];
       }
     }
-    const nodes = selection.map((node) => ({
-      id: node.id,
-      name: node.name,
-      type: node.type,
-      width: node.width,
-      height: node.height,
-      layoutMode: "layoutMode" in node ? (node as any).layoutMode : "NONE",
-      layoutSizingHorizontal: "layoutSizingHorizontal" in node ? (node as any).layoutSizingHorizontal : undefined,
-      layoutSizingVertical: "layoutSizingVertical" in node ? (node as any).layoutSizingVertical : undefined,
-      childrenCount: "children" in node ? (node as any).children.length : 0,
-    }));
+    function inspectNodeSummary(node: SceneNode, depth = 0, maxDepth = 2): any {
+      const summary: any = {
+        id: node.id,
+        name: node.name,
+        type: node.type,
+        width: Math.round(node.width),
+        height: Math.round(node.height),
+        layoutMode: "layoutMode" in node ? (node as any).layoutMode : "NONE",
+        layoutSizingHorizontal: "layoutSizingHorizontal" in node ? (node as any).layoutSizingHorizontal : undefined,
+        layoutSizingVertical: "layoutSizingVertical" in node ? (node as any).layoutSizingVertical : undefined,
+        childrenCount: "children" in node ? (node as any).children.length : 0,
+      };
+
+      if (node.type === "TEXT") {
+        summary.text = (node as TextNode).characters?.slice(0, 80);
+      }
+
+      if ("children" in node && depth < maxDepth) {
+        summary.children = (node as any).children.map((c: SceneNode) => inspectNodeSummary(c, depth + 1, maxDepth));
+      }
+
+      return summary;
+    }
+
+    const nodes = selection.map((node) => inspectNodeSummary(node, 0, 2));
 
     figma.ui.postMessage({
       type: "CANVAS_SELECTION_RESULT",
@@ -499,9 +527,10 @@ Skipped ${counts.skipped} elements`);
     // Run post-generation fidelity validation pass
     validateFidelity(rootFrame, result);
 
-    // If a frame was selected on the canvas, transfer the generated design into it
+    // If a frame was selected on the canvas, transfer the generated design into it (unless it's a mobile companion frame)
     let finalNode: SceneNode = result;
-    if (selectedFrame && selectedFrame.type === "FRAME") {
+    const isCompanionMobile = selectedFrame && selectedFrame.width > 1000 && result.width < 600;
+    if (selectedFrame && selectedFrame.type === "FRAME" && !isCompanionMobile) {
       console.log(`[Target Frame] Populating generated design directly into selected frame "${selectedFrame.name}" (${selectedFrame.id})`);
       if (result.type === "FRAME") {
         const frameResult = result as FrameNode;
@@ -545,6 +574,10 @@ Skipped ${counts.skipped} elements`);
         selectedFrame.appendChild(result);
         finalNode = selectedFrame;
       }
+    } else if (isCompanionMobile && selectedFrame) {
+      result.x = selectedFrame.x + selectedFrame.width + 80;
+      result.y = selectedFrame.y;
+      finalNode = result;
     }
 
     lastGeneratedFrameId = finalNode.id;
@@ -731,3 +764,357 @@ function sendProgress(stage: string, message: string, progress: number) {
 function sendMessage(msg: PluginToUIMessage) {
   figma.ui.postMessage(msg);
 }
+
+async function handleRecolorTheme(payload: { requestId?: string }): Promise<void> {
+  try {
+    let targetFrames: FrameNode[] = [];
+    const selection = figma.currentPage.selection;
+    for (const node of selection) {
+      if (node.type === "FRAME") targetFrames.push(node as FrameNode);
+    }
+    if (targetFrames.length === 0) {
+      const topFrames = figma.currentPage.children.filter((n) => n.type === "FRAME") as FrameNode[];
+      targetFrames = topFrames.filter(
+        (f) => f.name.includes("VisaWala") || f.width === 1440 || f.width === 390
+      );
+    }
+
+    if (targetFrames.length === 0) {
+      throw new Error("No frames found to update.");
+    }
+
+    // Color definitions for Visa Consultancy Color System
+    const cDeepNavy: RGB = { r: 11 / 255, g: 31 / 255, b: 58 / 255 };       // #0B1F3A
+    const cRoyalBlue: RGB = { r: 21 / 255, g: 94 / 255, b: 239 / 255 };      // #155EEF
+    const cSkyBlue: RGB = { r: 56 / 255, g: 189 / 255, b: 248 / 255 };       // #38BDF8
+    const cSoftOffWhite: RGB = { r: 247 / 255, g: 249 / 255, b: 252 / 255 }; // #F7F9FC
+    const cPureWhite: RGB = { r: 1, g: 1, b: 1 };                             // #FFFFFF
+    const cSlateText: RGB = { r: 100 / 255, g: 116 / 255, b: 139 / 255 };    // #64748B
+    const cLightBorder: RGB = { r: 220 / 255, g: 229 / 255, b: 240 / 255 };  // #DCE5F0
+    const cEmerald: RGB = { r: 18 / 255, g: 183 / 255, b: 106 / 255 };       // #12B76A
+    const cElevatedNavy: RGB = { r: 14 / 255, g: 39 / 255, b: 72 / 255 };    // #0E2748
+    const cDeepestNavy: RGB = { r: 6 / 255, g: 19 / 255, b: 36 / 255 };      // #061324
+    const cSoftSlate: RGB = { r: 148 / 255, g: 163 / 255, b: 184 / 255 };    // #94A3B8
+
+    function toHex(r: number, g: number, b: number): string {
+      const h = (v: number) => Math.round(Math.min(1, Math.max(0, v)) * 255).toString(16).padStart(2, "0");
+      return `#${h(r)}${h(g)}${h(b)}`.toLowerCase();
+    }
+
+    let nodesUpdated = 0;
+
+    function transformColor(orig: RGB, node: SceneNode, isStroke: boolean): RGB | null {
+      const hex = toHex(orig.r, orig.g, orig.b);
+
+      // 1. Orange / Red / Coral Accents
+      const isOrangeHue =
+        hex === "#ff4621" ||
+        hex === "#ff4b26" ||
+        hex === "#ff3b30" ||
+        hex === "#f44a22" ||
+        hex === "#ff5500" ||
+        hex === "#ff5a36" ||
+        hex === "#ea580c" ||
+        (orig.r > 0.8 && orig.g >= 0.15 && orig.g <= 0.48 && orig.b < 0.32);
+
+      if (isOrangeHue) {
+        if (node.type === "TEXT") {
+          const txt = (node as TextNode).characters?.trim() || "";
+          const parentName = node.parent?.name?.toLowerCase() || "";
+          const nodeName = node.name.toLowerCase();
+          if (
+            txt === "No Borders." ||
+            txt.includes(".com") ||
+            /^\+?\d+/.test(txt) ||
+            parentName.includes("badge") ||
+            parentName.includes("tag") ||
+            parentName.includes("eyebrow") ||
+            nodeName.includes("badge") ||
+            nodeName.includes("tag")
+          ) {
+            return cSkyBlue;
+          }
+          return cRoyalBlue;
+        }
+        const nodeName = node.name.toLowerCase();
+        if (nodeName.includes("tag") || nodeName.includes("badge") || nodeName.includes("highlight")) {
+          return cSkyBlue;
+        }
+        return cRoyalBlue;
+      }
+
+      // 2. Old Deep Black / Jet / Primary Dark Backgrounds (#0a0b0d)
+      if (hex === "#0a0b0d" || hex === "#08090b" || hex === "#000000" || hex === "#050505") {
+        return cDeepNavy;
+      }
+
+      // 3. Old Charcoal Cards (#111318, #12141a, #141311, #1a1816, #1e2029)
+      if (
+        hex === "#111318" ||
+        hex === "#12141a" ||
+        hex === "#141311" ||
+        hex === "#1a1816" ||
+        hex === "#1e2029" ||
+        hex === "#13161f"
+      ) {
+        return cElevatedNavy;
+      }
+
+      // 4. Old Deep Footer (#060709, #060505, #040507)
+      if (hex === "#060709" || hex === "#060505" || hex === "#040507") {
+        return cDeepestNavy;
+      }
+
+      // 5. Old Warm Chalk / Light Backgrounds (#f8f7f4, #f7f4ee, #f4f3f0, #faf9f6)
+      if (
+        hex === "#f8f7f4" ||
+        hex === "#f7f4ee" ||
+        hex === "#f4f3f0" ||
+        hex === "#faf9f6" ||
+        hex === "#f5f5f5"
+      ) {
+        return cSoftOffWhite;
+      }
+
+      // 6. Old Light Borders (#e2ddd5, #dcd7ce, #ede8e1, #e2ddd3, #ede8de, #e9e5de)
+      if (
+        hex === "#e2ddd5" ||
+        hex === "#dcd7ce" ||
+        hex === "#ede8e1" ||
+        hex === "#e2ddd3" ||
+        hex === "#ede8de" ||
+        hex === "#e9e5de" ||
+        hex === "#e5e7eb" ||
+        hex === "#e2e8f0"
+      ) {
+        return cLightBorder;
+      }
+
+      // 7. Old Muted Grey Text on Light (#555d6b, #636b78, #727a89, #5c574c, #767064, #6f788a, #475467)
+      if (
+        hex === "#555d6b" ||
+        hex === "#636b78" ||
+        hex === "#727a89" ||
+        hex === "#5c574c" ||
+        hex === "#767064" ||
+        hex === "#6f788a" ||
+        hex === "#475467" ||
+        hex === "#667085"
+      ) {
+        return cSlateText;
+      }
+
+      // 8. Old Muted Grey Text on Dark (#a6afc0, #929bb0, #8c93a0, #7d8596, #cfd4de, #a0a8b8, #8c867a, #9e978a)
+      if (
+        hex === "#a6afc0" ||
+        hex === "#929bb0" ||
+        hex === "#8c93a0" ||
+        hex === "#7d8596" ||
+        hex === "#cfd4de" ||
+        hex === "#a0a8b8" ||
+        hex === "#8c867a" ||
+        hex === "#9e978a"
+      ) {
+        return cSoftSlate;
+      }
+
+      // 9. Old Green Indicator (#00d084, #22c55e, #047857, #10b981)
+      if (hex === "#00d084" || hex === "#22c55e" || hex === "#047857" || hex === "#10b981") {
+        return cEmerald;
+      }
+
+      return null;
+    }
+
+    function processNode(node: SceneNode) {
+      if ("fills" in node && Array.isArray((node as any).fills)) {
+        const fills = [...((node as any).fills as Paint[])];
+        let changed = false;
+        const newFills = fills.map((f) => {
+          if (f.type === "SOLID") {
+            const next = transformColor(f.color, node, false);
+            if (next) {
+              changed = true;
+              return { ...f, color: next };
+            }
+          } else if (
+            f.type === "GRADIENT_LINEAR" ||
+            f.type === "GRADIENT_RADIAL" ||
+            f.type === "GRADIENT_ANGULAR" ||
+            f.type === "GRADIENT_DIAMOND"
+          ) {
+            let gradChanged = false;
+            const stops = f.gradientStops.map((stop) => {
+              const next = transformColor(stop.color, node, false);
+              if (next) {
+                gradChanged = true;
+                return { ...stop, color: { ...stop.color, r: next.r, g: next.g, b: next.b } };
+              }
+              return stop;
+            });
+            if (gradChanged) {
+              changed = true;
+              return { ...f, gradientStops: stops };
+            }
+          }
+          return f;
+        });
+        if (changed) {
+          (node as any).fills = newFills;
+          nodesUpdated++;
+        }
+      }
+
+      if ("strokes" in node && Array.isArray((node as any).strokes)) {
+        const strokes = [...((node as any).strokes as Paint[])];
+        let changed = false;
+        const newStrokes = strokes.map((s) => {
+          if (s.type === "SOLID") {
+            const next = transformColor(s.color, node, true);
+            if (next) {
+              changed = true;
+              return { ...s, color: next };
+            }
+          } else if (s.type === "GRADIENT_LINEAR" || s.type === "GRADIENT_RADIAL") {
+            let gradChanged = false;
+            const stops = s.gradientStops.map((stop) => {
+              const next = transformColor(stop.color, node, true);
+              if (next) {
+                gradChanged = true;
+                return { ...stop, color: { ...stop.color, r: next.r, g: next.g, b: next.b } };
+              }
+              return stop;
+            });
+            if (gradChanged) {
+              changed = true;
+              return { ...s, gradientStops: stops };
+            }
+          }
+          return s;
+        });
+        if (changed) {
+          (node as any).strokes = newStrokes;
+          nodesUpdated++;
+        }
+      }
+
+      if ("effects" in node && Array.isArray((node as any).effects)) {
+        const effects = [...((node as any).effects as Effect[])];
+        let changed = false;
+        const newEffects = effects.map((eff) => {
+          if ((eff.type === "DROP_SHADOW" || eff.type === "INNER_SHADOW") && eff.color) {
+            const next = transformColor(eff.color, node, false);
+            if (next) {
+              changed = true;
+              return { ...eff, color: { ...eff.color, r: next.r, g: next.g, b: next.b } };
+            }
+          }
+          return eff;
+        });
+        if (changed) {
+          (node as any).effects = newEffects;
+          nodesUpdated++;
+        }
+      }
+
+      if ("children" in node) {
+        for (const child of (node as any).children) {
+          processNode(child);
+        }
+      }
+    }
+
+    for (const frame of targetFrames) {
+      processNode(frame);
+    }
+
+    figma.notify(`✨ VisaWala.com color theme updated on ${nodesUpdated} properties across ${targetFrames.length} frames!`, {
+      timeout: 3500,
+    });
+
+    figma.ui.postMessage({
+      type: "RECOLOR_THEME_RESULT",
+      payload: {
+        requestId: payload.requestId,
+        success: true,
+        nodesUpdated,
+        framesCount: targetFrames.length,
+      },
+    });
+  } catch (err: any) {
+    console.error("[Controller] Recolor theme failed:", err);
+    figma.ui.postMessage({
+      type: "RECOLOR_THEME_RESULT",
+      payload: {
+        requestId: payload.requestId,
+        success: false,
+        error: err.message || "Failed to update colors",
+      },
+    });
+  }
+}
+
+async function handleExportFrameCode(requestId?: string, nodeId?: string): Promise<void> {
+  try {
+    let targetNode: SceneNode | null = null;
+    if (nodeId) {
+      targetNode = (await figma.getNodeByIdAsync(nodeId)) as SceneNode;
+    }
+    if (!targetNode && figma.currentPage.selection.length > 0) {
+      targetNode = figma.currentPage.selection[0];
+    }
+    if (!targetNode) {
+      const topFrames = figma.currentPage.children.filter((n) => n.type === "FRAME") as FrameNode[];
+      if (topFrames.length > 0) {
+        targetNode = topFrames[topFrames.length - 1];
+      }
+    }
+
+    if (!targetNode) {
+      throw new Error("No frame or layer selected. Please select a frame on the canvas first.");
+    }
+
+    figma.notify(`Extracting HTML & CSS from "${targetNode.name}"...`, { timeout: 2000 });
+
+    const codeResult = await generateCodeFromFigmaNode(targetNode);
+
+    figma.ui.postMessage({
+      type: "FRAME_CODE_EXPORTED",
+      payload: {
+        requestId,
+        success: true,
+        frameName: codeResult.frameName,
+        nodeId: codeResult.nodeId,
+        width: codeResult.width,
+        height: codeResult.height,
+        html: codeResult.html,
+        css: codeResult.css,
+        combinedHtml: codeResult.combinedHtml,
+        nodeCount: codeResult.nodeCount,
+        assets: codeResult.assets,
+      },
+    });
+
+    figma.notify(`✓ Extracted ${codeResult.nodeCount} layers to clean HTML & CSS!`, { timeout: 3000 });
+  } catch (err: any) {
+    console.error("[Controller] Failed to export frame code:", err);
+    figma.ui.postMessage({
+      type: "FRAME_CODE_EXPORTED",
+      payload: {
+        requestId,
+        success: false,
+        frameName: "",
+        nodeId: "",
+        width: 0,
+        height: 0,
+        html: "",
+        css: "",
+        combinedHtml: "",
+        nodeCount: 0,
+        error: err.message || "Failed to extract code from frame",
+      },
+    });
+    figma.notify(`❌ Export error: ${err.message || "Unknown error"}`, { error: true, timeout: 3500 });
+  }
+}
+

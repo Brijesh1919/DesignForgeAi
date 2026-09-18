@@ -223,10 +223,29 @@ export async function runMcpServer(): Promise<void> {
             };
           }
 
+          function formatNodeTree(node: any, indent = "   "): string {
+            let str = `- Dimensions: ${Math.round(node.width)} × ${Math.round(node.height)}, AL: \`${node.layoutMode || "NONE"}\`, Sizing: [H:\`${node.layoutSizingHorizontal || "FIXED"}\`, V:\`${node.layoutSizingVertical || "FIXED"}\`]\n`;
+            if (node.text) {
+              str += `${indent}- Text: "${node.text}"\n`;
+            }
+            if (node.children && node.children.length > 0) {
+              str += `${indent}- Children (${node.children.length}):\n`;
+              for (const child of node.children) {
+                str += `${indent}  • **${child.name}** (\`${child.type}\`, ${Math.round(child.width)}×${Math.round(child.height)}, AL: \`${child.layoutMode || "NONE"}\`${child.text ? `, "${child.text.slice(0, 30)}..."` : ""})\n`;
+                if (child.children && child.children.length > 0) {
+                  for (const grandchild of child.children) {
+                    str += `${indent}    - **${grandchild.name}** (\`${grandchild.type}\`, ${Math.round(grandchild.width)}×${Math.round(grandchild.height)}${grandchild.text ? `, "${grandchild.text.slice(0, 25)}..."` : ""})\n`;
+                  }
+                }
+              }
+            }
+            return str;
+          }
+
           const selectionList = data.selection
             .map(
               (node: any, idx: number) =>
-                `${idx + 1}. **${node.name}** (Type: \`${node.type}\`, ID: \`${node.id}\`)\n   - Dimensions: ${Math.round(node.width)} × ${Math.round(node.height)}\n   - Auto Layout Mode: \`${node.layoutMode || "NONE"}\`\n   - Sizing: H=\`${node.layoutSizingHorizontal || "FIXED"}\`, V=\`${node.layoutSizingVertical || "FIXED"}\`\n   - Children Count: ${node.childrenCount || 0}`
+                `${idx + 1}. **${node.name}** (Type: \`${node.type}\`, ID: \`${node.id}\`)\n${formatNodeTree(node, "   ")}`
             )
             .join("\n\n");
 

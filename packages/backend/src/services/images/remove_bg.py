@@ -1,4 +1,5 @@
 import sys
+import os
 import base64
 import io
 import numpy as np
@@ -7,7 +8,30 @@ from PIL import Image
 
 def main():
     try:
-        model_name = "u2net_human_seg"
+        # Check if arguments provided: python remove_bg.py <input_path> <output_path> [model_name]
+        if len(sys.argv) >= 3:
+            input_path = sys.argv[1]
+            output_path = sys.argv[2]
+            model_name = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] else "u2net"
+
+            input_img = Image.open(input_path)
+            session = new_session(model_name)
+
+            # High-precision alpha matting for silky-smooth animal fur and hair edges
+            output_img = remove(
+                input_img,
+                session=session,
+                alpha_matting=True,
+                alpha_matting_foreground_threshold=240,
+                alpha_matting_background_threshold=10,
+                alpha_matting_erode_size=10
+            )
+
+            output_img.save(output_path, format="PNG")
+            sys.exit(0)
+
+        # Stdin/Stdout mode
+        model_name = "u2net"
         if len(sys.argv) > 1 and sys.argv[1]:
             model_name = sys.argv[1]
 
@@ -22,18 +46,15 @@ def main():
         img_bytes = base64.b64decode(input_data)
         input_img = Image.open(io.BytesIO(img_bytes))
         
-        # Human segmentation model preserves the entire person (hair, face, torso, arms, clothes, legs)
         session = new_session(model_name)
-        output_img = remove(input_img, session=session)
-        
-        # Check if alpha channel has sufficient non-zero pixels
-        alpha = np.array(output_img)[:, :, 3]
-        visible_ratio = np.count_nonzero(alpha > 10) / alpha.size
-        
-        # If human_seg did not find a person (e.g. object/product image), fall back to general model
-        if visible_ratio < 0.02 and model_name == "u2net_human_seg":
-            fallback_session = new_session("u2netp")
-            output_img = remove(input_img, session=fallback_session)
+        output_img = remove(
+            input_img,
+            session=session,
+            alpha_matting=True,
+            alpha_matting_foreground_threshold=240,
+            alpha_matting_background_threshold=10,
+            alpha_matting_erode_size=10
+        )
         
         buffered = io.BytesIO()
         output_img.save(buffered, format="PNG")

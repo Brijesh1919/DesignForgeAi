@@ -62,7 +62,7 @@ export const AgentBridgeView: React.FC = () => {
         }
       }
 
-      if (msg.type === "REMOVE_BACKGROUND_EXPORT_READY" || msg.type === "REMOVE_BACKGROUND_RESULT") {
+      if (msg.type === "REMOVE_BACKGROUND_EXPORT_READY" || msg.type === "REMOVE_BACKGROUND_RESULT" || msg.type === "RECOLOR_THEME_RESULT") {
         const requestId = msg.payload?.requestId;
         if (requestId && pendingRequestsRef.current.has(requestId)) {
           const resolver = pendingRequestsRef.current.get(requestId)!;
@@ -334,6 +334,35 @@ export const AgentBridgeView: React.FC = () => {
 
             updateLog(logId, "success", `Background removed from ${results.length} layer(s)!`);
             ws.send(JSON.stringify({ id, success: true, data: { count: results.length } }));
+          } catch (err: any) {
+            updateLog(logId, "error", err.message);
+            ws.send(JSON.stringify({ id, success: false, error: err.message }));
+          }
+          return;
+        }
+
+        if (type === "RECOLOR_THEME") {
+          const logId = Math.random().toString(36).substring(2, 9);
+          addLog("Recolor Theme", "pending", "Applying new color theme to selected frames in Figma...");
+
+          try {
+            const recolorResult = await new Promise<any>((resolve) => {
+              pendingRequestsRef.current.set(id, resolve);
+              sendMessage({ type: "EXECUTE_RECOLOR_THEME", payload: { requestId: id, ...payload } });
+              setTimeout(() => {
+                if (pendingRequestsRef.current.has(id)) {
+                  pendingRequestsRef.current.delete(id);
+                  resolve({ success: false, error: "Timed out applying recolor theme" });
+                }
+              }, 30000);
+            });
+
+            if (!recolorResult || !recolorResult.success) {
+              throw new Error(recolorResult?.error || "Failed to recolor theme");
+            }
+
+            updateLog(logId, "success", `Theme updated on ${recolorResult.nodesUpdated || "selected"} layers!`);
+            ws.send(JSON.stringify({ id, success: true, data: recolorResult }));
           } catch (err: any) {
             updateLog(logId, "error", err.message);
             ws.send(JSON.stringify({ id, success: false, error: err.message }));

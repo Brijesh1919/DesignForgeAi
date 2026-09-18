@@ -71,6 +71,17 @@ export type UIToPluginMessage =
         transparentBase64?: string;
         results?: Array<{ nodeId: string; transparentBase64: string }>;
       };
+    }
+  | {
+      type: "EXECUTE_RECOLOR_THEME";
+      payload: { requestId?: string };
+    }
+  | {
+      type: "EXPORT_FRAME_CODE";
+      payload?: {
+        requestId?: string;
+        nodeId?: string;
+      };
     };
 
 // ─── Plugin → UI Messages ────────────────────────────────────
@@ -136,6 +147,38 @@ export type PluginToUIMessage =
         requestId?: string;
         success: boolean;
         nodeName?: string;
+        error?: string;
+      };
+    }
+  | {
+      type: "RECOLOR_THEME_RESULT";
+      payload: {
+        requestId?: string;
+        success: boolean;
+        nodesUpdated?: number;
+        framesCount?: number;
+        error?: string;
+      };
+    }
+  | {
+      type: "FRAME_CODE_EXPORTED";
+      payload: {
+        requestId?: string;
+        success: boolean;
+        frameName: string;
+        nodeId: string;
+        width: number;
+        height: number;
+        html: string;
+        css: string;
+        combinedHtml: string;
+        nodeCount: number;
+        assets?: Array<{
+          filename: string;
+          relativePath: string;
+          base64: string;
+          mimeType: string;
+        }>;
         error?: string;
       };
     }

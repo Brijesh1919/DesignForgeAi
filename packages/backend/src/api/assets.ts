@@ -178,15 +178,24 @@ assetsRouter.post(
 
       const { spawn } = await import("child_process");
       const path = await import("path");
+      const fs = await import("fs");
       const scriptPath = path.resolve(process.cwd(), "packages/backend/src/services/images/remove_bg.py");
 
-      const py = spawn("python", ["-u", scriptPath]);
-      let stdout = "";
-      let stderr = "";
+      // Ensure scratch directory exists
+      const scratchDir = path.resolve(process.cwd(), "scratch");
+      if (!fs.existsSync(scratchDir)) {
+        fs.mkdirSync(scratchDir, { recursive: true });
+      }
 
-      py.stdout.on("data", (chunk) => {
-        stdout += chunk.toString();
-      });
+      const uid = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      const inputPath = path.join(scratchDir, `in_${uid}.png`);
+      const outputPath = path.join(scratchDir, `out_${uid}.png`);
+
+      const cleanBase64 = imageBase64.includes(",") ? imageBase64.split(",")[1] : imageBase64;
+      fs.writeFileSync(inputPath, Buffer.from(cleanBase64, "base64"));
+
+      const py = spawn("python", ["-u", scriptPath, inputPath, outputPath, "u2net"]);
+      let stderr = "";
 
       py.stderr.on("data", (chunk) => {
         stderr += chunk.toString();
@@ -198,19 +207,23 @@ assetsRouter.post(
           stderr += " " + err.message;
           resolve(1);
         });
-
-        // Strip data url prefix if needed and send to stdin
-        const cleanBase64 = imageBase64.includes(",") ? imageBase64.split(",")[1] : imageBase64;
-        py.stdin.write(cleanBase64);
-        py.stdin.end();
       });
 
-      if (exitCode !== 0 || !stdout.trim()) {
+      if (exitCode !== 0 || !fs.existsSync(outputPath)) {
         console.error(`[Assets] Python remove_bg error: ${stderr}`);
+        try { if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath); } catch (e) {}
         throw new Error(`Background removal failed: ${stderr || "Process exited with error"}`);
       }
 
-      const transparentBase64 = stdout.trim();
+      const transparentBuffer = fs.readFileSync(outputPath);
+      const transparentBase64 = transparentBuffer.toString("base64");
+
+      // Cleanup temp files
+      try {
+        if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+        if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+      } catch (e) {}
+
       console.log(`[Assets] Background removed successfully! (Output length: ${transparentBase64.length})`);
 
       res.json({
