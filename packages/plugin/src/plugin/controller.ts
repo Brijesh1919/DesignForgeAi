@@ -112,6 +112,10 @@ figma.ui.onmessage = async (msg: UIToPluginMessage) => {
       await handleAdjustMobileLayout(msg.payload);
       break;
 
+    case "EXECUTE_ADD_PROTOTYPE_EFFECTS":
+      await handleAddPrototypeEffects(msg.payload);
+      break;
+
     default:
       break;
   }
@@ -182,9 +186,21 @@ async function handleGetCanvasSelection(requestId?: string, customMaxDepth = 10,
         itemSpacing: "itemSpacing" in node ? safeNumber((node as any).itemSpacing) : undefined,
       };
 
+      if ("reactions" in node && Array.isArray((node as any).reactions) && (node as any).reactions.length > 0) {
+        summary.reactions = (node as any).reactions.map((r: any) => ({
+          trigger: r.trigger ? { type: r.trigger.type } : undefined,
+          actions: Array.isArray(r.actions) ? r.actions.map((a: any) => ({ type: a.type, destinationId: a.destinationId, navigation: a.navigation })) : undefined,
+        }));
+      }
+
       if (node.type === "TEXT") {
         try {
-          summary.text = String((node as TextNode).characters || "").slice(0, 100);
+          const tn = node as TextNode;
+          summary.text = String(tn.characters || "").slice(0, 100);
+          summary.textAlignHorizontal = String(tn.textAlignHorizontal || "");
+          summary.fontSize = typeof tn.fontSize === "number" ? Math.round(tn.fontSize) : undefined;
+          summary.letterSpacing = tn.letterSpacing !== figma.mixed ? (tn.letterSpacing as any)?.value : "MIXED";
+          summary.fontName = tn.fontName !== figma.mixed ? `${(tn.fontName as FontName).family} ${(tn.fontName as FontName).style}` : "MIXED";
         } catch {}
       }
 
@@ -1182,6 +1198,7 @@ async function handleExportFrameCode(requestId?: string, nodeId?: string): Promi
   }
 }
 
+
 async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
   try {
     const requestId = payload.requestId;
@@ -1209,7 +1226,9 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
       }
       collectFrames(figma.currentPage);
       targetNode =
+        allFrames.find((f) => f.name === "Option 4") ||
         allFrames.find((f) => f.name === "Option 3") ||
+        allFrames.find((f) => f.name === "Option 2") ||
         allFrames.find((f) => f.name.includes("Mobile")) ||
         allFrames[allFrames.length - 1];
     }
@@ -1243,6 +1262,65 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
         try {
           const fallback: FontName = { family: "Inter", style: "Regular" };
           await figma.loadFontAsync(fallback);
+          return true;
+        } catch {
+          return false;
+        }
+      }
+    }
+
+    async function loadAndPrepareFont(textNode: TextNode): Promise<boolean> {
+      const fallback: FontName = { family: "Inter", style: "Regular" };
+      const fallbackBold: FontName = { family: "Inter", style: "Bold" };
+      const fallbackMedium: FontName = { family: "Inter", style: "Medium" };
+
+      await ensureFontLoaded(fallback);
+      await ensureFontLoaded(fallbackBold);
+      await ensureFontLoaded(fallbackMedium);
+
+      if (textNode.fontName === figma.mixed) {
+        try {
+          const segments = textNode.getStyledTextSegments(["fontName"]);
+          for (const seg of segments) {
+            if (seg.fontName) {
+              try {
+                await figma.loadFontAsync(seg.fontName);
+              } catch {
+                try {
+                  textNode.setRangeFontName(seg.start, seg.end, fallback);
+                } catch {}
+              }
+            }
+          }
+          return true;
+        } catch {
+          try {
+            textNode.setRangeFontName(0, textNode.characters.length, fallback);
+            return true;
+          } catch {
+            return false;
+          }
+        }
+      }
+
+      // Single font
+      const currentFont = textNode.fontName as FontName;
+      try {
+        await figma.loadFontAsync(currentFont);
+        return true;
+      } catch {
+        // Current font is missing / unloadable on client machine!
+        // We MUST replace it with Inter so Figma allows changing letterSpacing and fontSize!
+        try {
+          const styleStr = (currentFont.style || "").toLowerCase();
+          const targetStyle = styleStr.includes("bold") ? "Bold" : (styleStr.includes("medium") || styleStr.includes("semi") ? "Medium" : "Regular");
+          const chosenFallback: FontName = { family: "Inter", style: targetStyle };
+          try {
+            await figma.loadFontAsync(chosenFallback);
+            textNode.fontName = chosenFallback;
+          } catch {
+            textNode.fontName = fallback;
+          }
           return true;
         } catch {
           return false;
@@ -1316,21 +1394,22 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
     function createCloseIcon(): FrameNode {
       const icon = figma.createFrame();
       icon.name = "Close Icon";
-      icon.resize(24, 24);
+      icon.resize(36, 36);
       icon.fills = [];
       icon.layoutMode = "HORIZONTAL";
       icon.primaryAxisAlignItems = "CENTER";
       icon.counterAxisAlignItems = "CENTER";
       const txt = figma.createText();
       txt.characters = "✕";
-      txt.fontSize = 15;
-      txt.fills = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 0.7 }];
+      txt.fontSize = 18;
+      txt.letterSpacing = { value: 0, unit: "PIXELS" };
+      txt.fills = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 0.85 }];
       icon.appendChild(txt);
       return icon;
     }
 
-    async function createMobileNavDrawer(categoryLinks: string[], brandAccent: RGB = { r: 0.85, g: 0.35, b: 0.15 }): Promise<FrameNode> {
-      const drawer = figma.createFrame();
+    async function createMobileNavDrawer(categoryLinks: string[], brandAccent: RGB = { r: 0.85, g: 0.35, b: 0.15 }): Promise<{ drawer: ComponentNode; closeBtn: FrameNode; navItemRows: FrameNode[]; ctaBtn: FrameNode }> {
+      const drawer = figma.createComponent();
       drawer.name = "Mobile Navigation Drawer (Component)";
       drawer.resize(390, 100);
       drawer.fills = [{ type: "SOLID", color: { r: 0.08, g: 0.08, b: 0.09 }, opacity: 1 }];
@@ -1364,6 +1443,7 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
       titleText.fontName = { family: "Inter", style: "Bold" };
       titleText.characters = "Explore Products";
       titleText.fontSize = 16;
+      titleText.letterSpacing = { value: 0, unit: "PIXELS" };
       titleText.fills = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 0.95 }];
       headerRow.appendChild(titleText);
 
@@ -1379,11 +1459,12 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
       drawer.appendChild(div1);
 
       // List rows for each category
+      const navItemRows: FrameNode[] = [];
       const links = categoryLinks.length > 0 ? categoryLinks : ["Mugs", "Tumblers", "Water Bottles", "Coolers", "Accessories", "Customize", "B2B Bulk Orders"];
       for (const linkText of links) {
         const row = figma.createFrame();
         row.name = `Nav Item — ${linkText}`;
-        row.resize(358, 46);
+        row.resize(358, 48);
         row.fills = [];
         row.layoutMode = "HORIZONTAL";
         row.primaryAxisSizingMode = "FIXED";
@@ -1398,6 +1479,7 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
         rowText.fontName = { family: "Inter", style: "Medium" };
         rowText.characters = linkText;
         rowText.fontSize = 15;
+        rowText.letterSpacing = { value: 0, unit: "PIXELS" };
         rowText.fills = [{ type: "SOLID", color: { r: 0.9, g: 0.9, b: 0.9 }, opacity: 1 }];
         row.appendChild(rowText);
 
@@ -1406,10 +1488,12 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
         chevron.fontName = { family: "Inter", style: "Regular" };
         chevron.characters = "›";
         chevron.fontSize = 18;
+        chevron.letterSpacing = { value: 0, unit: "PIXELS" };
         chevron.fills = [{ type: "SOLID", color: { r: 0.5, g: 0.5, b: 0.5 }, opacity: 1 }];
         row.appendChild(chevron);
 
         drawer.appendChild(row);
+        navItemRows.push(row);
 
         const itemDiv = figma.createRectangle();
         itemDiv.name = "Divider";
@@ -1421,7 +1505,7 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
       // Drawer Bottom CTA
       const ctaBtn = figma.createFrame();
       ctaBtn.name = "Drawer CTA Button";
-      ctaBtn.resize(358, 46);
+      ctaBtn.resize(358, 48);
       ctaBtn.fills = [{ type: "SOLID", color: brandAccent, opacity: 1 }];
       ctaBtn.cornerRadius = 8;
       ctaBtn.layoutMode = "HORIZONTAL";
@@ -1435,14 +1519,15 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
       btnText.fontName = { family: "Inter", style: "Bold" };
       btnText.characters = "Request Custom Quote ↗";
       btnText.fontSize = 15;
+      btnText.letterSpacing = { value: 0, unit: "PIXELS" };
       btnText.fills = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 1 }];
       ctaBtn.appendChild(btnText);
       drawer.appendChild(ctaBtn);
 
-      return drawer;
+      return { drawer, closeBtn, navItemRows, ctaBtn };
     }
 
-    async function createMobileHeaderBar(logoNode: SceneNode | null): Promise<FrameNode> {
+    async function createMobileHeaderBar(logoNode: SceneNode | null): Promise<{ header: FrameNode; hamburger: FrameNode; menuBtn: FrameNode }> {
       const header = figma.createFrame();
       header.name = "Mobile Header Bar (56px)";
       header.resize(390, 56);
@@ -1483,12 +1568,13 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
         brandTxt.fontName = { family: "Inter", style: "Bold" };
         brandTxt.characters = "PELICAN";
         brandTxt.fontSize = 18;
+        brandTxt.letterSpacing = { value: 0, unit: "PIXELS" };
         brandTxt.fills = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 1 }];
         logoContainer.appendChild(brandTxt);
       }
       header.appendChild(logoContainer);
 
-      // Right: Action Group (Search + Bag + Hamburger)
+      // Right: Action Group (Search + Bag + Dedicated Menu Button)
       const actionGroup = figma.createFrame();
       actionGroup.name = "Header Actions";
       actionGroup.resize(110, 36);
@@ -1498,7 +1584,7 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
       actionGroup.counterAxisSizingMode = "AUTO";
       actionGroup.primaryAxisAlignItems = "MAX";
       actionGroup.counterAxisAlignItems = "CENTER";
-      actionGroup.itemSpacing = 16;
+      actionGroup.itemSpacing = 12;
 
       const searchBtn = figma.createFrame();
       searchBtn.name = "Search Action";
@@ -1530,11 +1616,21 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
       bagBtn.counterAxisAlignItems = "CENTER";
       actionGroup.appendChild(bagBtn);
 
+      // Dedicated Touch-Friendly List / Menu Button
+      const menuBtn = figma.createFrame();
+      menuBtn.name = "Menu Button (List Icon)";
+      menuBtn.resize(36, 36);
+      menuBtn.fills = [];
+      menuBtn.layoutMode = "HORIZONTAL";
+      menuBtn.primaryAxisAlignItems = "CENTER";
+      menuBtn.counterAxisAlignItems = "CENTER";
+
       const hamburger = createHamburgerIcon();
-      actionGroup.appendChild(hamburger);
+      menuBtn.appendChild(hamburger);
+      actionGroup.appendChild(menuBtn);
 
       header.appendChild(actionGroup);
-      return header;
+      return { header, hamburger, menuBtn };
     }
 
     // 1. Sort direct children by their Y position (or X if same row)
@@ -1609,7 +1705,7 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
       }
     }
 
-    // 4. Process Announcement Bar first if present
+    // 4. Process Announcement Bar first if present (Centered on mobile)
     if (announcementNode) {
       safeSetLayout(announcementNode);
       try {
@@ -1627,7 +1723,7 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
           bFrame.paddingRight = 12;
         } catch {}
         for (const c of bFrame.children) {
-          await formatBlock(c, targetWidth - 24);
+          await formatBlock(c, targetWidth - 24, true);
         }
       }
       targetNode.insertChild(0, announcementNode);
@@ -1635,70 +1731,196 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
       nodesAdjusted++;
     }
 
-    // 5. Replace Web Navigation with Mobile Header Bar & Drawer Component
+    // 5. Replace Web Navigation with Mobile Header Bar & Standalone Drawer Component
     if (navSectionNode) {
-      const mobileHeader = await createMobileHeaderBar(logoFound);
-      const mobileDrawer = await createMobileNavDrawer(categoryLinksFound);
+      const oldDrawers = figma.currentPage.children.filter(
+        (c) => c.name.includes("Mobile Navigation Drawer") && Math.abs(c.y - targetNode.y) < 600
+      );
+      for (const oldD of oldDrawers) {
+        try { oldD.remove(); } catch {}
+      }
+
+      const { header: mobileHeader, hamburger, menuBtn } = await createMobileHeaderBar(logoFound);
+      const { drawer: mobileDrawer, closeBtn, navItemRows, ctaBtn } = await createMobileNavDrawer(categoryLinksFound);
 
       const insertIndex = announcementNode ? 1 : 0;
       targetNode.insertChild(insertIndex, mobileHeader);
-      targetNode.insertChild(insertIndex + 1, mobileDrawer);
+
+      // Place mobileDrawer outside targetNode on canvas as a standalone reusable Component!
+      figma.currentPage.appendChild(mobileDrawer);
+      mobileDrawer.x = targetNode.x + targetNode.width + 60;
+      mobileDrawer.y = targetNode.y;
+
+      // Connect hamburger menu icon and menu button to open mobileDrawer as an overlay in prototype playing mode!
+      const openDrawerReaction = {
+        trigger: { type: "ON_CLICK" },
+        actions: [
+          {
+            type: "NODE",
+            destinationId: mobileDrawer.id,
+            navigation: "OVERLAY",
+            transition: {
+              type: "MOVE_IN",
+              direction: "TOP",
+              matchLayers: false,
+              duration: 0.3,
+              easing: { type: "EASE_OUT" },
+            },
+          },
+        ],
+        action: {
+          type: "NODE",
+          destinationId: mobileDrawer.id,
+          navigation: "OVERLAY",
+          transition: {
+            type: "MOVE_IN",
+            direction: "TOP",
+            matchLayers: false,
+            duration: 0.3,
+            easing: { type: "EASE_OUT" },
+          },
+        },
+      };
+
+      try {
+        await (menuBtn as any).setReactionsAsync([openDrawerReaction]);
+      } catch (err) {
+        console.warn("[Controller] Failed to set menuBtn reaction:", err);
+      }
+      try {
+        await (hamburger as any).setReactionsAsync([openDrawerReaction]);
+      } catch (err) {
+        console.warn("[Controller] Failed to set hamburger reaction:", err);
+      }
+      for (const bar of hamburger.children) {
+        try {
+          await (bar as any).setReactionsAsync([openDrawerReaction]);
+        } catch {}
+      }
+
+      // Connect close button to dismiss overlay
+      const closeReaction = {
+        trigger: { type: "ON_CLICK" },
+        actions: [
+          {
+            type: "BACK",
+          },
+        ],
+        action: {
+          type: "BACK",
+        },
+      };
+      try {
+        await (closeBtn as any).setReactionsAsync([closeReaction]);
+        for (const c of closeBtn.children) {
+          try { await (c as any).setReactionsAsync([closeReaction]); } catch {}
+        }
+      } catch (err) {
+        console.warn("[Controller] Failed to set closeBtn reaction:", err);
+      }
+
+      for (const row of navItemRows) {
+        try {
+          await (row as any).setReactionsAsync([closeReaction]);
+        } catch {}
+      }
+      try {
+        await (ctaBtn as any).setReactionsAsync([closeReaction]);
+      } catch {}
+
+      // Set current frame as prototype start node so pressing Play in Figma begins directly here
+      try {
+        figma.currentPage.prototypeStartNode = targetNode;
+      } catch {}
+
       try { navSectionNode.remove(); } catch {}
 
       sectionsAnalyzed.push({
         name: "Mobile Header & Drawer",
         type: "COMPONENT",
         role: "Mobile Navigation Component",
-        details: "Converted web header to 56px Mobile Header Bar (Logo + Hamburger Icon + Bag) and Collapsible Mobile Drawer Menu Component",
+        details: "Created 56px Mobile Header Bar with List/Menu icon wired to standalone Mobile Drawer Menu Component on canvas (Prototype Overlay ON_CLICK).",
       });
       nodesAdjusted += 10;
     }
 
-    // 6. Process remaining content sections
-    for (const section of [...targetNode.children]) {
-      if (section === announcementNode) continue;
-      if (section.name.includes("Mobile Header") || section.name.includes("Mobile Navigation Drawer")) continue;
+    // 6. Unpack main content wrapper if sections are nested in a single container
+    const rawChildren = [...targetNode.children].filter(
+      (c) => c !== announcementNode && !c.name.includes("Mobile Header") && !c.name.includes("Mobile Navigation Drawer")
+    );
+
+    const sectionsToFormat: SceneNode[] = [];
+    for (const child of rawChildren) {
+      if (
+        child.type === "FRAME" &&
+        (child as FrameNode).children.length >= 2 &&
+        child.height > 600
+      ) {
+        // This is a wrapper frame enclosing multiple sections!
+        const sectionKids = [...(child as FrameNode).children].sort((a, b) => (Math.abs(a.y - b.y) < 15 ? a.x - b.x : a.y - b.y));
+        for (const sk of sectionKids) {
+          targetNode.appendChild(sk);
+          sectionsToFormat.push(sk);
+        }
+        try { child.remove(); } catch {}
+      } else {
+        sectionsToFormat.push(child);
+      }
+    }
+
+    // Process each content section
+    for (let sIdx = 0; sIdx < sectionsToFormat.length; sIdx++) {
+      const section = sectionsToFormat[sIdx];
+      const secName = (section.name || "").toLowerCase();
+      safeSetLayout(section);
 
       if (section.type === "FRAME" || section.type === "INSTANCE" || section.type === "COMPONENT") {
-        const secName = section.name.toLowerCase();
-        safeSetLayout(section);
+        const contentFrame = section as FrameNode;
+        try {
+          contentFrame.resize(targetWidth, contentFrame.height);
+        } catch {}
 
-        if (section.type === "FRAME") {
-          const contentFrame = section as FrameNode;
-          try {
-            contentFrame.resize(targetWidth, contentFrame.height);
-          } catch {}
-
-          const kids = [...contentFrame.children].sort((a, b) => (Math.abs(a.y - b.y) < 15 ? a.x - b.x : a.y - b.y));
-          for (const k of kids) {
-            try { contentFrame.appendChild(k); } catch {}
-          }
-
-          try {
-            contentFrame.layoutMode = "VERTICAL";
-            contentFrame.primaryAxisSizingMode = "AUTO"; // Hug
-            contentFrame.counterAxisSizingMode = "FIXED"; // 390px
-            contentFrame.primaryAxisAlignItems = "MIN";
-            contentFrame.counterAxisAlignItems = "CENTER";
-            contentFrame.itemSpacing = sectionGap;
-            contentFrame.paddingLeft = 0;
-            contentFrame.paddingRight = 0;
-            contentFrame.paddingTop = 16;
-            contentFrame.paddingBottom = 28;
-            contentFrame.clipsContent = true;
-          } catch {}
-          nodesAdjusted++;
-
-          const isFooter = secName.includes("footer");
-          const isHero = secName.includes("hero") || (!isFooter && kids.some((k) => k.name.toLowerCase().includes("hero") || k.height > 350));
-          const role = isFooter ? "Footer Section" : isHero ? "Hero Section" : "Content / Showcase Section";
-
-          for (const card of kids) {
-            await formatBlock(card, contentWidth);
-          }
-
-          sectionsAnalyzed.push({ name: section.name, type: section.type, role, details: `Vertical Auto Layout (390px), ${kids.length} stacked blocks formatted` });
+        const kids = [...contentFrame.children].sort((a, b) => (Math.abs(a.y - b.y) < 15 ? a.x - b.x : a.y - b.y));
+        for (const k of kids) {
+          try { contentFrame.appendChild(k); } catch {}
         }
+
+        const isHero = sIdx === 0 || secName.includes("hero") || secName.includes("banner");
+        const isFooter = sIdx === sectionsToFormat.length - 1 || secName.includes("footer");
+        const isSteps = secName.includes("work") || secName.includes("step") || secName.includes("process");
+        const isStats = secName.includes("order") || secName.includes("stat") || secName.includes("unit");
+        const isFormSection = secName.includes("quote") || secName.includes("form") || secName.includes("contact");
+
+        // Mobile UI guidelines: Hero, Footer, Steps, Stats, and Section Intros default to CENTER
+        const shouldCenterSection = isHero || isFooter || isSteps || isStats;
+
+        try {
+          contentFrame.layoutMode = "VERTICAL";
+          contentFrame.primaryAxisSizingMode = "AUTO"; // Hug
+          contentFrame.counterAxisSizingMode = "FIXED"; // 390px
+          contentFrame.primaryAxisAlignItems = "MIN";
+          contentFrame.counterAxisAlignItems = "CENTER";
+          contentFrame.itemSpacing = sectionGap;
+          contentFrame.paddingLeft = 0;
+          contentFrame.paddingRight = 0;
+          contentFrame.paddingTop = 16;
+          contentFrame.paddingBottom = 28;
+          contentFrame.clipsContent = true;
+        } catch {}
+        nodesAdjusted++;
+
+        const role = isFooter ? "Footer Section" : isHero ? "Hero Section" : isFormSection ? "Form Section" : isSteps ? "Process / Steps Section" : "Content Showcase Section";
+
+        for (const card of kids) {
+          await formatBlock(card, contentWidth, shouldCenterSection);
+        }
+
+        sectionsAnalyzed.push({
+          name: section.name,
+          type: section.type,
+          role,
+          details: `Vertical Auto Layout (390px), ${kids.length} stacked blocks formatted (${shouldCenterSection ? "Center Aligned" : "Responsive Layout"})`,
+        });
       }
     }
 
@@ -1727,7 +1949,7 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
     }
 
     // Recursive helper to format cards, grids, buttons, icons, and text
-    async function formatBlock(node: SceneNode, maxWidth: number) {
+    async function formatBlock(node: SceneNode, maxWidth: number, centerAlign = false) {
       // 1. Icon Normalization
       if (isIconNode(node)) {
         nodesAdjusted++;
@@ -1814,6 +2036,23 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
 
         const children = "children" in frame && Array.isArray((frame as any).children) ? [...(frame as any).children] : [];
 
+        // Check if this container is an intro, hero, or section header that should be center-aligned
+        const fName = (frame.name || "").toLowerCase();
+        const isHero = fName.includes("hero") || fName.includes("banner");
+        const isHeaderOrIntro = fName.includes("header") || fName.includes("title") || fName.includes("intro") || fName.includes("badge") || fName.includes("tag");
+        const isFormRow = fName.includes("input") || fName.includes("field") || fName.includes("form") || fName.includes("dropdown") || fName.includes("message") || fName.includes("email") || fName.includes("quantity");
+        const isCard = fName.includes("card") || (hasVisualBackground && frameWidth < 300);
+
+        const isTextOnlyGroup = children.length >= 1 && children.every(c => c.type === "TEXT");
+        const hasLargeHeading = children.some(c => c.type === "TEXT" && typeof (c as TextNode).fontSize === "number" && (c as TextNode).fontSize >= 18);
+
+        let shouldCenterThis = centerAlign;
+        if (isFormRow) {
+          shouldCenterThis = false; // Form labels and input fields stay cleanly left-aligned!
+        } else if (isHero || isHeaderOrIntro || isTextOnlyGroup || (hasLargeHeading && !isCard)) {
+          shouldCenterThis = true;
+        }
+
         // Check if this frame is a button
         const isButton =
           frame.name.toLowerCase().includes("btn") ||
@@ -1838,13 +2077,20 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
             frame.paddingTop = 12;
             frame.paddingBottom = 12;
             frame.cornerRadius = 8;
+            if (shouldCenterThis || centerAlign) {
+              frame.layoutAlign = "INHERIT"; // centered in auto layout parent!
+            }
           } catch {}
           for (const c of children) {
             if (c.type === "TEXT") {
               const t = c as TextNode;
-              if (t.fontName !== figma.mixed) await ensureFontLoaded(t.fontName as FontName);
+              await loadAndPrepareFont(t);
               t.fontSize = Math.min(16, Math.max(14, typeof t.fontSize === "number" ? t.fontSize : 15));
               t.textAutoResize = "WIDTH_AND_HEIGHT";
+              t.textAlignHorizontal = "CENTER";
+              try {
+                t.letterSpacing = { value: 0, unit: "PIXELS" };
+              } catch {}
             }
           }
           return;
@@ -1888,7 +2134,7 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
               frame.layoutMode = "HORIZONTAL";
               frame.primaryAxisSizingMode = "AUTO";
               frame.counterAxisSizingMode = "AUTO";
-              frame.primaryAxisAlignItems = "MIN";
+              frame.primaryAxisAlignItems = shouldCenterThis ? "CENTER" : "MIN";
               frame.counterAxisAlignItems = "CENTER";
               frame.itemSpacing = 8;
             } else {
@@ -1898,7 +2144,7 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
               frame.primaryAxisSizingMode = "AUTO";
               frame.counterAxisSizingMode = "FIXED";
               frame.primaryAxisAlignItems = "MIN";
-              frame.counterAxisAlignItems = "MIN";
+              frame.counterAxisAlignItems = shouldCenterThis ? "CENTER" : "MIN";
 
               // Smart itemSpacing based on context
               const isFormGroup = children.length === 2 && children[0].type === "TEXT";
@@ -1921,34 +2167,82 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
         const innerMaxWidth = hasVisualBackground ? frameWidth - innerPad * 2 : frameWidth;
 
         for (const child of children) {
-          await formatBlock(child, innerMaxWidth);
+          await formatBlock(child, innerMaxWidth, shouldCenterThis);
         }
       } else if (workingNode.type === "TEXT") {
         const textNode = workingNode as TextNode;
         nodesAdjusted++;
 
-        const fontLoaded = textNode.fontName !== figma.mixed ? await ensureFontLoaded(textNode.fontName as FontName) : false;
-
         safeSetLayout(textNode, true);
 
-        if (fontLoaded && typeof textNode.fontSize === "number") {
-          // Responsive mobile typography scale
-          if (textNode.fontSize > 32) {
-            textNode.fontSize = Math.min(26, textNode.fontSize);
-            textNode.lineHeight = { value: 34, unit: "PIXELS" };
-          } else if (textNode.fontSize >= 22) {
-            textNode.fontSize = Math.min(19, textNode.fontSize);
-            textNode.lineHeight = { value: 25, unit: "PIXELS" };
-          } else if (textNode.fontSize >= 17) {
-            textNode.fontSize = Math.min(15, textNode.fontSize);
-            textNode.lineHeight = { value: 21, unit: "PIXELS" };
-          } else if (textNode.fontSize >= 14) {
-            textNode.fontSize = Math.min(13, textNode.fontSize);
-            textNode.lineHeight = { value: 18, unit: "PIXELS" };
+        // 1. Ensure fonts are loaded and replace any missing fonts so Figma allows updates
+        const fontReady = await loadAndPrepareFont(textNode);
+
+        if (fontReady) {
+          // 2. Mobile Typography: In mobile UI, negative letter spacing causes characters to stack/overlap.
+          // ALL negative letter spacing is strictly reset to 0px.
+          // In addition, all headings (fontSize >= 18) are reset to 0px letter spacing.
+          const isHeading = typeof textNode.fontSize === "number" && textNode.fontSize >= 18;
+          if (textNode.letterSpacing !== figma.mixed) {
+            const ls = textNode.letterSpacing as LetterSpacing;
+            if (isHeading || (ls && typeof ls.value === "number" && ls.value < 0)) {
+              try {
+                textNode.letterSpacing = { value: 0, unit: "PIXELS" };
+              } catch {}
+            }
+          } else {
+            try {
+              const segments = textNode.getStyledTextSegments(["letterSpacing", "fontSize"]);
+              for (const seg of segments) {
+                if (seg.fontSize >= 18 || (seg.letterSpacing && seg.letterSpacing.value < 0)) {
+                  textNode.setRangeLetterSpacing(seg.start, seg.end, { value: 0, unit: "PIXELS" });
+                }
+              }
+            } catch {
+              try {
+                textNode.setRangeLetterSpacing(0, textNode.characters.length, { value: 0, unit: "PIXELS" });
+              } catch {}
+            }
+          }
+
+          // 3. Responsive mobile typography scale
+          if (typeof textNode.fontSize === "number") {
+            if (textNode.fontSize > 36) {
+              textNode.fontSize = Math.min(26, textNode.fontSize);
+              textNode.lineHeight = { value: 34, unit: "PIXELS" };
+            } else if (textNode.fontSize >= 24) {
+              textNode.fontSize = Math.min(20, textNode.fontSize);
+              textNode.lineHeight = { value: 26, unit: "PIXELS" };
+            } else if (textNode.fontSize >= 17) {
+              textNode.fontSize = Math.min(15, textNode.fontSize);
+              textNode.lineHeight = { value: 21, unit: "PIXELS" };
+            } else if (textNode.fontSize >= 14) {
+              textNode.fontSize = Math.min(13, textNode.fontSize);
+              textNode.lineHeight = { value: 18, unit: "PIXELS" };
+            }
+
+            // Ensure line height prevents vertical multiline stacking
+            if (textNode.lineHeight !== figma.mixed) {
+              const lh = textNode.lineHeight as LineHeight;
+              if (lh.unit === "PIXELS" && lh.value < textNode.fontSize * 1.25) {
+                textNode.lineHeight = { value: Math.round(textNode.fontSize * 1.35), unit: "PIXELS" };
+              }
+            }
           }
         }
 
-        if (textNode.characters && textNode.characters.length <= 25 && textNode.width <= maxWidth) {
+        // Apply Center text alignment if requested by parent container or hero/intro, except for form fields
+        if (centerAlign) {
+          try {
+            textNode.textAlignHorizontal = "CENTER";
+          } catch {}
+        } else {
+          try {
+            textNode.textAlignHorizontal = "LEFT";
+          } catch {}
+        }
+
+        if (textNode.characters && textNode.characters.length <= 25 && textNode.width <= maxWidth && !centerAlign) {
           try {
             textNode.textAutoResize = "WIDTH_AND_HEIGHT";
           } catch {}
@@ -2004,4 +2298,602 @@ async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
     figma.notify(`❌ Layout adjustment error: ${err.message}`, { error: true, timeout: 4000 });
   }
 }
+
+async function handleAddPrototypeEffects(payload: any = {}): Promise<void> {
+  try {
+    const requestId = payload.requestId;
+    let targetNode: FrameNode | null = null;
+
+    if (payload.nodeId) {
+      targetNode = (await figma.getNodeByIdAsync(payload.nodeId)) as FrameNode;
+    }
+    if (!targetNode && figma.currentPage.selection.length > 0) {
+      const cand = figma.currentPage.selection[0];
+      if (cand.type === "FRAME") targetNode = cand as FrameNode;
+      else if ("parent" in cand && cand.parent && cand.parent.type === "FRAME") targetNode = cand.parent as FrameNode;
+    }
+    if (!targetNode) {
+      const allFrames: FrameNode[] = [];
+      function collectFrames(c: any) {
+        if (!c || !c.children) return;
+        for (const ch of c.children) {
+          if (ch.type === "FRAME") allFrames.push(ch);
+          if (ch.type === "SECTION" || ch.type === "GROUP") collectFrames(ch);
+        }
+      }
+      collectFrames(figma.currentPage);
+      targetNode =
+        allFrames.find((f) => f.name === "Option 4") ||
+        allFrames.find((f) => f.name === "Option 2") ||
+        allFrames.find((f) => f.name.includes("Mobile")) ||
+        allFrames[allFrames.length - 1];
+    }
+
+    if (!targetNode) {
+      throw new Error("No frame selected. Please select a mobile frame first.");
+    }
+
+    figma.notify(`⚡ Adding prototype animations and effects to "${targetNode.name}"...`, { timeout: 3500 });
+
+    let effectsAdded = 0;
+    const detailsList: string[] = [];
+
+    // 1. Prototype Flow Starting Point
+    try {
+      figma.currentPage.prototypeStartNode = targetNode;
+      effectsAdded++;
+      detailsList.push("Set prototype flow start point to mobile screen");
+    } catch {}
+
+    // 2. Vertical Scroll Overflow & Fixed Sticky Header Navigation
+    try {
+      targetNode.overflowDirection = "VERTICAL";
+      if (targetNode.children.length >= 2) {
+        const hasHeader = targetNode.children.some(c => c.name.includes("Header"));
+        if (hasHeader) {
+          targetNode.numberOfFixedChildren = 2; // Pinned Announcement + Header Bar to top
+          effectsAdded++;
+          detailsList.push("Pinned header navigation bar fixed to top during scroll");
+        }
+      }
+    } catch {}
+
+    // Helper: Recursively search for a node matching a predicate
+    function findNodeByPredicate(root: SceneNode, pred: (n: any) => boolean): SceneNode | null {
+      if (pred(root)) return root;
+      if ("children" in root && Array.isArray((root as any).children)) {
+        for (const ch of (root as any).children) {
+          const res = findNodeByPredicate(ch, pred);
+          if (res) return res;
+        }
+      }
+      return null;
+    }
+
+    function findAllNodesByPredicate(root: SceneNode, pred: (n: any) => boolean, acc: SceneNode[] = []): SceneNode[] {
+      if (pred(root)) acc.push(root);
+      if ("children" in root && Array.isArray((root as any).children)) {
+        for (const ch of (root as any).children) {
+          findAllNodesByPredicate(ch, pred, acc);
+        }
+      }
+      return acc;
+    }
+
+    // 3. Identify Sections in the Mobile UI Frame
+    const directChildren = [...targetNode.children];
+    const announcementBar = directChildren.find(c => (c.name || "").toLowerCase().includes("announc") || (c.height <= 45 && c.y < 50));
+    const headerBar = directChildren.find(c => c.name.includes("Header"));
+
+    // Content sections
+    const contentSections = directChildren.filter(c => c !== announcementBar && c !== headerBar);
+    const heroSection = contentSections[0];
+    const showcaseSection = contentSections[1] || contentSections.find(c => c.height > 1500);
+    const stepsSection = contentSections[2] || contentSections.find(c => (c.name || "").toLowerCase().includes("work"));
+    const statsSection = contentSections[3];
+    const quoteFormSection = contentSections.find(c => {
+      const hasQuote = findNodeByPredicate(c, n => n.type === "TEXT" && (n.characters || "").toLowerCase().includes("quote"));
+      return Boolean(hasQuote) && c !== heroSection;
+    }) || contentSections[contentSections.length - 2];
+    const footerSection = contentSections[contentSections.length - 1];
+
+    // 4. In-page Smooth Scroll Animation: Hero CTA -> Quote Form Section
+    if (heroSection && quoteFormSection) {
+      const heroCta = findNodeByPredicate(heroSection, n => {
+        if (n.type === "FRAME" && n.height >= 40 && n.height <= 64) {
+          const txt = findNodeByPredicate(n, cn => cn.type === "TEXT" && (cn.characters || "").toLowerCase().includes("quote"));
+          return Boolean(txt);
+        }
+        return false;
+      });
+
+      if (heroCta) {
+        const scrollReaction = {
+          trigger: { type: "ON_CLICK" },
+          actions: [
+            {
+              type: "NODE",
+              destinationId: quoteFormSection.id,
+              navigation: "SCROLL_TO",
+              transition: {
+                type: "SCROLL_ANIMATE",
+                duration: 0.55,
+                easing: { type: "EASE_OUT" },
+              },
+            },
+          ],
+          action: {
+            type: "NODE",
+            destinationId: quoteFormSection.id,
+            navigation: "SCROLL_TO",
+            transition: {
+              type: "SCROLL_ANIMATE",
+              duration: 0.55,
+              easing: { type: "EASE_OUT" },
+            },
+          },
+        };
+        try {
+          await (heroCta as any).setReactionsAsync([scrollReaction]);
+          effectsAdded++;
+          detailsList.push("Hero CTA 'get your custom quote': Smooth animated scroll to Quote Form");
+        } catch (err) {
+          console.warn("[Effects] Failed to wire hero CTA reaction:", err);
+        }
+      }
+    }
+
+    // 5. In-page Smooth Scroll Animation: Announcement Bar -> Drinkware Showcase
+    if (announcementBar && showcaseSection) {
+      const announceReaction = {
+        trigger: { type: "ON_CLICK" },
+        actions: [
+          {
+            type: "NODE",
+            destinationId: showcaseSection.id,
+            navigation: "SCROLL_TO",
+            transition: {
+              type: "SCROLL_ANIMATE",
+              duration: 0.5,
+              easing: { type: "EASE_OUT" },
+            },
+          },
+        ],
+        action: {
+          type: "NODE",
+          destinationId: showcaseSection.id,
+          navigation: "SCROLL_TO",
+          transition: {
+            type: "SCROLL_ANIMATE",
+            duration: 0.5,
+            easing: { type: "EASE_OUT" },
+          },
+        },
+      };
+      try {
+        await (announcementBar as any).setReactionsAsync([announceReaction]);
+        effectsAdded++;
+        detailsList.push("Announcement Bar: Smooth animated scroll to Drinkware Collection");
+      } catch (err) {
+        console.warn("[Effects] Failed to wire announcement reaction:", err);
+      }
+    }
+
+    // 6. Header Logo: Smooth animated scroll back to top (Hero)
+    if (headerBar && heroSection) {
+      const logo = findNodeByPredicate(headerBar, n => (n.name || "").toLowerCase().includes("logo"));
+      if (logo) {
+        const topReaction = {
+          trigger: { type: "ON_CLICK" },
+          actions: [
+            {
+              type: "NODE",
+              destinationId: heroSection.id,
+              navigation: "SCROLL_TO",
+              transition: {
+                type: "SCROLL_ANIMATE",
+                duration: 0.45,
+                easing: { type: "EASE_OUT" },
+              },
+            },
+          ],
+          action: {
+            type: "NODE",
+            destinationId: heroSection.id,
+            navigation: "SCROLL_TO",
+            transition: {
+              type: "SCROLL_ANIMATE",
+              duration: 0.45,
+              easing: { type: "EASE_OUT" },
+            },
+          },
+        };
+        try {
+          await (logo as any).setReactionsAsync([topReaction]);
+          effectsAdded++;
+          detailsList.push("Brand Logo: Smooth animated scroll back to top of screen");
+        } catch (err) {
+          console.warn("[Effects] Failed to wire logo reaction:", err);
+        }
+      }
+    }
+
+    // 7. Interactive Form Submission Effect: Quote Confirmation Toast Overlay
+    let toastComponent: ComponentNode | null = null;
+    const existingToasts = figma.currentPage.children.filter(c => c.name.includes("Quote Confirmation Toast"));
+    if (existingToasts.length > 0) {
+      toastComponent = existingToasts[0] as ComponentNode;
+    } else {
+      toastComponent = figma.createComponent();
+      toastComponent.name = "Quote Confirmation Toast (Component)";
+      toastComponent.resize(360, 110);
+      toastComponent.fills = [{ type: "SOLID", color: { r: 0.08, g: 0.08, b: 0.1 }, opacity: 0.98 }];
+      toastComponent.strokes = [{ type: "SOLID", color: { r: 0.2, g: 0.8, b: 0.4 }, opacity: 0.4 }];
+      toastComponent.strokeWeight = 1;
+      toastComponent.cornerRadius = 14;
+      toastComponent.layoutMode = "VERTICAL";
+      toastComponent.primaryAxisSizingMode = "AUTO";
+      toastComponent.counterAxisSizingMode = "FIXED";
+      toastComponent.primaryAxisAlignItems = "MIN";
+      toastComponent.counterAxisAlignItems = "CENTER";
+      toastComponent.itemSpacing = 8;
+      toastComponent.paddingLeft = 16;
+      toastComponent.paddingRight = 16;
+      toastComponent.paddingTop = 14;
+      toastComponent.paddingBottom = 16;
+
+      const tRow = figma.createFrame();
+      tRow.name = "Toast Row";
+      tRow.resize(328, 28);
+      tRow.fills = [];
+      tRow.layoutMode = "HORIZONTAL";
+      tRow.primaryAxisAlignItems = "SPACE_BETWEEN";
+      tRow.counterAxisAlignItems = "CENTER";
+
+      const titleTxt = figma.createText();
+      await figma.loadFontAsync({ family: "Inter", style: "Bold" });
+      titleTxt.fontName = { family: "Inter", style: "Bold" };
+      titleTxt.characters = "✓ Quote Request Received!";
+      titleTxt.fontSize = 15;
+      titleTxt.letterSpacing = { value: 0, unit: "PIXELS" };
+      titleTxt.fills = [{ type: "SOLID", color: { r: 0.2, g: 0.9, b: 0.5 }, opacity: 1 }];
+      tRow.appendChild(titleTxt);
+
+      const closeT = figma.createText();
+      await figma.loadFontAsync({ family: "Inter", style: "Regular" });
+      closeT.fontName = { family: "Inter", style: "Regular" };
+      closeT.characters = "✕";
+      closeT.fontSize = 15;
+      closeT.fills = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 0.6 }];
+      tRow.appendChild(closeT);
+      toastComponent.appendChild(tRow);
+
+      const subTxt = figma.createText();
+      subTxt.fontName = { family: "Inter", style: "Regular" };
+      subTxt.characters = "Our corporate team will review your order specs and reply within 1 business day.";
+      subTxt.fontSize = 13;
+      subTxt.lineHeight = { value: 18, unit: "PIXELS" };
+      subTxt.letterSpacing = { value: 0, unit: "PIXELS" };
+      subTxt.fills = [{ type: "SOLID", color: { r: 0.8, g: 0.8, b: 0.82 }, opacity: 1 }];
+      subTxt.resize(328, 36);
+      subTxt.textAutoResize = "HEIGHT";
+      toastComponent.appendChild(subTxt);
+
+      figma.currentPage.appendChild(toastComponent);
+      toastComponent.x = targetNode.x + targetNode.width + 60;
+      toastComponent.y = targetNode.y + 720;
+
+      try {
+        await (toastComponent as any).setReactionsAsync([
+          {
+            trigger: { type: "ON_CLICK" },
+            actions: [{ type: "BACK" }],
+            action: { type: "BACK" },
+          },
+        ]);
+      } catch {}
+    }
+
+    // Wire Form Submit Button to open this confirmation toast overlay!
+    if (quoteFormSection && toastComponent) {
+      const formSubmitBtn = findNodeByPredicate(quoteFormSection, n => {
+        if (n.type === "FRAME" && n.height >= 40 && n.height <= 64) {
+          const txt = findNodeByPredicate(n, cn => cn.type === "TEXT" && ((cn.characters || "").toLowerCase().includes("request") || (cn.characters || "").toLowerCase().includes("submit")));
+          return Boolean(txt);
+        }
+        return false;
+      });
+
+      if (formSubmitBtn) {
+        const submitReaction = {
+          trigger: { type: "ON_CLICK" },
+          actions: [
+            {
+              type: "NODE",
+              destinationId: toastComponent.id,
+              navigation: "OVERLAY",
+              transition: {
+                type: "MOVE_IN",
+                direction: "TOP",
+                matchLayers: false,
+                duration: 0.35,
+                easing: { type: "EASE_OUT" },
+              },
+            },
+          ],
+          action: {
+            type: "NODE",
+            destinationId: toastComponent.id,
+            navigation: "OVERLAY",
+            transition: {
+              type: "MOVE_IN",
+              direction: "TOP",
+              matchLayers: false,
+              duration: 0.35,
+              easing: { type: "EASE_OUT" },
+            },
+          },
+        };
+        try {
+          await (formSubmitBtn as any).setReactionsAsync([submitReaction]);
+          effectsAdded++;
+          detailsList.push("Form Submit Button: Opens animated Quote Confirmation Toast overlay");
+        } catch (err) {
+          console.warn("[Effects] Failed to wire form submit button:", err);
+        }
+      }
+    }
+
+    // 8. Product Cards "Explore ↗" buttons: Smooth scroll to Quote Form
+    if (showcaseSection && quoteFormSection) {
+      const exploreButtons = findAllNodesByPredicate(showcaseSection, n => {
+        if (n.type === "FRAME" && n.height < 40) {
+          const hasArrow = findNodeByPredicate(n, cn => cn.type === "TEXT" && (cn.characters || "").includes("↗"));
+          return Boolean(hasArrow);
+        }
+        return false;
+      });
+
+      for (const eb of exploreButtons) {
+        const ebReaction = {
+          trigger: { type: "ON_CLICK" },
+          actions: [
+            {
+              type: "NODE",
+              destinationId: quoteFormSection.id,
+              navigation: "SCROLL_TO",
+              transition: {
+                type: "SCROLL_ANIMATE",
+                duration: 0.55,
+                easing: { type: "EASE_OUT" },
+              },
+            },
+          ],
+          action: {
+            type: "NODE",
+            destinationId: quoteFormSection.id,
+            navigation: "SCROLL_TO",
+            transition: {
+              type: "SCROLL_ANIMATE",
+              duration: 0.55,
+              easing: { type: "EASE_OUT" },
+            },
+          },
+        };
+        try {
+          await (eb as any).setReactionsAsync([ebReaction]);
+          effectsAdded++;
+        } catch {}
+      }
+      if (exploreButtons.length > 0) {
+        detailsList.push(`Product Explore links: Smooth scroll to Quote Form (${exploreButtons.length} cards)`);
+      }
+    }
+
+    // 9. Wire Drawer Nav Items for In-Page Navigation & Menu Button Overlay
+    const drawerComponent = figma.currentPage.children.find(c => c.name.includes("Mobile Navigation Drawer")) as ComponentNode;
+    if (drawerComponent) {
+      // Connect Menu button / Hamburger in Header to open Drawer as top slide-in overlay
+      if (headerBar) {
+        const menuBtn = findNodeByPredicate(headerBar, n => (n.name || "").includes("Menu Button") || (n.name || "").includes("Hamburger"));
+        if (menuBtn) {
+          const openDrawerReaction = {
+            trigger: { type: "ON_CLICK" },
+            actions: [
+              {
+                type: "NODE",
+                destinationId: drawerComponent.id,
+                navigation: "OVERLAY",
+                transition: {
+                  type: "MOVE_IN",
+                  direction: "TOP",
+                  matchLayers: false,
+                  duration: 0.3,
+                  easing: { type: "EASE_OUT" },
+                },
+              },
+            ],
+            action: {
+              type: "NODE",
+              destinationId: drawerComponent.id,
+              navigation: "OVERLAY",
+              transition: {
+                type: "MOVE_IN",
+                direction: "TOP",
+                matchLayers: false,
+                duration: 0.3,
+                easing: { type: "EASE_OUT" },
+              },
+            },
+          };
+          try {
+            await (menuBtn as any).setReactionsAsync([openDrawerReaction]);
+            effectsAdded++;
+            detailsList.push("Menu / List Icon: Opens Mobile Navigation Drawer as top slide-down overlay");
+          } catch {}
+        }
+      }
+
+      // Connect Drawer close button to dismiss overlay
+      const drawerCloseBtn = findNodeByPredicate(drawerComponent, n => (n.name || "").toLowerCase().includes("close") || (n.name || "").includes("✕"));
+      if (drawerCloseBtn) {
+        try {
+          await (drawerCloseBtn as any).setReactionsAsync([
+            {
+              trigger: { type: "ON_CLICK" },
+              actions: [{ type: "BACK" }],
+              action: { type: "BACK" },
+            },
+          ]);
+          effectsAdded++;
+        } catch {}
+      }
+
+      const drawerNavItems = findAllNodesByPredicate(drawerComponent, n => (n.name || "").includes("Nav Item"));
+      for (const item of drawerNavItems) {
+        const itemText = (item.name || "").toLowerCase();
+        let targetDest = showcaseSection;
+        if (itemText.includes("custom") || itemText.includes("quote") || itemText.includes("b2b")) {
+          targetDest = quoteFormSection;
+        }
+
+        if (targetDest) {
+          const navReaction = {
+            trigger: { type: "ON_CLICK" },
+            actions: [
+              {
+                type: "NODE",
+                destinationId: targetDest.id,
+                navigation: "SCROLL_TO",
+                transition: {
+                  type: "SCROLL_ANIMATE",
+                  duration: 0.5,
+                  easing: { type: "EASE_OUT" },
+                },
+              },
+            ],
+            action: {
+              type: "NODE",
+              destinationId: targetDest.id,
+              navigation: "SCROLL_TO",
+              transition: {
+                type: "SCROLL_ANIMATE",
+                duration: 0.5,
+                easing: { type: "EASE_OUT" },
+              },
+            },
+          };
+          try {
+            await (item as any).setReactionsAsync([navReaction]);
+            effectsAdded++;
+          } catch {}
+        }
+      }
+
+      // Drawer CTA
+      const dCta = findNodeByPredicate(drawerComponent, n => (n.name || "").includes("Drawer CTA"));
+      if (dCta && quoteFormSection) {
+        const dCtaReaction = {
+          trigger: { type: "ON_CLICK" },
+          actions: [
+            {
+              type: "NODE",
+              destinationId: quoteFormSection.id,
+              navigation: "SCROLL_TO",
+              transition: {
+                type: "SCROLL_ANIMATE",
+                duration: 0.55,
+                easing: { type: "EASE_OUT" },
+              },
+            },
+          ],
+          action: {
+            type: "NODE",
+            destinationId: quoteFormSection.id,
+            navigation: "SCROLL_TO",
+            transition: {
+              type: "SCROLL_ANIMATE",
+              duration: 0.55,
+              easing: { type: "EASE_OUT" },
+            },
+          },
+        };
+        try {
+          await (dCta as any).setReactionsAsync([dCtaReaction]);
+          effectsAdded++;
+          detailsList.push("Drawer CTA: Smooth scroll to Quote Form");
+        } catch {}
+      }
+    }
+
+    // 10. Footer Back To Top
+    if (footerSection && heroSection) {
+      const footerLogoOrBtn = findNodeByPredicate(footerSection, n => {
+        const name = (n.name || "").toLowerCase();
+        return name.includes("logo") || name.includes("top") || name.includes("pelican");
+      });
+      if (footerLogoOrBtn) {
+        const backToTop = {
+          trigger: { type: "ON_CLICK" },
+          actions: [
+            {
+              type: "NODE",
+              destinationId: heroSection.id,
+              navigation: "SCROLL_TO",
+              transition: {
+                type: "SCROLL_ANIMATE",
+                duration: 0.6,
+                easing: { type: "EASE_OUT" },
+              },
+            },
+          ],
+          action: {
+            type: "NODE",
+            destinationId: heroSection.id,
+            navigation: "SCROLL_TO",
+            transition: {
+              type: "SCROLL_ANIMATE",
+              duration: 0.6,
+              easing: { type: "EASE_OUT" },
+            },
+          },
+        };
+        try {
+          await (footerLogoOrBtn as any).setReactionsAsync([backToTop]);
+          effectsAdded++;
+          detailsList.push("Footer: Smooth scroll back to top");
+        } catch {}
+      }
+    }
+
+    // Focus on targetNode in Figma
+    figma.currentPage.selection = [targetNode];
+    figma.viewport.scrollAndZoomIntoView([targetNode]);
+
+    figma.notify(`⚡ Prototype Animations & Effects Ready (${effectsAdded} interactions wired)! Press Play ▶ to test.`, { timeout: 4000 });
+
+    figma.ui.postMessage({
+      type: "ADD_PROTOTYPE_EFFECTS_RESULT",
+      payload: {
+        requestId,
+        success: true,
+        frameName: targetNode.name,
+        effectsAdded,
+        details: detailsList,
+      },
+    });
+  } catch (err: any) {
+    console.error("[Controller] Add prototype effects failed:", err);
+    figma.ui.postMessage({
+      type: "ADD_PROTOTYPE_EFFECTS_RESULT",
+      payload: {
+        requestId: payload?.requestId,
+        success: false,
+        error: err.message || "Failed to add prototype effects",
+      },
+    });
+    figma.notify(`❌ Prototype effects error: ${err.message}`, { error: true, timeout: 4000 });
+  }
+}
+
 

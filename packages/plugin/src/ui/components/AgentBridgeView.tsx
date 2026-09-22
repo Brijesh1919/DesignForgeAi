@@ -81,7 +81,8 @@ export const AgentBridgeView: React.FC = () => {
         msg.type === "REMOVE_BACKGROUND_EXPORT_READY" ||
         msg.type === "REMOVE_BACKGROUND_RESULT" ||
         msg.type === "RECOLOR_THEME_RESULT" ||
-        msg.type === "ADJUST_MOBILE_LAYOUT_RESULT"
+        msg.type === "ADJUST_MOBILE_LAYOUT_RESULT" ||
+        msg.type === "ADD_PROTOTYPE_EFFECTS_RESULT"
       ) {
         const requestId = msg.payload?.requestId;
         if (requestId && pendingRequestsRef.current.has(requestId)) {
@@ -898,6 +899,42 @@ export const AgentBridgeView: React.FC = () => {
           return;
         }
 
+        if (type === "ADD_PROTOTYPE_EFFECTS") {
+          if (isBusyRef.current) {
+            ws.send(JSON.stringify({ id, success: false, error: "Figma is currently busy. Please wait." }));
+            return;
+          }
+          isBusyRef.current = true;
+          const logId = Math.random().toString(36).substring(2, 9);
+          addLogRef.current("Prototype Effects", "pending", "Adding prototype animations and interactive effects...");
+
+          try {
+            const effectsResult = await new Promise<any>((resolve) => {
+              pendingRequestsRef.current.set(id, resolve);
+              sendMessageRef.current({ type: "EXECUTE_ADD_PROTOTYPE_EFFECTS", payload: { requestId: id, ...payload } });
+              setTimeout(() => {
+                if (pendingRequestsRef.current.has(id)) {
+                  pendingRequestsRef.current.delete(id);
+                  resolve({ success: false, error: "Timed out adding prototype effects" });
+                }
+              }, 40000);
+            });
+
+            if (!effectsResult || !effectsResult.success) {
+              throw new Error(effectsResult?.error || "Failed to add prototype effects");
+            }
+
+            updateLogRef.current(logId, "success", `Prototype effects ready: ${effectsResult.effectsAdded || 0} interactions wired!`);
+            ws.send(JSON.stringify({ id, success: true, data: effectsResult }));
+          } catch (err: any) {
+            updateLogRef.current(logId, "error", err.message);
+            ws.send(JSON.stringify({ id, success: false, error: err.message }));
+          } finally {
+            isBusyRef.current = false;
+          }
+          return;
+        }
+
         // Unknown command
         ws.send(JSON.stringify({ id, success: false, error: `Unsupported command: ${type}` }));
       } catch (err) {
@@ -1026,6 +1063,27 @@ export const AgentBridgeView: React.FC = () => {
             title="Convert selected frame to responsive Mobile UI (390px)"
           >
             📱 Mobile UI (390px)
+          </button>
+          <button
+            onClick={() => {
+              sendMessageRef.current({
+                type: "EXECUTE_ADD_PROTOTYPE_EFFECTS",
+                payload: { requestId: Math.random().toString(36).substring(2, 9) },
+              });
+            }}
+            style={{
+              padding: "5px 10px",
+              fontSize: "11px",
+              fontWeight: 600,
+              background: "#6366f1",
+              border: "none",
+              borderRadius: "6px",
+              color: "#ffffff",
+              cursor: "pointer",
+            }}
+            title="Add animations, sticky header, smooth scrolling, and effects to mobile prototype"
+          >
+            ✨ Prototype Effects
           </button>
           <button
             onClick={testPing}

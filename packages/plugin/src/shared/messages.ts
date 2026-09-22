@@ -97,6 +97,13 @@ export type UIToPluginMessage =
         buttonHeight?: number;
         maxTitleFontSize?: number;
       };
+    }
+  | {
+      type: "EXECUTE_ADD_PROTOTYPE_EFFECTS";
+      payload?: {
+        requestId?: string;
+        nodeId?: string;
+      };
     };
 
 // ─── Plugin → UI Messages ────────────────────────────────────
@@ -205,6 +212,17 @@ export type PluginToUIMessage =
         frameName?: string;
         nodesAdjusted?: number;
         details?: string;
+        error?: string;
+      };
+    }
+  | {
+      type: "ADD_PROTOTYPE_EFFECTS_RESULT";
+      payload: {
+        requestId?: string;
+        success: boolean;
+        frameName?: string;
+        effectsAdded?: number;
+        details?: string[];
         error?: string;
       };
     }
