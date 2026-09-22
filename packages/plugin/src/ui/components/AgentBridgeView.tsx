@@ -82,7 +82,8 @@ export const AgentBridgeView: React.FC = () => {
         msg.type === "REMOVE_BACKGROUND_RESULT" ||
         msg.type === "RECOLOR_THEME_RESULT" ||
         msg.type === "ADJUST_MOBILE_LAYOUT_RESULT" ||
-        msg.type === "ADD_PROTOTYPE_EFFECTS_RESULT"
+        msg.type === "ADD_PROTOTYPE_EFFECTS_RESULT" ||
+        msg.type === "CREATE_CAROUSEL_COMPONENT_RESULT"
       ) {
         const requestId = msg.payload?.requestId;
         if (requestId && pendingRequestsRef.current.has(requestId)) {
@@ -935,6 +936,42 @@ export const AgentBridgeView: React.FC = () => {
           return;
         }
 
+        if (type === "CREATE_CAROUSEL_COMPONENT") {
+          if (isBusyRef.current) {
+            ws.send(JSON.stringify({ id, success: false, error: "Figma is currently busy. Please wait." }));
+            return;
+          }
+          isBusyRef.current = true;
+          const logId = Math.random().toString(36).substring(2, 9);
+          addLogRef.current("Carousel Component", "pending", "Creating interactive square product carousel...");
+
+          try {
+            const carouselResult = await new Promise<any>((resolve) => {
+              pendingRequestsRef.current.set(id, resolve);
+              sendMessageRef.current({ type: "EXECUTE_CREATE_CAROUSEL_COMPONENT", payload: { requestId: id, ...payload } });
+              setTimeout(() => {
+                if (pendingRequestsRef.current.has(id)) {
+                  pendingRequestsRef.current.delete(id);
+                  resolve({ success: false, error: "Timed out creating carousel component" });
+                }
+              }, 40000);
+            });
+
+            if (!carouselResult || !carouselResult.success) {
+              throw new Error(carouselResult?.error || "Failed to create carousel component");
+            }
+
+            updateLogRef.current(logId, "success", `Square carousel component ready (${carouselResult.slideCount || 4} slides)!`);
+            ws.send(JSON.stringify({ id, success: true, data: carouselResult }));
+          } catch (err: any) {
+            updateLogRef.current(logId, "error", err.message);
+            ws.send(JSON.stringify({ id, success: false, error: err.message }));
+          } finally {
+            isBusyRef.current = false;
+          }
+          return;
+        }
+
         // Unknown command
         ws.send(JSON.stringify({ id, success: false, error: `Unsupported command: ${type}` }));
       } catch (err) {
@@ -1084,6 +1121,27 @@ export const AgentBridgeView: React.FC = () => {
             title="Add animations, sticky header, smooth scrolling, and effects to mobile prototype"
           >
             ✨ Prototype Effects
+          </button>
+          <button
+            onClick={() => {
+              sendMessageRef.current({
+                type: "EXECUTE_CREATE_CAROUSEL_COMPONENT",
+                payload: { requestId: Math.random().toString(36).substring(2, 9), squareSize: 320 },
+              });
+            }}
+            style={{
+              padding: "5px 10px",
+              fontSize: "11px",
+              fontWeight: 600,
+              background: "#ec4899",
+              border: "none",
+              borderRadius: "6px",
+              color: "#ffffff",
+              cursor: "pointer",
+            }}
+            title="Convert selected frame of 4 images into an interactive single square product carousel"
+          >
+            🎠 Product Carousel
           </button>
           <button
             onClick={testPing}

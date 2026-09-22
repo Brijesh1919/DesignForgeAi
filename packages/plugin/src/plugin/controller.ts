@@ -116,6 +116,10 @@ figma.ui.onmessage = async (msg: UIToPluginMessage) => {
       await handleAddPrototypeEffects(msg.payload);
       break;
 
+    case "EXECUTE_CREATE_CAROUSEL_COMPONENT":
+      await handleCreateCarouselComponent(msg.payload);
+      break;
+
     default:
       break;
   }
@@ -2896,4 +2900,490 @@ async function handleAddPrototypeEffects(payload: any = {}): Promise<void> {
   }
 }
 
+async function handleCreateCarouselComponent(payload: any = {}): Promise<void> {
+  try {
+    const requestId = payload.requestId;
+    let targetNode: FrameNode | null = null;
 
+    if (payload.nodeId) {
+      targetNode = (await figma.getNodeByIdAsync(payload.nodeId)) as FrameNode;
+    }
+    if (!targetNode && figma.currentPage.selection.length > 0) {
+      const cand = figma.currentPage.selection[0];
+      if (cand.type === "FRAME" || cand.type === "COMPONENT" || cand.type === "GROUP") {
+        targetNode = cand as FrameNode;
+      }
+    }
+    if (!targetNode) {
+      targetNode = (await figma.getNodeByIdAsync("777:4809")) as FrameNode;
+    }
+    if (!targetNode) {
+      throw new Error("No frame selected. Please select the frame of 4 images.");
+    }
+
+    figma.notify(`⚡ Creating interactive square product carousel from "${targetNode.name}"...`, { timeout: 3500 });
+
+    // Collect the 4 product image nodes from targetNode
+    let imageNodes: SceneNode[] = [];
+    if ("children" in targetNode && targetNode.children.length > 0) {
+      imageNodes = [...targetNode.children];
+      if (imageNodes.length === 1 && "children" in imageNodes[0] && (imageNodes[0] as any).children.length >= 2) {
+        imageNodes = [...(imageNodes[0] as any).children];
+      }
+    }
+
+    if (imageNodes.length === 0) {
+      throw new Error("Selected frame does not contain child product images.");
+    }
+
+    const slideCount = imageNodes.length;
+    const squareSize = payload.squareSize || 320;
+
+    // Load fonts for chevrons & badges
+    try {
+      await figma.loadFontAsync({ family: "Inter", style: "Medium" });
+      await figma.loadFontAsync({ family: "Inter", style: "Bold" });
+      await figma.loadFontAsync({ family: "Inter", style: "Regular" });
+    } catch {}
+
+    const variants: ComponentNode[] = [];
+
+    // Create 4 Component Variants
+    for (let i = 0; i < slideCount; i++) {
+      const variant = figma.createComponent();
+      variant.name = `Slide=${i + 1}`;
+      variant.resize(squareSize, squareSize);
+      variant.clipsContent = true; // Only one product is visible in the square frame!
+      variant.cornerRadius = 16;
+      variant.fills = [{ type: "SOLID", color: { r: 0.08, g: 0.08, b: 0.1 }, opacity: 1 }];
+      variant.strokes = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 0.08 }];
+      variant.strokeWeight = 1;
+      variant.layoutMode = "NONE";
+
+      // 1. Slides Track (Identical layer name across all variants for SMART_ANIMATE!)
+      const track = figma.createFrame();
+      track.name = "Slides Track";
+      track.resize(squareSize * slideCount, squareSize);
+      track.fills = [];
+      track.layoutMode = "HORIZONTAL";
+      track.primaryAxisSizingMode = "FIXED";
+      track.counterAxisSizingMode = "FIXED";
+      track.primaryAxisAlignItems = "CENTER";
+      track.counterAxisAlignItems = "CENTER";
+      track.itemSpacing = 0;
+      track.clipsContent = false;
+      track.x = -i * squareSize;
+      track.y = 0;
+
+      // Add each of the 4 slide cards into the track
+      for (let j = 0; j < slideCount; j++) {
+        const slideCard = figma.createFrame();
+        slideCard.name = `Slide Card ${j + 1}`;
+        slideCard.resize(squareSize, squareSize);
+        slideCard.fills = [];
+        slideCard.layoutMode = "VERTICAL";
+        slideCard.primaryAxisAlignItems = "CENTER";
+        slideCard.counterAxisAlignItems = "CENTER";
+        slideCard.paddingBottom = 24;
+
+        // Clone the source product image node
+        const sourceNode = imageNodes[j];
+        const clonedImg = sourceNode.clone() as FrameNode;
+        const maxImgW = squareSize - 40;
+        const maxImgH = squareSize - 70;
+        const scale = Math.min(maxImgW / clonedImg.width, maxImgH / clonedImg.height, 1);
+        clonedImg.resize(Math.round(clonedImg.width * scale), Math.round(clonedImg.height * scale));
+
+        slideCard.appendChild(clonedImg);
+        track.appendChild(slideCard);
+      }
+      variant.appendChild(track);
+
+      // 2. Slide Counter Badge in top-right (e.g. "1 / 4")
+      const badge = figma.createFrame();
+      badge.name = "Slide Counter Badge";
+      badge.resize(48, 22);
+      badge.fills = [{ type: "SOLID", color: { r: 0, g: 0, b: 0 }, opacity: 0.5 }];
+      badge.cornerRadius = 11;
+      badge.layoutMode = "HORIZONTAL";
+      badge.primaryAxisAlignItems = "CENTER";
+      badge.counterAxisAlignItems = "CENTER";
+      badge.x = squareSize - 58;
+      badge.y = 12;
+
+      const badgeTxt = figma.createText();
+      badgeTxt.fontName = { family: "Inter", style: "Medium" };
+      badgeTxt.characters = `${i + 1} / ${slideCount}`;
+      badgeTxt.fontSize = 11;
+      badgeTxt.letterSpacing = { value: 0, unit: "PIXELS" };
+      badgeTxt.fills = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 0.85 }];
+      badge.appendChild(badgeTxt);
+      variant.appendChild(badge);
+
+      // 3. Navigation Chevron Arrows: Prev & Next
+      const prevBtn = figma.createFrame();
+      prevBtn.name = "Prev Button";
+      prevBtn.resize(28, 28);
+      prevBtn.cornerRadius = 14;
+      prevBtn.fills = [{ type: "SOLID", color: { r: 0, g: 0, b: 0 }, opacity: 0.45 }];
+      prevBtn.strokes = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 0.15 }];
+      prevBtn.strokeWeight = 1;
+      prevBtn.layoutMode = "HORIZONTAL";
+      prevBtn.primaryAxisAlignItems = "CENTER";
+      prevBtn.counterAxisAlignItems = "CENTER";
+      prevBtn.x = 10;
+      prevBtn.y = Math.round((squareSize - 28) / 2);
+
+      const prevTxt = figma.createText();
+      prevTxt.fontName = { family: "Inter", style: "Bold" };
+      prevTxt.characters = "‹";
+      prevTxt.fontSize = 16;
+      prevTxt.letterSpacing = { value: 0, unit: "PIXELS" };
+      prevTxt.fills = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 0.9 }];
+      prevBtn.appendChild(prevTxt);
+      variant.appendChild(prevBtn);
+
+      const nextBtn = figma.createFrame();
+      nextBtn.name = "Next Button";
+      nextBtn.resize(28, 28);
+      nextBtn.cornerRadius = 14;
+      nextBtn.fills = [{ type: "SOLID", color: { r: 0, g: 0, b: 0 }, opacity: 0.45 }];
+      nextBtn.strokes = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 0.15 }];
+      nextBtn.strokeWeight = 1;
+      nextBtn.layoutMode = "HORIZONTAL";
+      nextBtn.primaryAxisAlignItems = "CENTER";
+      nextBtn.counterAxisAlignItems = "CENTER";
+      nextBtn.x = squareSize - 38;
+      nextBtn.y = Math.round((squareSize - 28) / 2);
+
+      const nextTxt = figma.createText();
+      nextTxt.fontName = { family: "Inter", style: "Bold" };
+      nextTxt.characters = "›";
+      nextTxt.fontSize = 16;
+      nextTxt.letterSpacing = { value: 0, unit: "PIXELS" };
+      nextTxt.fills = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 0.9 }];
+      nextBtn.appendChild(nextTxt);
+      variant.appendChild(nextBtn);
+
+      // 4. Pagination Dots Indicator row at bottom
+      const dotsRow = figma.createFrame();
+      dotsRow.name = "Pagination Dots";
+      const dotsWidth = slideCount * 14 + 16;
+      dotsRow.resize(dotsWidth, 16);
+      dotsRow.fills = [];
+      dotsRow.layoutMode = "HORIZONTAL";
+      dotsRow.primaryAxisAlignItems = "CENTER";
+      dotsRow.counterAxisAlignItems = "CENTER";
+      dotsRow.itemSpacing = 6;
+      dotsRow.x = Math.round((squareSize - dotsWidth) / 2);
+      dotsRow.y = squareSize - 22;
+
+      for (let d = 0; d < slideCount; d++) {
+        const dot = figma.createFrame();
+        dot.name = `Dot ${d + 1}`;
+        const isActive = d === i;
+        dot.resize(isActive ? 18 : 6, 6);
+        dot.cornerRadius = 3;
+        dot.fills = [
+          {
+            type: "SOLID",
+            color: isActive ? { r: 0.95, g: 0.45, b: 0.2 } : { r: 1, g: 1, b: 1 },
+            opacity: isActive ? 1 : 0.25,
+          },
+        ];
+        dotsRow.appendChild(dot);
+      }
+      variant.appendChild(dotsRow);
+
+      figma.currentPage.appendChild(variant);
+      variants.push(variant);
+    }
+
+    // Combine all 4 variants into an official ComponentSetNode!
+    const componentSet = figma.combineAsVariants(variants, figma.currentPage);
+    componentSet.name = "Product Carousel (Component Set)";
+    componentSet.layoutMode = "HORIZONTAL";
+    componentSet.itemSpacing = 24;
+    componentSet.paddingLeft = 24;
+    componentSet.paddingRight = 24;
+    componentSet.paddingTop = 24;
+    componentSet.paddingBottom = 24;
+    componentSet.fills = [{ type: "SOLID", color: { r: 0.04, g: 0.04, b: 0.06 }, opacity: 1 }];
+    componentSet.strokes = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 0.08 }];
+    componentSet.cornerRadius = 20;
+
+    // Position Component Set neatly next to targetNode
+    componentSet.x = targetNode.x + targetNode.width + 60;
+    componentSet.y = targetNode.y;
+
+    // Wire Prototyping Reactions between Variants with SMART_ANIMATE and EASE_IN_AND_OUT
+    for (let i = 0; i < slideCount; i++) {
+      const currentVariant = variants[i];
+      const nextIndex = (i + 1) % slideCount;
+      const prevIndex = (i - 1 + slideCount) % slideCount;
+      const nextVariant = variants[nextIndex];
+      const prevVariant = variants[prevIndex];
+
+      // 1. Auto-scroll transition: AFTER_TIMEOUT (2.5 seconds delay)
+      // Ease in and ease out smooth animated glide!
+      const autoScrollReaction = {
+        trigger: {
+          type: "AFTER_TIMEOUT",
+          timeout: 2.5,
+        },
+        actions: [
+          {
+            type: "NODE",
+            destinationId: nextVariant.id,
+            navigation: "CHANGE_TO",
+            transition: {
+              type: "SMART_ANIMATE",
+              duration: 0.65,
+              easing: { type: "EASE_IN_AND_OUT" },
+            },
+          },
+        ],
+        action: {
+          type: "NODE",
+          destinationId: nextVariant.id,
+          navigation: "CHANGE_TO",
+          transition: {
+            type: "SMART_ANIMATE",
+            duration: 0.65,
+            easing: { type: "EASE_IN_AND_OUT" },
+          },
+        },
+      };
+
+      // 2. Click / Tap to advance: ON_CLICK
+      const clickReaction = {
+        trigger: { type: "ON_CLICK" },
+        actions: [
+          {
+            type: "NODE",
+            destinationId: nextVariant.id,
+            navigation: "CHANGE_TO",
+            transition: {
+              type: "SMART_ANIMATE",
+              duration: 0.55,
+              easing: { type: "EASE_IN_AND_OUT" },
+            },
+          },
+        ],
+        action: {
+          type: "NODE",
+          destinationId: nextVariant.id,
+          navigation: "CHANGE_TO",
+          transition: {
+            type: "SMART_ANIMATE",
+            duration: 0.55,
+            easing: { type: "EASE_IN_AND_OUT" },
+          },
+        },
+      };
+
+      // 3. Swipe / Drag gesture: ON_DRAG
+      const dragReaction = {
+        trigger: { type: "ON_DRAG" },
+        actions: [
+          {
+            type: "NODE",
+            destinationId: nextVariant.id,
+            navigation: "CHANGE_TO",
+            transition: {
+              type: "SMART_ANIMATE",
+              duration: 0.55,
+              easing: { type: "EASE_IN_AND_OUT" },
+            },
+          },
+        ],
+        action: {
+          type: "NODE",
+          destinationId: nextVariant.id,
+          navigation: "CHANGE_TO",
+          transition: {
+            type: "SMART_ANIMATE",
+            duration: 0.55,
+            easing: { type: "EASE_IN_AND_OUT" },
+          },
+        },
+      };
+
+      // Apply to current variant root
+      try {
+        await (currentVariant as any).setReactionsAsync([autoScrollReaction, clickReaction, dragReaction]);
+      } catch (err) {
+        try {
+          await (currentVariant as any).setReactionsAsync([autoScrollReaction]);
+        } catch {}
+      }
+
+      // Track: Wire click to advance
+      const trackChild = currentVariant.findChild(c => c.name === "Slides Track");
+      if (trackChild) {
+        try {
+          await (trackChild as any).setReactionsAsync([clickReaction, dragReaction]);
+        } catch {}
+      }
+
+      // Next Button: ON_CLICK -> nextVariant
+      const nextBtnChild = currentVariant.findChild(c => c.name === "Next Button");
+      if (nextBtnChild) {
+        try {
+          await (nextBtnChild as any).setReactionsAsync([
+            {
+              trigger: { type: "ON_CLICK" },
+              actions: [
+                {
+                  type: "NODE",
+                  destinationId: nextVariant.id,
+                  navigation: "CHANGE_TO",
+                  transition: {
+                    type: "SMART_ANIMATE",
+                    duration: 0.5,
+                    easing: { type: "EASE_IN_AND_OUT" },
+                  },
+                },
+              ],
+              action: {
+                type: "NODE",
+                destinationId: nextVariant.id,
+                navigation: "CHANGE_TO",
+                transition: {
+                  type: "SMART_ANIMATE",
+                  duration: 0.5,
+                  easing: { type: "EASE_IN_AND_OUT" },
+                },
+              },
+            },
+          ]);
+        } catch {}
+      }
+
+      // Prev Button: ON_CLICK -> prevVariant
+      const prevBtnChild = currentVariant.findChild(c => c.name === "Prev Button");
+      if (prevBtnChild) {
+        try {
+          await (prevBtnChild as any).setReactionsAsync([
+            {
+              trigger: { type: "ON_CLICK" },
+              actions: [
+                {
+                  type: "NODE",
+                  destinationId: prevVariant.id,
+                  navigation: "CHANGE_TO",
+                  transition: {
+                    type: "SMART_ANIMATE",
+                    duration: 0.5,
+                    easing: { type: "EASE_IN_AND_OUT" },
+                  },
+                },
+              ],
+              action: {
+                type: "NODE",
+                destinationId: prevVariant.id,
+                navigation: "CHANGE_TO",
+                transition: {
+                  type: "SMART_ANIMATE",
+                  duration: 0.5,
+                  easing: { type: "EASE_IN_AND_OUT" },
+                },
+              },
+            },
+          ]);
+        } catch {}
+      }
+
+      // Pagination Dots: wire each Dot d to jump to Variant d
+      const dotsRowChild = currentVariant.findChild(c => c.name === "Pagination Dots") as FrameNode;
+      if (dotsRowChild && dotsRowChild.children) {
+        for (let d = 0; d < slideCount; d++) {
+          const dotChild = dotsRowChild.children[d];
+          const destVar = variants[d];
+          if (dotChild && destVar && d !== i) {
+            try {
+              await (dotChild as any).setReactionsAsync([
+                {
+                  trigger: { type: "ON_CLICK" },
+                  actions: [
+                    {
+                      type: "NODE",
+                      destinationId: destVar.id,
+                      navigation: "CHANGE_TO",
+                      transition: {
+                        type: "SMART_ANIMATE",
+                        duration: 0.5,
+                        easing: { type: "EASE_IN_AND_OUT" },
+                      },
+                    },
+                  ],
+                  action: {
+                    type: "NODE",
+                    destinationId: destVar.id,
+                    navigation: "CHANGE_TO",
+                    transition: {
+                      type: "SMART_ANIMATE",
+                      duration: 0.5,
+                      easing: { type: "EASE_IN_AND_OUT" },
+                    },
+                  },
+                },
+              ]);
+            } catch {}
+          }
+        }
+      }
+    }
+
+    // Create a live ready-to-play single square frame Instance of Variant 1!
+    const instance = variants[0].createInstance();
+    instance.name = "Product Carousel (Square)";
+    const parentContainer = targetNode.parent || figma.currentPage;
+    parentContainer.appendChild(instance);
+    instance.x = targetNode.x;
+    instance.y = targetNode.y;
+
+    // Set prototype flow start point to the square instance or currentPage
+    try {
+      figma.currentPage.prototypeStartNode = instance;
+    } catch {}
+
+    // Select the new square instance and zoom into view
+    figma.currentPage.selection = [instance];
+    figma.viewport.scrollAndZoomIntoView([instance]);
+
+    figma.notify(`✓ Square Product Carousel Ready (${slideCount} products, smooth ease-in-out scroll)! Press Play ▶ to preview.`, { timeout: 4000 });
+
+    figma.ui.postMessage({
+      type: "CREATE_CAROUSEL_COMPONENT_RESULT",
+      payload: {
+        requestId,
+        success: true,
+        componentSetId: componentSet.id,
+        instanceId: instance.id,
+        squareSize,
+        slideCount,
+        details: [
+          `Single square frame (${squareSize}x${squareSize}) showing 1 product at a time`,
+          `${slideCount} product variants inside interactive Component Set`,
+          "Smooth scrolling animation between products (SMART_ANIMATE, 0.65s, EASE_IN_AND_OUT)",
+          "Auto-scrolls one by one every 2.5s with infinite loop",
+          "Interactive pagination dots and next/prev chevrons for manual control",
+          "Tap or swipe card to advance",
+          "Live instance placed at selected frame position",
+        ],
+      },
+    });
+  } catch (err: any) {
+    console.error("[Controller] Create carousel component failed:", err);
+    figma.ui.postMessage({
+      type: "CREATE_CAROUSEL_COMPONENT_RESULT",
+      payload: {
+        requestId: payload?.requestId,
+        success: false,
+        error: err.message || "Failed to create carousel component",
+      },
+    });
+    figma.notify(`❌ Carousel error: ${err.message}`, { error: true, timeout: 4000 });
+  }
+}

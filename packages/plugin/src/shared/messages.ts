@@ -104,6 +104,14 @@ export type UIToPluginMessage =
         requestId?: string;
         nodeId?: string;
       };
+    }
+  | {
+      type: "EXECUTE_CREATE_CAROUSEL_COMPONENT";
+      payload?: {
+        requestId?: string;
+        nodeId?: string;
+        squareSize?: number;
+      };
     };
 
 // ─── Plugin → UI Messages ────────────────────────────────────
@@ -222,6 +230,19 @@ export type PluginToUIMessage =
         success: boolean;
         frameName?: string;
         effectsAdded?: number;
+        details?: string[];
+        error?: string;
+      };
+    }
+  | {
+      type: "CREATE_CAROUSEL_COMPONENT_RESULT";
+      payload: {
+        requestId?: string;
+        success: boolean;
+        componentSetId?: string;
+        instanceId?: string;
+        squareSize?: number;
+        slideCount?: number;
         details?: string[];
         error?: string;
       };
