@@ -235,6 +235,9 @@ function parseGradientStops(stopParts: string[]): ColorStop[] {
  */
 function parseColorToHex(colorStr: string): string {
   const str = colorStr.trim();
+  if (str === "transparent" || str === "rgba(0, 0, 0, 0)" || str === "none") {
+    return "#FFFFFF00";
+  }
   if (str.startsWith("#")) {
     if (str.length === 4) {
       return `#${str[1]}${str[1]}${str[2]}${str[2]}${str[3]}${str[3]}`.toUpperCase();

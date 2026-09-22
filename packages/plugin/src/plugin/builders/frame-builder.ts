@@ -394,12 +394,12 @@ function configureAutoLayoutRecursively(
         frame.primaryAxisSizingMode = isHorizontalRoot ? "FIXED" : "AUTO";
         frame.counterAxisSizingMode = "FIXED";
         frame.primaryAxisAlignItems = "MIN";
-        frame.counterAxisAlignItems = "MIN";
-        frame.itemSpacing = 0;
-        frame.paddingTop = 0;
-        frame.paddingRight = 0;
-        frame.paddingBottom = 0;
-        frame.paddingLeft = 0;
+        frame.counterAxisAlignItems = (uiNode.layout?.alignment === "CENTER" || uiNode.layout?.alignment === "TOP_CENTER") ? "CENTER" : "MIN";
+        frame.itemSpacing = typeof uiNode.layout?.itemSpacing === "number" ? uiNode.layout.itemSpacing : 0;
+        frame.paddingTop = Math.max(0, uiNode.layout?.paddingTop || 0);
+        frame.paddingRight = Math.max(0, uiNode.layout?.paddingRight || 0);
+        frame.paddingBottom = Math.max(0, uiNode.layout?.paddingBottom || 0);
+        frame.paddingLeft = Math.max(0, uiNode.layout?.paddingLeft || 0);
         try {
           frame.overflowDirection = "VERTICAL";
         } catch (_) {}

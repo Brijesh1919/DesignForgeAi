@@ -82,6 +82,21 @@ export type UIToPluginMessage =
         requestId?: string;
         nodeId?: string;
       };
+    }
+  | {
+      type: "EXECUTE_ADJUST_MOBILE_LAYOUT";
+      payload?: {
+        requestId?: string;
+        nodeId?: string;
+        viewportWidth?: number;
+        horizontalPadding?: number;
+        sectionSpacing?: number;
+        cardSpacing?: number;
+        cardCornerRadius?: number;
+        cardPadding?: number;
+        buttonHeight?: number;
+        maxTitleFontSize?: number;
+      };
     };
 
 // ─── Plugin → UI Messages ────────────────────────────────────
@@ -179,6 +194,17 @@ export type PluginToUIMessage =
           base64: string;
           mimeType: string;
         }>;
+        error?: string;
+      };
+    }
+  | {
+      type: "ADJUST_MOBILE_LAYOUT_RESULT";
+      payload: {
+        requestId?: string;
+        success: boolean;
+        frameName?: string;
+        nodesAdjusted?: number;
+        details?: string;
         error?: string;
       };
     }

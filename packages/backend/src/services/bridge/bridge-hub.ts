@@ -9,7 +9,7 @@ import type { Server as HttpServer } from "http";
 
 export interface BridgeCommand {
   id: string;
-  type: "PING" | "EXECUTE_URL_TO_DESIGN" | "GET_CANVAS_SELECTION" | "EXECUTE_AI_PROMPT" | "EXECUTE_HTML_CSS" | "REMOVE_BACKGROUND" | "RECOLOR_THEME";
+  type: "PING" | "EXECUTE_URL_TO_DESIGN" | "GET_CANVAS_SELECTION" | "EXECUTE_AI_PROMPT" | "EXECUTE_HTML_CSS" | "REMOVE_BACKGROUND" | "RECOLOR_THEME" | "ADJUST_MOBILE_LAYOUT";
   payload?: any;
   timestamp: number;
 }
@@ -111,11 +111,22 @@ export class BridgeHub {
     payload: any = {},
     timeoutMs: number = 60000
   ): Promise<BridgeResponse> {
-    if (this.clients.size === 0) {
+    // Clean up any stale closed clients
+    for (const client of [...this.clients]) {
+      if (client.readyState === WebSocket.CLOSED || client.readyState === WebSocket.CLOSING) {
+        this.clients.delete(client);
+      }
+    }
+
+    const openClients = [...this.clients].filter((c) => c.readyState === WebSocket.OPEN);
+    if (openClients.length === 0) {
       throw new Error(
         "No active Figma plugin connected. Please open the 'DesignForge AI' plugin in Figma and switch to the '🔌 Agent Bridge' tab."
       );
     }
+
+    // Pick the most recent active client to prevent duplicate execution across reconnecting sockets
+    const activeClient = openClients[openClients.length - 1];
 
     const id = uuidv4();
     const command: BridgeCommand = {
@@ -136,13 +147,7 @@ export class BridgeHub {
       }, timeoutMs);
 
       this.pendingRequests.set(id, { id, resolve, reject, timeout });
-
-      const messageStr = JSON.stringify(command);
-      for (const client of this.clients) {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(messageStr);
-        }
-      }
+      activeClient.send(JSON.stringify(command));
     });
   }
 

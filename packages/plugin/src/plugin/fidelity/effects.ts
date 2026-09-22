@@ -45,13 +45,13 @@ filter: ${filterVal}`);
     const isVisible = eff.visible !== false;
 
     if (eff.type === "BACKGROUND_BLUR" || eff.type?.toLowerCase().includes("backdrop")) {
-      console.log(`[EFFECT] backdrop-filter detected`);
-      console.log(`[EFFECT] BACKGROUND_BLUR skipped by fidelity policy`);
-      console.log(`[NAVBAR BLUR]
-CSS backdrop-filter detected: true
-Figma background blur applied: false
-Reason: backdrop-filter intentionally not mapped to Figma background blur`);
-      continue;
+      const radius = eff.radius || eff.blur || 24;
+      figmaEffects.push({
+        type: "BACKGROUND_BLUR",
+        radius,
+        visible: isVisible,
+      });
+      console.log(`[EFFECT] Figma applied: BACKGROUND_BLUR (radius: ${radius})`);
     } else if (eff.type === "LAYER_BLUR" || (eff.type?.toLowerCase().includes("blur") && !eff.type?.toLowerCase().includes("background"))) {
       const radius = eff.radius || eff.blur || 4;
       figmaEffects.push({

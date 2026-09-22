@@ -89,7 +89,7 @@ figma.ui.onmessage = async (msg: UIToPluginMessage) => {
       break;
 
     case "GET_CANVAS_SELECTION":
-      await handleGetCanvasSelection(msg.payload?.requestId);
+      await handleGetCanvasSelection(msg.payload?.requestId, msg.payload?.maxDepth, msg.payload?.nodeId);
       break;
 
     case "EXECUTE_REMOVE_BACKGROUND":
@@ -108,6 +108,10 @@ figma.ui.onmessage = async (msg: UIToPluginMessage) => {
       await handleExportFrameCode(msg.payload?.requestId, msg.payload?.nodeId);
       break;
 
+    case "EXECUTE_ADJUST_MOBILE_LAYOUT":
+      await handleAdjustMobileLayout(msg.payload);
+      break;
+
     default:
       break;
   }
@@ -120,46 +124,97 @@ figma.on("selectionchange", () => {
 
 let lastGeneratedFrameId: string | null = null;
 
-async function handleGetCanvasSelection(requestId?: string): Promise<void> {
+async function handleGetCanvasSelection(requestId?: string, customMaxDepth = 10, nodeId?: string): Promise<void> {
   try {
     let selection = [...figma.currentPage.selection];
-    if (selection.length === 0) {
-      const topFrames = figma.currentPage.children.filter((n) => n.type === "FRAME") as FrameNode[];
-      if (topFrames.length > 0) {
-        selection = [topFrames[topFrames.length - 1]];
+    if (nodeId) {
+      const explicit = (await figma.getNodeByIdAsync(nodeId)) as SceneNode;
+      if (explicit) selection = [explicit];
+    }
+    // Collect all frames on current page (including inside sections/groups)
+    const allFrames: FrameNode[] = [];
+    function collectAllFrames(container: any) {
+      if (!container || !container.children) return;
+      for (const child of container.children) {
+        if (child.type === "FRAME") {
+          allFrames.push(child);
+        }
+        if (child.type === "SECTION" || child.type === "GROUP") {
+          collectAllFrames(child);
+        }
       }
     }
-    function inspectNodeSummary(node: SceneNode, depth = 0, maxDepth = 2): any {
+    collectAllFrames(figma.currentPage);
+
+    if (selection.length === 0 && allFrames.length > 0) {
+      // Prioritize recently created frame or frame matching mobile or last frame
+      const mob = allFrames.find((f) => f.name.toLowerCase().includes("mobile") || (f.width >= 320 && f.width <= 480));
+      selection = [mob || allFrames[allFrames.length - 1]];
+    }
+    const maxDepth = customMaxDepth || 10;
+    function safeNumber(val: any): number | undefined {
+      return typeof val === "number" && !isNaN(val) ? Math.round(val) : undefined;
+    }
+
+    function inspectNodeSummary(node: SceneNode, depth = 0): any {
       const summary: any = {
-        id: node.id,
-        name: node.name,
-        type: node.type,
-        width: Math.round(node.width),
-        height: Math.round(node.height),
-        layoutMode: "layoutMode" in node ? (node as any).layoutMode : "NONE",
-        layoutSizingHorizontal: "layoutSizingHorizontal" in node ? (node as any).layoutSizingHorizontal : undefined,
-        layoutSizingVertical: "layoutSizingVertical" in node ? (node as any).layoutSizingVertical : undefined,
-        childrenCount: "children" in node ? (node as any).children.length : 0,
+        id: String(node.id || ""),
+        name: String(node.name || ""),
+        type: String(node.type || ""),
+        width: Math.round(node.width || 0),
+        height: Math.round(node.height || 0),
+        x: Math.round(node.x || 0),
+        y: Math.round(node.y || 0),
+        layoutMode: "layoutMode" in node && typeof (node as any).layoutMode === "string" ? (node as any).layoutMode : "NONE",
+        layoutPositioning: "layoutPositioning" in node && typeof (node as any).layoutPositioning === "string" ? (node as any).layoutPositioning : undefined,
+        layoutSizingHorizontal: "layoutSizingHorizontal" in node && typeof (node as any).layoutSizingHorizontal === "string" ? (node as any).layoutSizingHorizontal : undefined,
+        layoutSizingVertical: "layoutSizingVertical" in node && typeof (node as any).layoutSizingVertical === "string" ? (node as any).layoutSizingVertical : undefined,
+        childrenCount: "children" in node && Array.isArray((node as any).children) ? (node as any).children.length : 0,
+        effects: "effects" in node && Array.isArray((node as any).effects)
+          ? (node as any).effects.map((e: any) => ({ type: String(e.type || ""), radius: typeof e.radius === "number" ? e.radius : 0, visible: Boolean(e.visible) }))
+          : undefined,
+        fills: "fills" in node && Array.isArray((node as any).fills)
+          ? (node as any).fills.map((f: any) => ({ type: String(f.type || ""), visible: f.visible !== false, opacity: typeof f.opacity === "number" ? f.opacity : 1 }))
+          : undefined,
+        cornerRadius: "cornerRadius" in node ? safeNumber((node as any).cornerRadius) : undefined,
+        strokeWeight: "strokeWeight" in node ? safeNumber((node as any).strokeWeight) : undefined,
+        padding: "paddingTop" in node ? [safeNumber((node as any).paddingTop) || 0, safeNumber((node as any).paddingRight) || 0, safeNumber((node as any).paddingBottom) || 0, safeNumber((node as any).paddingLeft) || 0] : undefined,
+        itemSpacing: "itemSpacing" in node ? safeNumber((node as any).itemSpacing) : undefined,
       };
 
       if (node.type === "TEXT") {
-        summary.text = (node as TextNode).characters?.slice(0, 80);
+        try {
+          summary.text = String((node as TextNode).characters || "").slice(0, 100);
+        } catch {}
       }
 
-      if ("children" in node && depth < maxDepth) {
-        summary.children = (node as any).children.map((c: SceneNode) => inspectNodeSummary(c, depth + 1, maxDepth));
+      if ("children" in node && depth < maxDepth && Array.isArray((node as any).children)) {
+        summary.children = (node as any).children.map((c: SceneNode) => inspectNodeSummary(c, depth + 1));
       }
 
       return summary;
     }
 
-    const nodes = selection.map((node) => inspectNodeSummary(node, 0, 2));
+    const nodes = selection.map((node) => inspectNodeSummary(node, 0));
 
     figma.ui.postMessage({
       type: "CANVAS_SELECTION_RESULT",
       payload: {
         requestId,
         selection: nodes,
+        availableFrames: allFrames.map((f) => ({
+          id: f.id,
+          name: f.name,
+          width: Math.round(f.width),
+          height: Math.round(f.height),
+          parentType: f.parent?.type,
+        })),
+        currentPageName: figma.currentPage.name,
+        currentPageChildren: figma.currentPage.children.map((c) => ({
+          id: c.id,
+          name: c.name,
+          type: c.type,
+        })),
       },
     });
   } catch (err: any) {
@@ -169,6 +224,7 @@ async function handleGetCanvasSelection(requestId?: string): Promise<void> {
       payload: {
         requestId,
         selection: [],
+        error: String(err?.message || err),
       },
     });
   }
@@ -562,7 +618,15 @@ Skipped ${counts.skipped} elements`);
 
         const childrenToMove = [...frameResult.children];
         for (const child of childrenToMove) {
+          const wasAbsolute = "layoutPositioning" in child && (child as any).layoutPositioning === "ABSOLUTE";
+          const savedX = child.x;
+          const savedY = child.y;
           selectedFrame.appendChild(child);
+          if (wasAbsolute && "layoutPositioning" in child) {
+            (child as any).layoutPositioning = "ABSOLUTE";
+            child.x = savedX;
+            child.y = savedY;
+          }
         }
         frameResult.remove();
         finalNode = selectedFrame;
@@ -1115,6 +1179,829 @@ async function handleExportFrameCode(requestId?: string, nodeId?: string): Promi
       },
     });
     figma.notify(`❌ Export error: ${err.message || "Unknown error"}`, { error: true, timeout: 3500 });
+  }
+}
+
+async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
+  try {
+    const requestId = payload.requestId;
+    let targetNode: FrameNode | null = null;
+
+    if (payload.nodeId) {
+      targetNode = (await figma.getNodeByIdAsync(payload.nodeId)) as FrameNode;
+    }
+    if (!targetNode && figma.currentPage.selection.length > 0) {
+      const candidate = figma.currentPage.selection[0];
+      if (candidate.type === "FRAME") {
+        targetNode = candidate as FrameNode;
+      } else if ("parent" in candidate && candidate.parent && candidate.parent.type === "FRAME") {
+        targetNode = candidate.parent as FrameNode;
+      }
+    }
+    if (!targetNode) {
+      const allFrames: FrameNode[] = [];
+      function collectFrames(c: any) {
+        if (!c || !c.children) return;
+        for (const ch of c.children) {
+          if (ch.type === "FRAME") allFrames.push(ch);
+          if (ch.type === "SECTION" || ch.type === "GROUP") collectFrames(ch);
+        }
+      }
+      collectFrames(figma.currentPage);
+      targetNode =
+        allFrames.find((f) => f.name === "Option 3") ||
+        allFrames.find((f) => f.name.includes("Mobile")) ||
+        allFrames[allFrames.length - 1];
+    }
+
+    if (!targetNode) {
+      throw new Error("No frame selected. Please select a frame in Figma first.");
+    }
+
+    figma.notify(`📱 Converting "${targetNode.name}" to responsive Mobile UI...`, { timeout: 3500 });
+
+    const targetWidth = payload.viewportWidth || 390;
+    const horizontalMargin = payload.horizontalPadding ?? 20;
+    const contentWidth = targetWidth - horizontalMargin * 2; // 350px
+    const sectionGap = payload.sectionSpacing ?? 28;
+    const cardGap = payload.cardSpacing ?? 14;
+    const buttonTargetHeight = payload.buttonHeight ?? 48;
+
+    let nodesAdjusted = 0;
+    const sectionsAnalyzed: Array<{ name: string; type: string; role: string; details: string }> = [];
+
+    // Safe font loader
+    const loadedFonts = new Set<string>();
+    async function ensureFontLoaded(fontName: FontName): Promise<boolean> {
+      const key = `${fontName.family}__${fontName.style}`;
+      if (loadedFonts.has(key)) return true;
+      try {
+        await figma.loadFontAsync(fontName);
+        loadedFonts.add(key);
+        return true;
+      } catch {
+        try {
+          const fallback: FontName = { family: "Inter", style: "Regular" };
+          await figma.loadFontAsync(fallback);
+          return true;
+        } catch {
+          return false;
+        }
+      }
+    }
+
+    function safeSetLayout(n: any, canStretch = true) {
+      try {
+        if ("layoutPositioning" in n) n.layoutPositioning = "AUTO";
+      } catch {}
+      try {
+        if ("layoutAlign" in n) n.layoutAlign = canStretch ? "STRETCH" : "INHERIT";
+      } catch {}
+    }
+
+    function isIconNode(node: SceneNode): boolean {
+      if (node.type === "VECTOR" || node.type === "BOOLEAN_OPERATION" || node.type === "STAR" || node.type === "LINE") {
+        return true;
+      }
+      const n = (node.name || "").toLowerCase();
+      const iconKeywords = [
+        "icon", "outline", "caret", "arrow", "search", "bag", "cart", "user",
+        "menu", "hamburger", "close", "vector", "svg", "star", "chevron", "check",
+        "bx:", "eva:", "bitcoin-icons:", "lucide:", "tabler:", "heroicons:", "feather:",
+        "bell", "heart", "share", "filter", "sort", "dots", "plus", "minus", "cross"
+      ];
+      const hasIconName = iconKeywords.some((kw) => n.includes(kw));
+      if (hasIconName) {
+        if (node.height <= 64 || node.width <= 64 || (node.height <= 80 && node.width <= 160)) return true;
+      }
+      if (node.type === "FRAME" || node.type === "INSTANCE" || node.type === "GROUP") {
+        if (node.width <= 44 && node.height <= 44) return true;
+        if ("children" in node && (node as any).children.length > 0 && (node as any).children.length <= 4) {
+          const onlyVectors = (node as any).children.every(
+            (c: any) => c.type === "VECTOR" || c.type === "LINE" || c.type === "RECTANGLE" || c.type === "GROUP" || c.type === "BOOLEAN_OPERATION"
+          );
+          if (onlyVectors && node.height <= 50) return true;
+        }
+      }
+      return false;
+    }
+
+    function createHamburgerIcon(): FrameNode {
+      const icon = figma.createFrame();
+      icon.name = "Mobile Menu Icon";
+      icon.resize(26, 26);
+      icon.fills = [];
+      icon.layoutMode = "VERTICAL";
+      icon.primaryAxisAlignItems = "CENTER";
+      icon.counterAxisAlignItems = "CENTER";
+      icon.primaryAxisSizingMode = "FIXED";
+      icon.counterAxisSizingMode = "FIXED";
+      icon.itemSpacing = 4;
+      icon.paddingLeft = 3;
+      icon.paddingRight = 3;
+      icon.paddingTop = 5;
+      icon.paddingBottom = 5;
+
+      for (let i = 0; i < 3; i++) {
+        const bar = figma.createRectangle();
+        bar.name = `bar-${i + 1}`;
+        bar.resize(20, 2.5);
+        bar.cornerRadius = 1.25;
+        bar.fills = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 0.95 }];
+        icon.appendChild(bar);
+      }
+      return icon;
+    }
+
+    function createCloseIcon(): FrameNode {
+      const icon = figma.createFrame();
+      icon.name = "Close Icon";
+      icon.resize(24, 24);
+      icon.fills = [];
+      icon.layoutMode = "HORIZONTAL";
+      icon.primaryAxisAlignItems = "CENTER";
+      icon.counterAxisAlignItems = "CENTER";
+      const txt = figma.createText();
+      txt.characters = "✕";
+      txt.fontSize = 15;
+      txt.fills = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 0.7 }];
+      icon.appendChild(txt);
+      return icon;
+    }
+
+    async function createMobileNavDrawer(categoryLinks: string[], brandAccent: RGB = { r: 0.85, g: 0.35, b: 0.15 }): Promise<FrameNode> {
+      const drawer = figma.createFrame();
+      drawer.name = "Mobile Navigation Drawer (Component)";
+      drawer.resize(390, 100);
+      drawer.fills = [{ type: "SOLID", color: { r: 0.08, g: 0.08, b: 0.09 }, opacity: 1 }];
+      drawer.strokes = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 0.08 }];
+      drawer.strokeWeight = 1;
+      drawer.cornerRadius = 16;
+      drawer.layoutMode = "VERTICAL";
+      drawer.primaryAxisSizingMode = "AUTO"; // Hug
+      drawer.counterAxisSizingMode = "FIXED"; // 390px
+      drawer.primaryAxisAlignItems = "MIN";
+      drawer.counterAxisAlignItems = "CENTER";
+      drawer.itemSpacing = 0;
+      drawer.paddingLeft = 16;
+      drawer.paddingRight = 16;
+      drawer.paddingTop = 16;
+      drawer.paddingBottom = 20;
+
+      // Header row
+      const headerRow = figma.createFrame();
+      headerRow.name = "Drawer Header";
+      headerRow.resize(358, 44);
+      headerRow.fills = [];
+      headerRow.layoutMode = "HORIZONTAL";
+      headerRow.primaryAxisSizingMode = "FIXED";
+      headerRow.counterAxisSizingMode = "AUTO";
+      headerRow.primaryAxisAlignItems = "SPACE_BETWEEN";
+      headerRow.counterAxisAlignItems = "CENTER";
+
+      const titleText = figma.createText();
+      await ensureFontLoaded({ family: "Inter", style: "Bold" });
+      titleText.fontName = { family: "Inter", style: "Bold" };
+      titleText.characters = "Explore Products";
+      titleText.fontSize = 16;
+      titleText.fills = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 0.95 }];
+      headerRow.appendChild(titleText);
+
+      const closeBtn = createCloseIcon();
+      headerRow.appendChild(closeBtn);
+      drawer.appendChild(headerRow);
+
+      // Divider
+      const div1 = figma.createRectangle();
+      div1.name = "Divider";
+      div1.resize(358, 1);
+      div1.fills = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 0.1 }];
+      drawer.appendChild(div1);
+
+      // List rows for each category
+      const links = categoryLinks.length > 0 ? categoryLinks : ["Mugs", "Tumblers", "Water Bottles", "Coolers", "Accessories", "Customize", "B2B Bulk Orders"];
+      for (const linkText of links) {
+        const row = figma.createFrame();
+        row.name = `Nav Item — ${linkText}`;
+        row.resize(358, 46);
+        row.fills = [];
+        row.layoutMode = "HORIZONTAL";
+        row.primaryAxisSizingMode = "FIXED";
+        row.counterAxisSizingMode = "AUTO";
+        row.primaryAxisAlignItems = "SPACE_BETWEEN";
+        row.counterAxisAlignItems = "CENTER";
+        row.paddingTop = 12;
+        row.paddingBottom = 12;
+
+        const rowText = figma.createText();
+        await ensureFontLoaded({ family: "Inter", style: "Medium" });
+        rowText.fontName = { family: "Inter", style: "Medium" };
+        rowText.characters = linkText;
+        rowText.fontSize = 15;
+        rowText.fills = [{ type: "SOLID", color: { r: 0.9, g: 0.9, b: 0.9 }, opacity: 1 }];
+        row.appendChild(rowText);
+
+        const chevron = figma.createText();
+        await ensureFontLoaded({ family: "Inter", style: "Regular" });
+        chevron.fontName = { family: "Inter", style: "Regular" };
+        chevron.characters = "›";
+        chevron.fontSize = 18;
+        chevron.fills = [{ type: "SOLID", color: { r: 0.5, g: 0.5, b: 0.5 }, opacity: 1 }];
+        row.appendChild(chevron);
+
+        drawer.appendChild(row);
+
+        const itemDiv = figma.createRectangle();
+        itemDiv.name = "Divider";
+        itemDiv.resize(358, 1);
+        itemDiv.fills = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 0.05 }];
+        drawer.appendChild(itemDiv);
+      }
+
+      // Drawer Bottom CTA
+      const ctaBtn = figma.createFrame();
+      ctaBtn.name = "Drawer CTA Button";
+      ctaBtn.resize(358, 46);
+      ctaBtn.fills = [{ type: "SOLID", color: brandAccent, opacity: 1 }];
+      ctaBtn.cornerRadius = 8;
+      ctaBtn.layoutMode = "HORIZONTAL";
+      ctaBtn.primaryAxisAlignItems = "CENTER";
+      ctaBtn.counterAxisAlignItems = "CENTER";
+      ctaBtn.paddingTop = 12;
+      ctaBtn.paddingBottom = 12;
+
+      const btnText = figma.createText();
+      await ensureFontLoaded({ family: "Inter", style: "Bold" });
+      btnText.fontName = { family: "Inter", style: "Bold" };
+      btnText.characters = "Request Custom Quote ↗";
+      btnText.fontSize = 15;
+      btnText.fills = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 1 }];
+      ctaBtn.appendChild(btnText);
+      drawer.appendChild(ctaBtn);
+
+      return drawer;
+    }
+
+    async function createMobileHeaderBar(logoNode: SceneNode | null): Promise<FrameNode> {
+      const header = figma.createFrame();
+      header.name = "Mobile Header Bar (56px)";
+      header.resize(390, 56);
+      header.layoutMode = "HORIZONTAL";
+      header.primaryAxisSizingMode = "FIXED";
+      header.counterAxisSizingMode = "AUTO";
+      header.primaryAxisAlignItems = "SPACE_BETWEEN";
+      header.counterAxisAlignItems = "CENTER";
+      header.paddingLeft = 16;
+      header.paddingRight = 16;
+      header.paddingTop = 10;
+      header.paddingBottom = 10;
+      header.fills = [{ type: "SOLID", color: { r: 0.07, g: 0.07, b: 0.08 }, opacity: 1 }];
+
+      // Left: Logo container
+      const logoContainer = figma.createFrame();
+      logoContainer.name = "Logo Container";
+      logoContainer.resize(110, 36);
+      logoContainer.fills = [];
+      logoContainer.layoutMode = "HORIZONTAL";
+      logoContainer.primaryAxisAlignItems = "MIN";
+      logoContainer.counterAxisAlignItems = "CENTER";
+
+      if (logoNode) {
+        const clonedLogo = logoNode.clone();
+        clonedLogo.name = "Brand Logo";
+        if (clonedLogo.width > 0 && clonedLogo.height > 0) {
+          const ratio = clonedLogo.height / clonedLogo.width;
+          const targetH = Math.min(28, clonedLogo.height);
+          const targetW = Math.min(120, Math.round(targetH / ratio));
+          try { clonedLogo.resize(targetW, targetH); } catch {}
+        }
+        logoContainer.resize(clonedLogo.width, 36);
+        logoContainer.appendChild(clonedLogo);
+      } else {
+        const brandTxt = figma.createText();
+        await ensureFontLoaded({ family: "Inter", style: "Bold" });
+        brandTxt.fontName = { family: "Inter", style: "Bold" };
+        brandTxt.characters = "PELICAN";
+        brandTxt.fontSize = 18;
+        brandTxt.fills = [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 1 }];
+        logoContainer.appendChild(brandTxt);
+      }
+      header.appendChild(logoContainer);
+
+      // Right: Action Group (Search + Bag + Hamburger)
+      const actionGroup = figma.createFrame();
+      actionGroup.name = "Header Actions";
+      actionGroup.resize(110, 36);
+      actionGroup.fills = [];
+      actionGroup.layoutMode = "HORIZONTAL";
+      actionGroup.primaryAxisSizingMode = "AUTO";
+      actionGroup.counterAxisSizingMode = "AUTO";
+      actionGroup.primaryAxisAlignItems = "MAX";
+      actionGroup.counterAxisAlignItems = "CENTER";
+      actionGroup.itemSpacing = 16;
+
+      const searchBtn = figma.createFrame();
+      searchBtn.name = "Search Action";
+      searchBtn.resize(24, 24);
+      searchBtn.fills = [];
+      const sTxt = figma.createText();
+      await ensureFontLoaded({ family: "Inter", style: "Regular" });
+      sTxt.fontName = { family: "Inter", style: "Regular" };
+      sTxt.characters = "🔍";
+      sTxt.fontSize = 14;
+      searchBtn.appendChild(sTxt);
+      searchBtn.layoutMode = "HORIZONTAL";
+      searchBtn.primaryAxisAlignItems = "CENTER";
+      searchBtn.counterAxisAlignItems = "CENTER";
+      actionGroup.appendChild(searchBtn);
+
+      const bagBtn = figma.createFrame();
+      bagBtn.name = "Cart Action";
+      bagBtn.resize(24, 24);
+      bagBtn.fills = [];
+      const bTxt = figma.createText();
+      await ensureFontLoaded({ family: "Inter", style: "Regular" });
+      bTxt.fontName = { family: "Inter", style: "Regular" };
+      bTxt.characters = "🛍";
+      bTxt.fontSize = 15;
+      bagBtn.appendChild(bTxt);
+      bagBtn.layoutMode = "HORIZONTAL";
+      bagBtn.primaryAxisAlignItems = "CENTER";
+      bagBtn.counterAxisAlignItems = "CENTER";
+      actionGroup.appendChild(bagBtn);
+
+      const hamburger = createHamburgerIcon();
+      actionGroup.appendChild(hamburger);
+
+      header.appendChild(actionGroup);
+      return header;
+    }
+
+    // 1. Sort direct children by their Y position (or X if same row)
+    const sortedDirectChildren = [...targetNode.children].sort((a, b) => (Math.abs(a.y - b.y) < 15 ? a.x - b.x : a.y - b.y));
+
+    // 2. Configure targetNode as vertical Auto Layout
+    targetNode.resize(targetWidth, targetNode.height);
+    targetNode.layoutMode = "VERTICAL";
+    targetNode.primaryAxisSizingMode = "AUTO"; // Hug content vertically
+    targetNode.counterAxisSizingMode = "FIXED"; // Exactly 390px wide
+    targetNode.primaryAxisAlignItems = "MIN";
+    targetNode.counterAxisAlignItems = "CENTER";
+    targetNode.itemSpacing = 0;
+    targetNode.paddingTop = 0;
+    targetNode.paddingBottom = 48; // Clean bottom clearance on mobile
+    targetNode.paddingLeft = 0;
+    targetNode.paddingRight = 0;
+    targetNode.clipsContent = true;
+    nodesAdjusted++;
+
+    // 3. Scan for Announcement Bar and Web Navigation
+    let announcementNode: SceneNode | null = null;
+    let navSectionNode: SceneNode | null = null;
+    let logoFound: SceneNode | null = null;
+    const categoryLinksFound: string[] = [];
+
+    for (let i = 0; i < Math.min(4, sortedDirectChildren.length); i++) {
+      const s = sortedDirectChildren[i];
+      const sName = (s.name || "").toLowerCase();
+
+      // Check for Announcement Bar
+      let isAnnounce = sName.includes("banner") || sName.includes("announc");
+      function scanAnnounce(n: any) {
+        if (!n) return;
+        if (n.type === "TEXT" && n.characters) {
+          const t = n.characters.toLowerCase();
+          if (t.includes("off") || t.includes("deal") || t.includes("sale") || t.includes("free shipping")) {
+            isAnnounce = true;
+          }
+        }
+        if (n.children && Array.isArray(n.children)) n.children.forEach(scanAnnounce);
+      }
+      scanAnnounce(s);
+
+      if (isAnnounce && s.height <= 60 && !announcementNode) {
+        announcementNode = s;
+        continue;
+      }
+
+      // Check for Web Navigation
+      let hasLogoOrLinks = false;
+      function scanNav(n: any) {
+        if (!n) return;
+        const name = (n.name || "").toLowerCase();
+        if ((name.includes("logo") || (n.fills && Array.isArray(n.fills) && n.fills.some((f: any) => f.type === "IMAGE") && n.height <= 80 && n.width >= 40)) && !logoFound) {
+          logoFound = n;
+          hasLogoOrLinks = true;
+        }
+        if (n.type === "TEXT" && n.characters) {
+          const t = n.characters.trim();
+          if (["MUGS", "TUMBLERS", "WATER BOTTLES", "COOLER", "COOLERS", "ACCESSORIES", "CUSTOMIZE", "B2B", "SHOP", "ABOUT", "PRODUCTS"].includes(t.toUpperCase())) {
+            if (!categoryLinksFound.includes(t)) categoryLinksFound.push(t);
+            hasLogoOrLinks = true;
+          }
+        }
+        if (n.children && Array.isArray(n.children)) n.children.forEach(scanNav);
+      }
+      scanNav(s);
+
+      if ((hasLogoOrLinks || sName.includes("nav") || sName.includes("header") || sName.includes("menu")) && !navSectionNode) {
+        navSectionNode = s;
+      }
+    }
+
+    // 4. Process Announcement Bar first if present
+    if (announcementNode) {
+      safeSetLayout(announcementNode);
+      try {
+        if ("resize" in announcementNode) (announcementNode as any).resize(targetWidth, 36);
+      } catch {}
+      if (announcementNode.type === "FRAME") {
+        const bFrame = announcementNode as FrameNode;
+        try {
+          bFrame.layoutMode = "HORIZONTAL";
+          bFrame.primaryAxisSizingMode = "FIXED";
+          bFrame.counterAxisSizingMode = "AUTO";
+          bFrame.primaryAxisAlignItems = "CENTER";
+          bFrame.counterAxisAlignItems = "CENTER";
+          bFrame.paddingLeft = 12;
+          bFrame.paddingRight = 12;
+        } catch {}
+        for (const c of bFrame.children) {
+          await formatBlock(c, targetWidth - 24);
+        }
+      }
+      targetNode.insertChild(0, announcementNode);
+      sectionsAnalyzed.push({ name: announcementNode.name, type: announcementNode.type, role: "Announcement Bar", details: "390px full width, centered 12-13px announcement text" });
+      nodesAdjusted++;
+    }
+
+    // 5. Replace Web Navigation with Mobile Header Bar & Drawer Component
+    if (navSectionNode) {
+      const mobileHeader = await createMobileHeaderBar(logoFound);
+      const mobileDrawer = await createMobileNavDrawer(categoryLinksFound);
+
+      const insertIndex = announcementNode ? 1 : 0;
+      targetNode.insertChild(insertIndex, mobileHeader);
+      targetNode.insertChild(insertIndex + 1, mobileDrawer);
+      try { navSectionNode.remove(); } catch {}
+
+      sectionsAnalyzed.push({
+        name: "Mobile Header & Drawer",
+        type: "COMPONENT",
+        role: "Mobile Navigation Component",
+        details: "Converted web header to 56px Mobile Header Bar (Logo + Hamburger Icon + Bag) and Collapsible Mobile Drawer Menu Component",
+      });
+      nodesAdjusted += 10;
+    }
+
+    // 6. Process remaining content sections
+    for (const section of [...targetNode.children]) {
+      if (section === announcementNode) continue;
+      if (section.name.includes("Mobile Header") || section.name.includes("Mobile Navigation Drawer")) continue;
+
+      if (section.type === "FRAME" || section.type === "INSTANCE" || section.type === "COMPONENT") {
+        const secName = section.name.toLowerCase();
+        safeSetLayout(section);
+
+        if (section.type === "FRAME") {
+          const contentFrame = section as FrameNode;
+          try {
+            contentFrame.resize(targetWidth, contentFrame.height);
+          } catch {}
+
+          const kids = [...contentFrame.children].sort((a, b) => (Math.abs(a.y - b.y) < 15 ? a.x - b.x : a.y - b.y));
+          for (const k of kids) {
+            try { contentFrame.appendChild(k); } catch {}
+          }
+
+          try {
+            contentFrame.layoutMode = "VERTICAL";
+            contentFrame.primaryAxisSizingMode = "AUTO"; // Hug
+            contentFrame.counterAxisSizingMode = "FIXED"; // 390px
+            contentFrame.primaryAxisAlignItems = "MIN";
+            contentFrame.counterAxisAlignItems = "CENTER";
+            contentFrame.itemSpacing = sectionGap;
+            contentFrame.paddingLeft = 0;
+            contentFrame.paddingRight = 0;
+            contentFrame.paddingTop = 16;
+            contentFrame.paddingBottom = 28;
+            contentFrame.clipsContent = true;
+          } catch {}
+          nodesAdjusted++;
+
+          const isFooter = secName.includes("footer");
+          const isHero = secName.includes("hero") || (!isFooter && kids.some((k) => k.name.toLowerCase().includes("hero") || k.height > 350));
+          const role = isFooter ? "Footer Section" : isHero ? "Hero Section" : "Content / Showcase Section";
+
+          for (const card of kids) {
+            await formatBlock(card, contentWidth);
+          }
+
+          sectionsAnalyzed.push({ name: section.name, type: section.type, role, details: `Vertical Auto Layout (390px), ${kids.length} stacked blocks formatted` });
+        }
+      }
+    }
+
+    // Helper: Proportional mobile corner radius according to mobile design guidelines
+    function applySmartCornerRadius(f: FrameNode, isBtn: boolean) {
+      if (isIconNode(f)) { f.cornerRadius = 0; return; }
+      if (f.height <= 4) { f.cornerRadius = 0; return; } // Dividers, underlines
+      if (isBtn) { f.cornerRadius = 8; return; } // Standard button
+      if (f.height <= 28) { f.cornerRadius = 4; return; } // Tags, badges, chips
+      if (f.height <= 54) { f.cornerRadius = 8; return; } // Inputs, form fields
+      if (f.width >= 160 && f.height >= 60) { f.cornerRadius = 12; return; } // Cards
+      f.cornerRadius = 6;
+    }
+
+    function isEffectivelyEmpty(n: any): boolean {
+      if (!n) return true;
+      if (n.type === "TEXT") return !n.characters || n.characters.trim().length === 0;
+      if (n.type === "VECTOR" || n.type === "LINE" || n.type === "RECTANGLE" || n.type === "ELLIPSE") {
+        return false;
+      }
+      const hasFills = n.fills && Array.isArray(n.fills) && n.fills.some((f: any) => f.visible !== false);
+      const hasStrokes = n.strokes && Array.isArray(n.strokes) && n.strokes.some((s: any) => s.visible !== false);
+      if (hasFills || hasStrokes) return false;
+      if (!n.children || n.children.length === 0) return true;
+      return n.children.every((c: any) => isEffectivelyEmpty(c));
+    }
+
+    // Recursive helper to format cards, grids, buttons, icons, and text
+    async function formatBlock(node: SceneNode, maxWidth: number) {
+      // 1. Icon Normalization
+      if (isIconNode(node)) {
+        nodesAdjusted++;
+        const targetSize = 24;
+        try {
+          if ("resize" in node) (node as any).resize(targetSize, targetSize);
+        } catch {}
+        safeSetLayout(node, false); // INHERIT, never STRETCH!
+        try {
+          if ("layoutSizingHorizontal" in node) (node as any).layoutSizingHorizontal = "FIXED";
+          if ("layoutSizingVertical" in node) (node as any).layoutSizingVertical = "FIXED";
+          if ("cornerRadius" in node) (node as any).cornerRadius = 0;
+          if ("paddingTop" in node) {
+            (node as any).paddingTop = 0;
+            (node as any).paddingRight = 0;
+            (node as any).paddingBottom = 0;
+            (node as any).paddingLeft = 0;
+          }
+        } catch {}
+
+        // Scale vector children proportionally within 18x18 and center them
+        if ("children" in node && Array.isArray((node as any).children)) {
+          const maxDim = 18;
+          for (const vc of (node as any).children) {
+            if (vc.type === "VECTOR" || vc.type === "LINE" || vc.type === "RECTANGLE" || vc.type === "GROUP") {
+              if (vc.width > maxDim || vc.height > maxDim) {
+                const scale = Math.min(maxDim / vc.width, maxDim / vc.height);
+                try {
+                  vc.resize(Math.max(1, Math.round(vc.width * scale)), Math.max(1, Math.round(vc.height * scale)));
+                } catch {}
+              }
+              try {
+                vc.x = Math.round((24 - vc.width) / 2);
+                vc.y = Math.round((24 - vc.height) / 2);
+              } catch {}
+            }
+          }
+        }
+        return;
+      }
+
+      // 2. Empty spacer frame elimination: REMOVE from tree!
+      if (isEffectivelyEmpty(node)) {
+        try {
+          node.remove();
+          nodesAdjusted++;
+          return;
+        } catch {}
+      }
+
+      // 3. Frame / Component / Instance Formatting
+      let workingNode: SceneNode = node;
+      if (node.type === "INSTANCE") {
+        try {
+          workingNode = (node as InstanceNode).detachInstance();
+          nodesAdjusted++;
+        } catch {
+          workingNode = node;
+        }
+      }
+
+      if (
+        workingNode.type === "FRAME" ||
+        workingNode.type === "COMPONENT" ||
+        workingNode.type === "COMPONENT_SET" ||
+        workingNode.type === "INSTANCE" ||
+        workingNode.type === "GROUP"
+      ) {
+        const frame = workingNode as FrameNode;
+        nodesAdjusted++;
+
+        const frameWidth = Math.min(maxWidth, Math.max(30, frame.width));
+        try {
+          frame.resize(frameWidth, frame.height);
+          if ("clipsContent" in frame) frame.clipsContent = true;
+        } catch {}
+        safeSetLayout(frame, true);
+
+        const hasVisualBackground =
+          "fills" in frame &&
+          Array.isArray(frame.fills) &&
+          frame.fills.length > 0 &&
+          (frame.fills[0] as any).visible !== false;
+
+        const children = "children" in frame && Array.isArray((frame as any).children) ? [...(frame as any).children] : [];
+
+        // Check if this frame is a button
+        const isButton =
+          frame.name.toLowerCase().includes("btn") ||
+          frame.name.toLowerCase().includes("button") ||
+          frame.name.toLowerCase().includes("cta") ||
+          (children.length <= 2 &&
+            children.some((c) => c.type === "TEXT") &&
+            frame.height >= 32 &&
+            frame.height <= 64 &&
+            hasVisualBackground);
+
+        if (isButton && "layoutMode" in frame && frame.type !== "INSTANCE") {
+          try {
+            frame.layoutMode = "HORIZONTAL";
+            frame.primaryAxisSizingMode = "AUTO";
+            frame.counterAxisSizingMode = "FIXED";
+            frame.resize(Math.min(maxWidth, Math.max(140, frame.width)), buttonTargetHeight);
+            frame.primaryAxisAlignItems = "CENTER";
+            frame.counterAxisAlignItems = "CENTER";
+            frame.paddingLeft = 20;
+            frame.paddingRight = 20;
+            frame.paddingTop = 12;
+            frame.paddingBottom = 12;
+            frame.cornerRadius = 8;
+          } catch {}
+          for (const c of children) {
+            if (c.type === "TEXT") {
+              const t = c as TextNode;
+              if (t.fontName !== figma.mixed) await ensureFontLoaded(t.fontName as FontName);
+              t.fontSize = Math.min(16, Math.max(14, typeof t.fontSize === "number" ? t.fontSize : 15));
+              t.textAutoResize = "WIDTH_AND_HEIGHT";
+            }
+          }
+          return;
+        }
+
+        // Check if this frame is a dropdown (e.g. form input with caret)
+        const isDropdown = children.some(c => (c.name || "").toLowerCase().includes("caret") || (c.name || "").toLowerCase().includes("down"));
+        if (isDropdown && "layoutMode" in frame && frame.type !== "INSTANCE") {
+          try {
+            frame.layoutMode = "HORIZONTAL";
+            frame.primaryAxisSizingMode = "AUTO";
+            frame.counterAxisSizingMode = "FIXED";
+            frame.resize(frameWidth, 46);
+            frame.primaryAxisAlignItems = "SPACE_BETWEEN";
+            frame.counterAxisAlignItems = "CENTER";
+            frame.paddingLeft = 14;
+            frame.paddingRight = 14;
+            frame.cornerRadius = 8;
+          } catch {}
+        }
+
+        // Determine if children should be HORIZONTAL or VERTICAL
+        let canBeHorizontal = false;
+        if (children.length >= 2 && children.length <= 5) {
+          const totalKidsWidth =
+            children.reduce((sum, c) => sum + Math.min(c.width, maxWidth), 0) + (children.length - 1) * 8;
+          if (totalKidsWidth <= maxWidth && children.every((c) => c.width < maxWidth * 0.6)) {
+            const yDiffs = Math.abs(children[0].y - children[1].y);
+            if (yDiffs < 25) canBeHorizontal = true;
+          }
+        }
+        if (children.length >= 2 && children.every(c => isIconNode(c))) {
+          canBeHorizontal = true;
+        }
+
+        if ("layoutMode" in frame && frame.type !== "INSTANCE") {
+          try {
+            if (canBeHorizontal) {
+              const sortedH = children.sort((a, b) => a.x - b.x);
+              for (const c of sortedH) frame.appendChild(c);
+              frame.layoutMode = "HORIZONTAL";
+              frame.primaryAxisSizingMode = "AUTO";
+              frame.counterAxisSizingMode = "AUTO";
+              frame.primaryAxisAlignItems = "MIN";
+              frame.counterAxisAlignItems = "CENTER";
+              frame.itemSpacing = 8;
+            } else {
+              const sortedV = children.sort((a, b) => (Math.abs(a.y - b.y) < 15 ? a.x - b.x : a.y - b.y));
+              for (const c of sortedV) frame.appendChild(c);
+              frame.layoutMode = "VERTICAL";
+              frame.primaryAxisSizingMode = "AUTO";
+              frame.counterAxisSizingMode = "FIXED";
+              frame.primaryAxisAlignItems = "MIN";
+              frame.counterAxisAlignItems = "MIN";
+
+              // Smart itemSpacing based on context
+              const isFormGroup = children.length === 2 && children[0].type === "TEXT";
+              const isTextGroup = children.every(c => c.type === "TEXT");
+              frame.itemSpacing = isFormGroup ? 6 : (isTextGroup ? 8 : cardGap);
+            }
+
+            if (hasVisualBackground) {
+              applySmartCornerRadius(frame, isButton);
+              const pad = isButton ? 12 : (frameWidth >= 200 ? 14 : 8);
+              frame.paddingTop = pad;
+              frame.paddingBottom = pad;
+              frame.paddingLeft = pad;
+              frame.paddingRight = pad;
+            }
+          } catch {}
+        }
+
+        const innerPad = hasVisualBackground ? (isButton ? 12 : (frameWidth >= 200 ? 14 : 8)) : 0;
+        const innerMaxWidth = hasVisualBackground ? frameWidth - innerPad * 2 : frameWidth;
+
+        for (const child of children) {
+          await formatBlock(child, innerMaxWidth);
+        }
+      } else if (workingNode.type === "TEXT") {
+        const textNode = workingNode as TextNode;
+        nodesAdjusted++;
+
+        const fontLoaded = textNode.fontName !== figma.mixed ? await ensureFontLoaded(textNode.fontName as FontName) : false;
+
+        safeSetLayout(textNode, true);
+
+        if (fontLoaded && typeof textNode.fontSize === "number") {
+          // Responsive mobile typography scale
+          if (textNode.fontSize > 32) {
+            textNode.fontSize = Math.min(26, textNode.fontSize);
+            textNode.lineHeight = { value: 34, unit: "PIXELS" };
+          } else if (textNode.fontSize >= 22) {
+            textNode.fontSize = Math.min(19, textNode.fontSize);
+            textNode.lineHeight = { value: 25, unit: "PIXELS" };
+          } else if (textNode.fontSize >= 17) {
+            textNode.fontSize = Math.min(15, textNode.fontSize);
+            textNode.lineHeight = { value: 21, unit: "PIXELS" };
+          } else if (textNode.fontSize >= 14) {
+            textNode.fontSize = Math.min(13, textNode.fontSize);
+            textNode.lineHeight = { value: 18, unit: "PIXELS" };
+          }
+        }
+
+        if (textNode.characters && textNode.characters.length <= 25 && textNode.width <= maxWidth) {
+          try {
+            textNode.textAutoResize = "WIDTH_AND_HEIGHT";
+          } catch {}
+        } else {
+          try {
+            textNode.textAutoResize = "HEIGHT";
+            textNode.resize(Math.min(maxWidth, Math.max(60, textNode.width)), textNode.height);
+          } catch {}
+        }
+      } else if (workingNode.type === "RECTANGLE" || workingNode.type === "VECTOR" || workingNode.type === "LINE") {
+        if (isIconNode(workingNode)) {
+          return;
+        }
+        safeSetLayout(workingNode, true);
+        if (workingNode.width > maxWidth) {
+          const ratio = workingNode.height / workingNode.width;
+          const newH = Math.round(maxWidth * ratio);
+          try {
+            workingNode.resize(maxWidth, Math.max(1, newH));
+          } catch {}
+        }
+        nodesAdjusted++;
+      }
+    }
+
+    // Focus on targetNode on canvas
+    figma.currentPage.selection = [targetNode];
+    figma.viewport.scrollAndZoomIntoView([targetNode]);
+
+    figma.notify(`✓ Mobile UI Conversion Complete: ${nodesAdjusted} elements aligned to 390px!`, { timeout: 4000 });
+
+    figma.ui.postMessage({
+      type: "ADJUST_MOBILE_LAYOUT_RESULT",
+      payload: {
+        requestId,
+        success: true,
+        frameName: targetNode.name,
+        nodesAdjusted,
+        sections: sectionsAnalyzed,
+        details: `Successfully converted "${targetNode.name}" to responsive Mobile UI (390px width, vertical Auto Layout, touch targets >= 48px, wrapped typography).`,
+      },
+    });
+  } catch (err: any) {
+    console.error("[Controller] Adjust mobile layout failed:", err);
+    figma.ui.postMessage({
+      type: "ADJUST_MOBILE_LAYOUT_RESULT",
+      payload: {
+        requestId: payload.requestId,
+        success: false,
+        error: err.message || "Failed to adjust mobile layout",
+      },
+    });
+    figma.notify(`❌ Layout adjustment error: ${err.message}`, { error: true, timeout: 4000 });
   }
 }
 

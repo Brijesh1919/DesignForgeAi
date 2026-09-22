@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hire+ Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #EEF2F6;
+      color: #0F172A;
+      -webkit-font-smoothing: antialiased;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 28px 60px 40px 60px;
+      gap: 20px;
+      width: 1440px;
+      min-height: 980px;
+      margin: 0 auto;
+    }
+
+    /* ─── Ambient Glow Background Orbs ─── */
+    .bg-mesh {
+      position: absolute;
+      inset: 0;
+      width: 1440px;
+      height: 100%;
+      overflow: hidden;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .glow-orb {
+      position: absolute;
+      border-radius: 9999px;
+      filter: blur(80px);
+    }
+
+    .orb-blue-top {
+      top: -40px;
+      left: 80px;
+      width: 360px;
+      height: 360px;
+      background-color: #3B82F6;
+      opacity: 0.5;
+    }
+
+    .orb-green-top {
+      top: -50px;
+      right: 220px;
+      width: 380px;
+      height: 380px;
+      background-color: #10B981;
+      opacity: 0.45;
+    }
+
+    .orb-amber-left {
+      top: 480px;
+      left: -60px;
+      width: 340px;
+      height: 340px;
+      background-color: #F59E0B;
+      opacity: 0.45;
+    }
+
+    .orb-red-right {
+      top: 240px;
+      right: -60px;
+      width: 340px;
+      height: 340px;
+      background-color: #F87171;
+      opacity: 0.45;
+    }
+
+    .orb-teal-bottom {
+      bottom: 40px;
+      right: 80px;
+      width: 340px;
+      height: 340px;
+      background-color: #10B981;
+      opacity: 0.45;
+    }
+
+    .sparkle-star {
+      position: absolute;
+      color: rgba(255, 255, 255, 0.9);
+      filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.9));
+    }
+
+    /* ─── Top Floating Pill Navigation (Glassmorphism) ─── */
+    .nav-pill-bar {
+      width: 1320px;
+      height: 64px;
+      background: rgba(255, 255, 255, 0.76);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      border-radius: 9999px;
+      box-shadow: 0 12px 36px rgba(15, 23, 42, 0.05), inset 0 1.5px 0 rgba(255, 255, 255, 0.9);
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+    }
+
+    .nav-left-cluster {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 36px;
+    }
+
+    .brand-logo {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      user-select: none;
+    }
+
+    .brand-hire {
+      color: #1E3A8A;
+    }
+
+    .brand-plus {
+      color: #10B981;
+      font-size: 28px;
+      margin-left: 1px;
+    }
+
+    .nav-links {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .nav-item {
+      font-size: 13px;
+      font-weight: 500;
+      color: #64748B;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .nav-item.active {
+      background: rgba(255, 255, 255, 0.92);
+      color: #1D4ED8;
+      font-weight: 600;
+      border: 1px solid rgba(255, 255, 255, 1);
+      box-shadow: 0 6px 20px rgba(249, 115, 22, 0.3), 0 2px 8px rgba(59, 130, 246, 0.25);
+    }
+
+    .nav-right-tools {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .search-pill {
+      background: rgba(255, 255, 255, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      border-radius: 9999px;
+      height: 36px;
+      width: 156px;
+      padding: 0 14px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      color: #94A3B8;
+      font-size: 12.5px;
+    }
+
+    .notification-btn {
+      position: relative;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .badge-dot-red {
+      position: absolute;
+      top: 7px;
+      right: 8px;
+      width: 7px;
+      height: 7px;
+      background-color: #EF4444;
+      border-radius: 50%;
+      border: 1.5px solid #FFFFFF;
+    }
+
+    .toggle-pill {
+      width: 38px;
+      height: 22px;
+      background-color: #0F172A;
+      border-radius: 9999px;
+      padding: 3px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-end;
+      cursor: pointer;
+    }
+
+    .toggle-thumb {
+      width: 16px;
+      height: 16px;
+      background-color: #FFFFFF;
+      border-radius: 50%;
+    }
+
+    .user-profile-badge {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .user-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1.5px solid #FFFFFF;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .user-name-text {
+      font-size: 12px;
+      font-weight: 600;
+      color: #0F172A;
+      line-height: 1.2;
+    }
+
+    .user-chevron {
+      color: #64748B;
+      font-size: 11px;
+      margin-left: -2px;
+    }
+
+    /* ─── Main Frosted Dashboard Window Card (Glassmorphism) ─── */
+    .dashboard-main-card {
+      width: 1320px;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      border-radius: 28px;
+      padding: 32px;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.04), inset 0 1.5px 0 rgba(255, 255, 255, 0.9);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* ─── Dashboard Header Bar ─── */
+    .dashboard-header-bar {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .dash-title-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .dash-main-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: #0F172A;
+      letter-spacing: -0.5px;
+    }
+
+    .status-badge-operational {
+      display: inline-flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 6px;
+      background: rgba(34, 197, 94, 0.14);
+      border: 1px solid rgba(34, 197, 94, 0.28);
+      color: #15803D;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    .green-status-dot {
+      width: 7px;
+      height: 7px;
+      background-color: #16A34A;
+      border-radius: 50%;
+    }
+
+    .dash-subtitle-text {
+      font-size: 13px;
+      color: #64748B;
+      margin-top: 4px;
+      font-weight: 400;
+    }
+
+    .btn-export {
+      display: inline-flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(203, 213, 225, 0.8);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    /* ─── Row of 4 Metric Stat Cards ─── */
+    .stats-card-row {
+      display: flex;
+      flex-direction: row;
+      gap: 16px;
+      width: 100%;
+    }
+
+    .stat-card {
+      flex: 1;
+      min-width: 0;
+      border-radius: 18px;
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 138px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+    }
+
+    .stat-card--blue {
+      background: linear-gradient(135deg, #E0F2FE 0%, #F0F9FF 100%);
+      border: 1px solid rgba(186, 230, 253, 0.85);
+    }
+
+    .stat-card--amber {
+      background: linear-gradient(135deg, #FEF3C7 0%, #FFFBEB 100%);
+      border: 1px solid rgba(253, 230, 138, 0.85);
+    }
+
+    .stat-card--green {
+      background: linear-gradient(135deg, #DCFCE7 0%, #F0FDF4 100%);
+      border: 1px solid rgba(187, 247, 208, 0.85);
+    }
+
+    .stat-card--rose {
+      background: linear-gradient(135deg, #FFE4E6 0%, #FFF1F2 100%);
+      border: 1px solid rgba(254, 205, 211, 0.85);
+    }
+
+    .stat-card-top-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .stat-card-label-wrap {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .stat-card--blue .stat-card-label-wrap { color: #0369A1; }
+    .stat-card--amber .stat-card-label-wrap { color: #B45309; }
+    .stat-card--green .stat-card-label-wrap { color: #15803D; }
+    .stat-card--rose .stat-card-label-wrap { color: #BE123C; }
+
+    .stat-card-badge-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stat-card--blue .stat-card-badge-icon { background: rgba(2, 132, 199, 0.14); color: #0284C7; }
+    .stat-card--amber .stat-card-badge-icon { background: rgba(217, 119, 6, 0.14); color: #D97706; }
+    .stat-card--green .stat-card-badge-icon { background: rgba(5, 150, 105, 0.14); color: #059669; }
+    .stat-card--rose .stat-card-badge-icon { background: rgba(225, 29, 72, 0.14); color: #E11D48; }
+
+    .stat-card-number {
+      font-size: 34px;
+      font-weight: 800;
+      color: #0F172A;
+      letter-spacing: -1px;
+      margin: 10px 0 2px 0;
+    }
+
+    .stat-card-footer {
+      font-size: 12px;
+      color: #64748B;
+      font-weight: 500;
+    }
+
+    /* ─── 2-Column Split Rows: Individual Separated White Cards ─── */
+    .dashboard-content-split {
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+      width: 100%;
+    }
+
+    .card-panel-left {
+      width: 440px;
+      flex-shrink: 0;
+      background: #FFFFFF;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      border-radius: 18px;
+      padding: 22px 24px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card-panel-right {
+      flex: 1;
+      min-width: 0;
+      background: #FFFFFF;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      border-radius: 18px;
+      padding: 22px 24px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel-header-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0F172A;
+    }
+
+    .panel-view-all {
+      font-size: 12px;
+      font-weight: 600;
+      color: #2563EB;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    /* ─── Recent Activity List ─── */
+    .activity-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .activity-item {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .activity-user-wrap {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .activity-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    }
+
+    .activity-text-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .activity-headline {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #1E293B;
+    }
+
+    .activity-timestamp {
+      font-size: 11px;
+      color: #94A3B8;
+    }
+
+    .activity-badge-time {
+      font-size: 11px;
+      font-weight: 500;
+      color: #64748B;
+    }
+
+    /* ─── Recruitment Pipeline Progress Bars ─── */
+    .pipeline-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 4px;
+    }
+
+    .pipeline-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .pipeline-stage-label {
+      width: 74px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .pipeline-track {
+      flex: 1;
+      height: 10px;
+      background-color: #EEF2F6;
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .pipeline-fill {
+      height: 100%;
+      border-radius: 9999px;
+    }
+
+    .fill-sourced { width: 72%; background: linear-gradient(90deg, #3B82F6 0%, #60A5FA 100%); }
+    .fill-applied { width: 54%; background: linear-gradient(90deg, #F97316 0%, #FB923C 100%); }
+    .fill-screened { width: 40%; background: linear-gradient(90deg, #06B6D4 0%, #38BDF8 100%); }
+    .fill-interview { width: 24%; background: linear-gradient(90deg, #EF4444 0%, #F87171 100%); }
+    .fill-offer { width: 12%; background: linear-gradient(90deg, #10B981 0%, #34D399 100%); }
+    .fill-hired { width: 6%; background: #22C55E; }
+
+    .pipeline-value {
+      width: 46px;
+      text-align: right;
+      font-size: 13px;
+      font-weight: 700;
+      color: #0F172A;
+    }
+
+    /* ─── Top Partners / Vendors Table ─── */
+    .vendors-table {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .vendors-header-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748B;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+    }
+
+    .col-vendor { width: 170px; }
+    .col-perf { width: 96px; }
+    .col-active { width: 50px; text-align: center; }
+    .col-jobs { width: 54px; text-align: right; }
+
+    .vendor-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+    }
+
+    .vendor-info {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .vendor-logo-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      flex-shrink: 0;
+    }
+
+    .vendor-name-col {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .vendor-name-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0F172A;
+    }
+
+    .vendor-name-sub {
+      font-size: 10px;
+      color: #94A3B8;
+    }
+
+    .vendor-perf-cell {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+    }
+
+    .perf-score-badge {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #B45309;
+    }
+
+    .perf-bar-mini {
+      width: 36px;
+      height: 5px;
+      background: #E2E8F0;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .perf-bar-fill {
+      height: 100%;
+      background: #F59E0B;
+      border-radius: 3px;
+    }
+
+    .perf-floating-tooltip {
+      position: absolute;
+      top: -18px;
+      left: 20px;
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+      border-radius: 9999px;
+      padding: 1px 6px;
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #0F172A;
+      white-space: nowrap;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 3px;
+      z-index: 10;
+    }
+
+    .vendor-metric-cell {
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    /* ─── Candidate Statistics & Dual Bar Charts ─── */
+    .mini-stat-pills-row {
+      display: flex;
+      flex-direction: row;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .mini-stat-pill {
+      flex: 1;
+      min-width: 0;
+      border-radius: 10px;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pill-partner { background: #EFF6FF; border: 1px solid #DBEAFE; }
+    .pill-talent { background: #FFFBEB; border: 1px solid #FEF3C7; }
+    .pill-opening { background: #F0FDF4; border: 1px solid #DCFCE7; }
+    .pill-apps { background: #FFF1F2; border: 1px solid #FFE4E6; }
+
+    .mini-stat-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mini-stat-label {
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .pill-partner .mini-stat-label { color: #1E40AF; }
+    .pill-talent .mini-stat-label { color: #B45309; }
+    .pill-opening .mini-stat-label { color: #15803D; }
+    .pill-apps .mini-stat-label { color: #BE123C; }
+
+    .mini-stat-val {
+      font-size: 12px;
+      font-weight: 800;
+      color: #0F172A;
+    }
+
+    /* ─── Charts Row ─── */
+    .dual-charts-wrap {
+      display: flex;
+      flex-direction: row;
+      gap: 16px;
+      margin-top: 4px;
+      width: 100%;
+    }
+
+    .chart-box {
+      flex: 1;
+      min-width: 0;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: row;
+      gap: 10px;
+    }
+
+    .chart-y-axis {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-size: 9.5px;
+      color: #94A3B8;
+      font-weight: 500;
+      height: 90px;
+      padding-bottom: 2px;
+    }
+
+    .chart-bars-area {
+      flex: 1;
+      height: 90px;
+      display: flex;
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-around;
+      border-bottom: 1px solid #E2E8F0;
+      padding-bottom: 2px;
+    }
+
+    .bar-col {
+      width: 7px;
+      border-radius: 4px 4px 0 0;
+    }
+
+    .bar-blue { background: #3B82F6; }
+    .bar-cyan { background: #38BDF8; }
+    .bar-orange { background: #FB923C; }
+    .bar-yellow { background: #FACC15; }
+    .bar-red { background: #F87171; }
+    .bar-teal { background: #14B8A6; }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Blurred Colorful Mesh Background -->
+  <div class="bg-mesh">
+    <div class="glow-orb orb-blue-top"></div>
+    <div class="glow-orb orb-green-top"></div>
+    <div class="glow-orb orb-amber-left"></div>
+    <div class="glow-orb orb-red-right"></div>
+    <div class="glow-orb orb-teal-bottom"></div>
+
+    <!-- Sparkle Star -->
+    <svg class="sparkle-star" style="bottom: 50px; right: 50px;" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/>
+    </svg>
+  </div>
+
+  <!-- ─── 1. TOP FLOATING PILL NAVIGATION (Frosted Glass) ─── -->
+  <header class="nav-pill-bar">
+    <div class="nav-left-cluster">
+      <!-- Exact Brand Logo "Hire+" -->
+      <div class="brand-logo">
+        <span class="brand-hire">Hire</span><span class="brand-plus">+</span>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-links">
+        <a class="nav-item active">Dashboard</a>
+        <a class="nav-item">Vendors</a>
+        <a class="nav-item">Jobs</a>
+        <a class="nav-item">Candidates</a>
+        <a class="nav-item">Applications</a>
+        <a class="nav-item">Messages</a>
+        <a class="nav-item">Support</a>
+      </nav>
+    </div>
+
+    <!-- Right Tool Cluster -->
+    <div class="nav-right-tools">
+      <!-- Search Pill -->
+      <div class="search-pill">
+        <span>Search</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </div>
+
+      <!-- Notification Bell with Red Dot -->
+      <div class="notification-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <span class="badge-dot-red"></span>
+      </div>
+
+      <!-- Dark Toggle Switch -->
+      <div class="toggle-pill">
+        <div class="toggle-thumb"></div>
+      </div>
+
+      <!-- User Profile (Super Admin) -->
+      <div class="user-profile-badge">
+        <img class="user-avatar" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80" alt="Super Admin" />
+        <span class="user-name-text">Super<br />Admin</span>
+        <span class="user-chevron">▼</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ─── 2. MAIN FROSTED GLASS CARD (Frosted Glass Container) ─── -->
+  <main class="dashboard-main-card">
+
+    <!-- Header Section -->
+    <div class="dashboard-header-bar">
+      <div>
+        <div class="dash-title-row">
+          <h1 class="dash-main-title">Dashboard</h1>
+          <span class="status-badge-operational">
+            <span class="green-status-dot"></span>
+            System Operational
+          </span>
+        </div>
+        <p class="dash-subtitle-text">Clean orie enterprise sad seastios. System dashboard.</p>
+      </div>
+
+      <!-- Export CTA Button -->
+      <button class="btn-export">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Export
+      </button>
+    </div>
+
+    <!-- ─── Row of 4 Metric Stat Cards ─── -->
+    <section class="stats-card-row">
+      <!-- 1. Partner Vendors -->
+      <div class="stat-card stat-card--blue">
+        <div class="stat-card-top-row">
+          <div class="stat-card-label-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+              <path d="M4 22h16"></path>
+              <path d="M10 14.66V17c0 .55-.45 1-1 1H7v2h10v-2h-2c-.55 0-1-.45-1-1v-2.34"></path>
+              <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+            </svg>
+            <span>Partner Vendors</span>
+          </div>
+          <div class="stat-card-badge-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+              <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+              <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+              <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <div class="stat-card-number">1,245</div>
+          <div class="stat-card-footer">Partner Vendors 1,245</div>
+        </div>
+      </div>
+
+      <!-- 2. Talent Pool -->
+      <div class="stat-card stat-card--amber">
+        <div class="stat-card-top-row">
+          <div class="stat-card-label-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>Talent Pool</span>
+          </div>
+          <div class="stat-card-badge-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <div class="stat-card-number">75,890</div>
+          <div class="stat-card-footer">Talent Pool Informsetion</div>
+        </div>
+      </div>
+
+      <!-- 3. Active Openings -->
+      <div class="stat-card stat-card--green">
+        <div class="stat-card-top-row">
+          <div class="stat-card-label-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+            </svg>
+            <span>Active Openings</span>
+          </div>
+          <div class="stat-card-badge-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 4v6h-6"></path>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <div class="stat-card-number">345</div>
+          <div class="stat-card-footer">Active Open information</div>
+        </div>
+      </div>
+
+      <!-- 4. Applications -->
+      <div class="stat-card stat-card--rose">
+        <div class="stat-card-top-row">
+          <div class="stat-card-label-wrap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span>Applications</span>
+          </div>
+          <div class="stat-card-badge-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <div class="stat-card-number">12,987</div>
+          <div class="stat-card-footer">Applications Information</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Middle Row: 2 Separate Cards (Recent Activity & Recruitment Pipeline) ─── -->
+    <section class="dashboard-content-split">
+      <!-- Distinct White Card 1: Recent Activity -->
+      <div class="card-panel-left">
+        <div class="panel-header-row">
+          <h3 class="panel-title">Recent Activity</h3>
+          <a class="panel-view-all">View All</a>
+        </div>
+
+        <div class="activity-list">
+          <!-- Row 1 -->
+          <div class="activity-item">
+            <div class="activity-user-wrap">
+              <img class="activity-avatar" src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80" alt="Sarah Chen" />
+              <div class="activity-text-info">
+                <span class="activity-headline">Sarah Chen viewed Candidate Profile</span>
+                <span class="activity-timestamp">3 visits ago</span>
+              </div>
+            </div>
+            <span class="activity-badge-time">Today</span>
+          </div>
+
+          <!-- Row 2 -->
+          <div class="activity-item">
+            <div class="activity-user-wrap">
+              <img class="activity-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80" alt="Vendor User" />
+              <div class="activity-text-info">
+                <span class="activity-headline">New Vendor Registered: ABC Corp</span>
+                <span class="activity-timestamp">17 hours ago</span>
+              </div>
+            </div>
+            <span class="activity-badge-time">Today</span>
+          </div>
+
+          <!-- Row 3 -->
+          <div class="activity-item">
+            <div class="activity-user-wrap">
+              <img class="activity-avatar" src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=80" alt="Sarah Chen" />
+              <div class="activity-text-info">
+                <span class="activity-headline">Sarah Chen registered: ABC Corp</span>
+                <span class="activity-timestamp">17 hours ago</span>
+              </div>
+            </div>
+            <span class="activity-badge-time">Today</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Distinct White Card 2: Recruitment Pipeline -->
+      <div class="card-panel-right">
+        <div class="panel-header-row">
+          <h3 class="panel-title">Recruitment Pipeline</h3>
+        </div>
+
+        <div class="pipeline-list">
+          <div class="pipeline-row">
+            <span class="pipeline-stage-label">Sourced</span>
+            <div class="pipeline-track"><div class="pipeline-fill fill-sourced"></div></div>
+            <span class="pipeline-value">3,200</span>
+          </div>
+          <div class="pipeline-row">
+            <span class="pipeline-stage-label">Applied</span>
+            <div class="pipeline-track"><div class="pipeline-fill fill-applied"></div></div>
+            <span class="pipeline-value">2,100</span>
+          </div>
+          <div class="pipeline-row">
+            <span class="pipeline-stage-label">Screened</span>
+            <div class="pipeline-track"><div class="pipeline-fill fill-screened"></div></div>
+            <span class="pipeline-value">1,500</span>
+          </div>
+          <div class="pipeline-row">
+            <span class="pipeline-stage-label">Interview</span>
+            <div class="pipeline-track"><div class="pipeline-fill fill-interview"></div></div>
+            <span class="pipeline-value">800</span>
+          </div>
+          <div class="pipeline-row">
+            <span class="pipeline-stage-label">Offer</span>
+            <div class="pipeline-track"><div class="pipeline-fill fill-offer"></div></div>
+            <span class="pipeline-value">350</span>
+          </div>
+          <div class="pipeline-row">
+            <span class="pipeline-stage-label">Hired</span>
+            <div class="pipeline-track"><div class="pipeline-fill fill-hired"></div></div>
+            <span class="pipeline-value">150</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Bottom Row: 2 Separate Cards (Top Partners & Candidate Statistics) ─── -->
+    <section class="dashboard-content-split">
+      <!-- Distinct White Card 1: Top Partners / Vendors -->
+      <div class="card-panel-left">
+        <div class="panel-header-row">
+          <h3 class="panel-title">Top Partners / Vendors</h3>
+          <a class="panel-view-all">View All</a>
+        </div>
+
+        <div class="vendors-table">
+          <div class="vendors-header-row">
+            <span class="col-vendor">Vendors</span>
+            <span class="col-perf">Performance</span>
+            <span class="col-active">Active</span>
+            <span class="col-jobs">Active Jobs</span>
+          </div>
+
+          <!-- Row 1: Hire+ -->
+          <div class="vendor-row">
+            <div class="vendor-info col-vendor">
+              <div class="vendor-logo-circle" style="background: #0F172A; color: #FFFFFF;">
+                <span style="font-size: 10px;">H+</span>
+              </div>
+              <div class="vendor-name-col">
+                <span class="vendor-name-title">Hire+</span>
+                <span class="vendor-name-sub">Top 5 vendor</span>
+              </div>
+            </div>
+            <div class="vendor-perf-cell col-perf">
+              <span class="perf-score-badge">8.5</span>
+              <div class="perf-bar-mini"><div class="perf-bar-fill" style="width: 85%;"></div></div>
+            </div>
+            <span class="vendor-metric-cell col-active">305</span>
+            <span class="vendor-metric-cell col-jobs">92</span>
+          </div>
+
+          <!-- Row 2: SarahBaons -->
+          <div class="vendor-row">
+            <div class="vendor-info col-vendor">
+              <div class="vendor-logo-circle" style="background: #FFFFFF; border: 1px solid #E2E8F0; color: #EA4335;">
+                <span style="font-weight: 800; font-size: 12px;">G</span>
+              </div>
+              <div class="vendor-name-col">
+                <span class="vendor-name-title">SarahBaons</span>
+                <span class="vendor-name-sub">Top 5 offshore</span>
+              </div>
+            </div>
+            <div class="vendor-perf-cell col-perf">
+              <span class="perf-score-badge">6.5</span>
+              <div class="perf-bar-mini"><div class="perf-bar-fill" style="width: 65%;"></div></div>
+              <div class="perf-floating-tooltip">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                  <polyline points="17 6 23 6 23 12"></polyline>
+                </svg>
+                136%
+              </div>
+            </div>
+            <span class="vendor-metric-cell col-active">275</span>
+            <span class="vendor-metric-cell col-jobs">85</span>
+          </div>
+
+          <!-- Row 3: ABC Corp -->
+          <div class="vendor-row">
+            <div class="vendor-info col-vendor">
+              <div class="vendor-logo-circle" style="background: #EFF6FF; color: #2563EB;">
+                <span style="font-size: 14px; font-weight: 900;">+</span>
+              </div>
+              <div class="vendor-name-col">
+                <span class="vendor-name-title">ABC Corp</span>
+                <span class="vendor-name-sub">Top 5 investors</span>
+              </div>
+            </div>
+            <div class="vendor-perf-cell col-perf">
+              <span class="perf-score-badge">6.5</span>
+              <div class="perf-bar-mini"><div class="perf-bar-fill" style="width: 65%;"></div></div>
+            </div>
+            <span class="vendor-metric-cell col-active">301</span>
+            <span class="vendor-metric-cell col-jobs">97</span>
+          </div>
+
+          <!-- Row 4: Jaskes -->
+          <div class="vendor-row">
+            <div class="vendor-info col-vendor">
+              <div class="vendor-logo-circle" style="background: #1E293B; color: #FFFFFF;">
+                <span style="font-size: 11px;">J</span>
+              </div>
+              <div class="vendor-name-col">
+                <span class="vendor-name-title">Jaskes</span>
+                <span class="vendor-name-sub">Top 5 vendors</span>
+              </div>
+            </div>
+            <div class="vendor-perf-cell col-perf">
+              <span class="perf-score-badge">6.5</span>
+              <div class="perf-bar-mini"><div class="perf-bar-fill" style="width: 65%;"></div></div>
+            </div>
+            <span class="vendor-metric-cell col-active">175</span>
+            <span class="vendor-metric-cell col-jobs">86</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Distinct White Card 2: Candidate/application statistics -->
+      <div class="card-panel-right">
+        <div class="panel-header-row">
+          <h3 class="panel-title">Candidate/application statistics</h3>
+        </div>
+
+        <!-- 4 Mini Stat Pills -->
+        <div class="mini-stat-pills-row">
+          <div class="mini-stat-pill pill-partner">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+              <path d="M4 22h16"></path>
+              <path d="M10 14.66V17c0 .55-.45 1-1 1H7v2h10v-2h-2c-.55 0-1-.45-1-1v-2.34"></path>
+              <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+            </svg>
+            <div class="mini-stat-text">
+              <span class="mini-stat-label">Partner</span>
+              <span class="mini-stat-val">1,245</span>
+            </div>
+          </div>
+          <div class="mini-stat-pill pill-talent">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+            </svg>
+            <div class="mini-stat-text">
+              <span class="mini-stat-label">Talent Pool</span>
+              <span class="mini-stat-val">75,890</span>
+            </div>
+          </div>
+          <div class="mini-stat-pill pill-opening">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+            </svg>
+            <div class="mini-stat-text">
+              <span class="mini-stat-label">Active Opening</span>
+              <span class="mini-stat-val">345</span>
+            </div>
+          </div>
+          <div class="mini-stat-pill pill-apps">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E11D48" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            </svg>
+            <div class="mini-stat-text">
+              <span class="mini-stat-label">Applications</span>
+              <span class="mini-stat-val">12,987</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dual Bar Charts -->
+        <div class="dual-charts-wrap">
+          <!-- Chart 1 (Multi-bar breakdown) -->
+          <div class="chart-box">
+            <div class="chart-y-axis">
+              <span>1000</span>
+              <span>755</span>
+              <span>500</span>
+              <span>255</span>
+            </div>
+            <div class="chart-bars-area">
+              <div class="bar-col bar-blue" style="height: 58px;"></div>
+              <div class="bar-col bar-cyan" style="height: 38px;"></div>
+              <div class="bar-col bar-orange" style="height: 78px;"></div>
+              <div class="bar-col bar-yellow" style="height: 44px;"></div>
+              <div class="bar-col bar-red" style="height: 64px;"></div>
+              <div class="bar-col bar-blue" style="height: 82px;"></div>
+              <div class="bar-col bar-teal" style="height: 50px;"></div>
+              <div class="bar-col bar-orange" style="height: 70px;"></div>
+              <div class="bar-col bar-yellow" style="height: 36px;"></div>
+              <div class="bar-col bar-red" style="height: 60px;"></div>
+            </div>
+          </div>
+
+          <!-- Chart 2 (Alternating distribution) -->
+          <div class="chart-box">
+            <div class="chart-y-axis">
+              <span>1000</span>
+              <span>755</span>
+              <span>500</span>
+              <span>255</span>
+            </div>
+            <div class="chart-bars-area">
+              <div class="bar-col bar-blue" style="height: 48px;"></div>
+              <div class="bar-col bar-cyan" style="height: 68px;"></div>
+              <div class="bar-col bar-red" style="height: 52px;"></div>
+              <div class="bar-col bar-yellow" style="height: 76px;"></div>
+              <div class="bar-col bar-teal" style="height: 40px;"></div>
+              <div class="bar-col bar-blue" style="height: 84px;"></div>
+              <div class="bar-col bar-cyan" style="height: 60px;"></div>
+              <div class="bar-col bar-red" style="height: 44px;"></div>
+              <div class="bar-col bar-yellow" style="height: 72px;"></div>
+              <div class="bar-col bar-teal" style="height: 56px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+</body>
+</html>

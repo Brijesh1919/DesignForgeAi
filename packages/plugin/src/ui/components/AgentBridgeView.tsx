@@ -17,7 +17,7 @@ interface ActivityLogItem {
 }
 
 export const AgentBridgeView: React.FC = () => {
-  const { settings } = useAppStore();
+  const settings = useAppStore((s) => s.settings);
   const { sendMessage } = useFigmaMessages();
   const { convertWebsiteToFigma } = useWebsiteConversion();
 
@@ -27,7 +27,16 @@ export const AgentBridgeView: React.FC = () => {
   const [pingLatency, setPingLatency] = useState<number | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimerRef = useRef<any>(null);
   const pendingRequestsRef = useRef<Map<string, (result: any) => void>>(new Map());
+  const isMountedRef = useRef(true);
+  const isBusyRef = useRef(false);
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+  const sendMessageRef = useRef(sendMessage);
+  sendMessageRef.current = sendMessage;
+  const convertWebsiteToFigmaRef = useRef(convertWebsiteToFigma);
+  convertWebsiteToFigmaRef.current = convertWebsiteToFigma;
 
   const addLog = useCallback((command: string, status: "pending" | "success" | "error", details: string) => {
     const item: ActivityLogItem = {
@@ -40,12 +49,18 @@ export const AgentBridgeView: React.FC = () => {
     setLogs((prev) => [item, ...prev.slice(0, 30)]);
   }, []);
 
+  const addLogRef = useRef(addLog);
+  addLogRef.current = addLog;
+
   // Update existing log status
   const updateLog = useCallback((id: string, status: "success" | "error", details: string) => {
     setLogs((prev) =>
       prev.map((log) => (log.id === id ? { ...log, status, details } : log))
     );
   }, []);
+
+  const updateLogRef = useRef(updateLog);
+  updateLogRef.current = updateLog;
 
   // Listen to messages from Figma's sandbox (code.js)
   useEffect(() => {
@@ -62,7 +77,12 @@ export const AgentBridgeView: React.FC = () => {
         }
       }
 
-      if (msg.type === "REMOVE_BACKGROUND_EXPORT_READY" || msg.type === "REMOVE_BACKGROUND_RESULT" || msg.type === "RECOLOR_THEME_RESULT") {
+      if (
+        msg.type === "REMOVE_BACKGROUND_EXPORT_READY" ||
+        msg.type === "REMOVE_BACKGROUND_RESULT" ||
+        msg.type === "RECOLOR_THEME_RESULT" ||
+        msg.type === "ADJUST_MOBILE_LAYOUT_RESULT"
+      ) {
         const requestId = msg.payload?.requestId;
         if (requestId && pendingRequestsRef.current.has(requestId)) {
           const resolver = pendingRequestsRef.current.get(requestId)!;
@@ -96,25 +116,39 @@ export const AgentBridgeView: React.FC = () => {
 
   // Connect to the local WebSocket bridge
   const connectBridge = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    if (
+      wsRef.current?.readyState === WebSocket.OPEN ||
+      wsRef.current?.readyState === WebSocket.CONNECTING
+    ) {
+      return;
+    }
 
     setConnectionStatus("connecting");
     const ws = new WebSocket("ws://localhost:3001/bridge");
     wsRef.current = ws;
 
     ws.onopen = () => {
+      if (!isMountedRef.current) {
+        ws.close();
+        return;
+      }
       setConnectionStatus("connected");
-      addLog("System", "success", "Connected to DesignForge AI Agent Bridge (ws://localhost:3001/bridge)");
+      addLogRef.current("System", "success", "Connected to DesignForge AI Agent Bridge (ws://localhost:3001/bridge)");
     };
 
     ws.onclose = () => {
+      if (!isMountedRef.current) return;
       setConnectionStatus("disconnected");
-      setTimeout(() => {
-        connectBridge();
-      }, 2500);
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = setTimeout(() => {
+        if (isMountedRef.current) {
+          connectBridge();
+        }
+      }, 3000);
     };
 
     ws.onerror = () => {
+      if (!isMountedRef.current) return;
       setConnectionStatus("disconnected");
     };
 
@@ -134,17 +168,20 @@ export const AgentBridgeView: React.FC = () => {
 
         if (type === "PING") {
           ws.send(JSON.stringify({ id, success: true, data: { status: "pong", time: Date.now() } }));
-          addLog("Ping", "success", "Agent ping received and acknowledged");
+          addLogRef.current("Ping", "success", "Agent ping received and acknowledged");
           return;
         }
 
         if (type === "GET_CANVAS_SELECTION") {
           const logId = Math.random().toString(36).substring(2, 9);
-          addLog("Inspect Selection", "pending", "Reading selected layers from Figma canvas...");
+          addLogRef.current("Inspect Selection", "pending", "Reading selected layers from Figma canvas...");
 
           const selectionResult = await new Promise<any>((resolve) => {
             pendingRequestsRef.current.set(id, resolve);
-            sendMessage({ type: "GET_CANVAS_SELECTION", payload: { requestId: id } });
+            sendMessageRef.current({
+              type: "GET_CANVAS_SELECTION",
+              payload: { requestId: id, maxDepth: payload?.maxDepth, nodeId: payload?.nodeId },
+            });
             setTimeout(() => {
               if (pendingRequestsRef.current.has(id)) {
                 pendingRequestsRef.current.delete(id);
@@ -154,13 +191,18 @@ export const AgentBridgeView: React.FC = () => {
           });
 
           const count = selectionResult?.selection?.length || 0;
-          updateLog(logId, "success", `Returned ${count} selected layer(s) to Antigravity`);
+          updateLogRef.current(logId, "success", `Returned ${count} selected layer(s) to Antigravity`);
 
           ws.send(JSON.stringify({ id, success: true, data: selectionResult }));
           return;
         }
 
         if (type === "EXECUTE_URL_TO_DESIGN") {
+          if (isBusyRef.current) {
+            ws.send(JSON.stringify({ id, success: false, error: "Figma is already busy generating a design. Please wait for it to finish." }));
+            return;
+          }
+          isBusyRef.current = true;
           const targetUrl = payload.url;
           const autoLayout = payload.autoLayout !== false;
           const viewportStr = payload.viewport || "desktop";
@@ -174,7 +216,7 @@ export const AgentBridgeView: React.FC = () => {
           const viewportObj = vpMap[viewportStr] || vpMap.desktop;
 
           const logId = Math.random().toString(36).substring(2, 9);
-          addLog("Convert URL", "pending", `Extracting & generating: ${targetUrl} (AL: ${autoLayout ? "ON" : "OFF"})`);
+          addLogRef.current("Convert URL", "pending", `Extracting & generating: ${targetUrl} (AL: ${autoLayout ? "ON" : "OFF"})`);
 
           try {
             const buildPromise = new Promise<any>((resolve) => {
@@ -187,7 +229,7 @@ export const AgentBridgeView: React.FC = () => {
               }, 90000);
             });
 
-            await convertWebsiteToFigma(targetUrl, viewportObj, {
+            await convertWebsiteToFigmaRef.current(targetUrl, viewportObj, {
               editableText: true,
               autoLayout: autoLayout,
               importImages: true,
@@ -199,7 +241,7 @@ export const AgentBridgeView: React.FC = () => {
             const buildResult = await buildPromise;
 
             if (buildResult.success) {
-              updateLog(logId, "success", `Design generated: "${buildResult.frameName || "Page"}"`);
+              updateLogRef.current(logId, "success", `Design generated: "${buildResult.frameName || "Page"}"`);
               ws.send(JSON.stringify({
                 id,
                 success: true,
@@ -213,15 +255,22 @@ export const AgentBridgeView: React.FC = () => {
               throw new Error(buildResult.error || "Generation failed in Figma");
             }
           } catch (err: any) {
-            updateLog(logId, "error", `Failed: ${err.message}`);
+            updateLogRef.current(logId, "error", `Failed: ${err.message}`);
             ws.send(JSON.stringify({ id, success: false, error: err.message }));
+          } finally {
+            isBusyRef.current = false;
           }
           return;
         }
 
         if (type === "EXECUTE_AI_PROMPT") {
+          if (isBusyRef.current) {
+            ws.send(JSON.stringify({ id, success: false, error: "Figma is already busy generating a design. Please wait for it to finish." }));
+            return;
+          }
+          isBusyRef.current = true;
           const logId = Math.random().toString(36).substring(2, 9);
-          addLog("AI Generate", "pending", `Generating from prompt: "${payload.prompt}"`);
+          addLogRef.current("AI Generate", "pending", `Generating from prompt: "${payload.prompt}"`);
 
           try {
             // Send prompt to backend generate API
@@ -237,13 +286,13 @@ export const AgentBridgeView: React.FC = () => {
             // Dispatch to Figma
             const buildResult = await new Promise<any>((resolve) => {
               pendingRequestsRef.current.set("CURRENT_GENERATION", resolve);
-              sendMessage({
+              sendMessageRef.current({
                 type: "START_GENERATION",
                 payload: {
                   analysisJson: JSON.stringify(genData.data?.analysis),
                   imageBase64: "",
                   settings: {
-                    ...settings,
+                    ...settingsRef.current,
                     createAutoLayout: payload.autoLayout !== false,
                   },
                 },
@@ -251,24 +300,31 @@ export const AgentBridgeView: React.FC = () => {
               setTimeout(() => resolve({ success: false, error: "Timed out" }), 60000);
             });
 
-            updateLog(logId, buildResult.success ? "success" : "error", buildResult.frameName || "AI Component");
+            updateLogRef.current(logId, buildResult.success ? "success" : "error", buildResult.frameName || "AI Component");
             ws.send(JSON.stringify({ id, success: buildResult.success, data: buildResult }));
           } catch (err: any) {
-            updateLog(logId, "error", err.message);
+            updateLogRef.current(logId, "error", err.message);
             ws.send(JSON.stringify({ id, success: false, error: err.message }));
+          } finally {
+            isBusyRef.current = false;
           }
           return;
         }
 
         if (type === "REMOVE_BACKGROUND") {
+          if (isBusyRef.current) {
+            ws.send(JSON.stringify({ id, success: false, error: "Figma is currently busy. Please wait for it to finish." }));
+            return;
+          }
+          isBusyRef.current = true;
           const logId = Math.random().toString(36).substring(2, 9);
-          addLog("Remove BG", "pending", "Exporting selected layer(s) from Figma...");
+          addLogRef.current("Remove BG", "pending", "Exporting selected layer(s) from Figma...");
 
           try {
             // 1. Ask controller to export selected layer(s) as PNG base64
             const exportResult = await new Promise<any>((resolve) => {
               pendingRequestsRef.current.set(id, resolve);
-              sendMessage({ type: "EXECUTE_REMOVE_BACKGROUND", payload: { requestId: id } });
+              sendMessageRef.current({ type: "EXECUTE_REMOVE_BACKGROUND", payload: { requestId: id } });
               setTimeout(() => {
                 if (pendingRequestsRef.current.has(id)) {
                   pendingRequestsRef.current.delete(id);
@@ -284,14 +340,14 @@ export const AgentBridgeView: React.FC = () => {
               throw new Error(exportResult?.error || "No layers selected or failed to export images");
             }
 
-            updateLog(logId, "pending", `Removing background from ${items.length} layer(s) via AI...`);
+            updateLogRef.current(logId, "pending", `Removing background from ${items.length} layer(s) via AI...`);
 
             // 2. Process all items with backend /api/assets/remove-bg
             const results: Array<{ nodeId: string; transparentBase64: string }> = [];
 
             for (let i = 0; i < items.length; i++) {
               const item = items[i];
-              updateLog(logId, "pending", `Removing background ${i + 1}/${items.length}: "${item.nodeName}"...`);
+              updateLogRef.current(logId, "pending", `Removing background ${i + 1}/${items.length}: "${item.nodeName}"...`);
 
               const res = await fetch("http://localhost:3001/api/assets/remove-bg", {
                 method: "POST",
@@ -308,12 +364,12 @@ export const AgentBridgeView: React.FC = () => {
               throw new Error("Background removal failed for all selected layers");
             }
 
-            updateLog(logId, "pending", `Applying transparent cutouts to ${results.length} layer(s)...`);
+            updateLogRef.current(logId, "pending", `Applying transparent cutouts to ${results.length} layer(s)...`);
 
             // 3. Ask controller to apply transparent image fills
             const applyResult = await new Promise<any>((resolve) => {
               pendingRequestsRef.current.set(id, resolve);
-              sendMessage({
+              sendMessageRef.current({
                 type: "APPLY_REMOVE_BACKGROUND_RESULT",
                 payload: {
                   requestId: id,
@@ -332,23 +388,30 @@ export const AgentBridgeView: React.FC = () => {
               throw new Error(applyResult?.error || "Failed to apply transparent images");
             }
 
-            updateLog(logId, "success", `Background removed from ${results.length} layer(s)!`);
+            updateLogRef.current(logId, "success", `Background removed from ${results.length} layer(s)!`);
             ws.send(JSON.stringify({ id, success: true, data: { count: results.length } }));
           } catch (err: any) {
-            updateLog(logId, "error", err.message);
+            updateLogRef.current(logId, "error", err.message);
             ws.send(JSON.stringify({ id, success: false, error: err.message }));
+          } finally {
+            isBusyRef.current = false;
           }
           return;
         }
 
         if (type === "RECOLOR_THEME") {
+          if (isBusyRef.current) {
+            ws.send(JSON.stringify({ id, success: false, error: "Figma is currently busy. Please wait for it to finish." }));
+            return;
+          }
+          isBusyRef.current = true;
           const logId = Math.random().toString(36).substring(2, 9);
-          addLog("Recolor Theme", "pending", "Applying new color theme to selected frames in Figma...");
+          addLogRef.current("Recolor Theme", "pending", "Applying new color theme to selected frames in Figma...");
 
           try {
             const recolorResult = await new Promise<any>((resolve) => {
               pendingRequestsRef.current.set(id, resolve);
-              sendMessage({ type: "EXECUTE_RECOLOR_THEME", payload: { requestId: id, ...payload } });
+              sendMessageRef.current({ type: "EXECUTE_RECOLOR_THEME", payload: { requestId: id, ...payload } });
               setTimeout(() => {
                 if (pendingRequestsRef.current.has(id)) {
                   pendingRequestsRef.current.delete(id);
@@ -361,18 +424,25 @@ export const AgentBridgeView: React.FC = () => {
               throw new Error(recolorResult?.error || "Failed to recolor theme");
             }
 
-            updateLog(logId, "success", `Theme updated on ${recolorResult.nodesUpdated || "selected"} layers!`);
+            updateLogRef.current(logId, "success", `Theme updated on ${recolorResult.nodesUpdated || "selected"} layers!`);
             ws.send(JSON.stringify({ id, success: true, data: recolorResult }));
           } catch (err: any) {
-            updateLog(logId, "error", err.message);
+            updateLogRef.current(logId, "error", err.message);
             ws.send(JSON.stringify({ id, success: false, error: err.message }));
+          } finally {
+            isBusyRef.current = false;
           }
           return;
         }
 
         if (type === "EXECUTE_HTML_CSS") {
+          if (isBusyRef.current) {
+            ws.send(JSON.stringify({ id, success: false, error: "Figma is already busy generating a design. Please wait for it to complete." }));
+            return;
+          }
+          isBusyRef.current = true;
           const logId = Math.random().toString(36).substring(2, 9);
-          addLog("Apply Code", "pending", "Rendering HTML/CSS design in Figma...");
+          addLogRef.current("Apply Code", "pending", "Rendering HTML/CSS design in Figma...");
 
           try {
             const { html = "", css = "", analysisJson = "" } = payload as { html?: string; css?: string; analysisJson?: string };
@@ -381,17 +451,17 @@ export const AgentBridgeView: React.FC = () => {
             if (analysisJson) {
               const buildResult = await new Promise<any>((resolve) => {
                 pendingRequestsRef.current.set("CURRENT_GENERATION", resolve);
-                sendMessage({
+                sendMessageRef.current({
                   type: "START_GENERATION",
                   payload: {
                     analysisJson,
                     imageBase64: "",
-                    settings: { ...settings, createAutoLayout: payload.autoLayout !== false },
+                    settings: { ...settingsRef.current, createAutoLayout: payload.autoLayout !== false },
                   },
                 });
                 setTimeout(() => resolve({ success: false, error: "Timed out after 90s" }), 90000);
               });
-              updateLog(logId, buildResult.success ? "success" : "error", buildResult.frameName || (buildResult.error ?? "Done"));
+              updateLogRef.current(logId, buildResult.success ? "success" : "error", buildResult.frameName || (buildResult.error ?? "Done"));
               ws.send(JSON.stringify({ id, success: buildResult.success, data: buildResult, error: buildResult.error }));
               return;
             }
@@ -404,7 +474,7 @@ export const AgentBridgeView: React.FC = () => {
               fullHtml = html.replace("</head>", `<style>${css}</style></head>`);
             }
 
-            addLog("Apply Code", "pending", "Extracting layout from HTML iframe...");
+            addLogRef.current("Apply Code", "pending", "Extracting layout from HTML iframe...");
 
             const targetWidth = (payload as any).width || 1440;
             // Render inside a hidden iframe so we can read computed styles
@@ -427,6 +497,29 @@ export const AgentBridgeView: React.FC = () => {
             if (!iDoc || !iWin) {
               document.body.removeChild(iframe);
               throw new Error("Failed to access iframe document");
+            }
+
+            function parseColorAndAlpha(colorStr: string): { hex: string; alpha: number } {
+              if (!colorStr || colorStr === "transparent" || colorStr === "rgba(0, 0, 0, 0)") {
+                return { hex: "#ffffff", alpha: 0 };
+              }
+              if (colorStr.startsWith("#")) {
+                if (colorStr.length === 9) {
+                  const hex = colorStr.slice(0, 7);
+                  const alpha = parseInt(colorStr.slice(7, 9), 16) / 255;
+                  return { hex, alpha };
+                }
+                return { hex: colorStr, alpha: 1 };
+              }
+              const match = colorStr.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/);
+              if (match) {
+                const r = parseInt(match[1], 10).toString(16).padStart(2, "0");
+                const g = parseInt(match[2], 10).toString(16).padStart(2, "0");
+                const b = parseInt(match[3], 10).toString(16).padStart(2, "0");
+                const alpha = match[4] !== undefined ? parseFloat(match[4]) : 1;
+                return { hex: `#${r}${g}${b}`, alpha };
+              }
+              return { hex: parseColorToHex(colorStr), alpha: 1 };
             }
 
             function parseColorToHex(colorStr: string): string {
@@ -469,12 +562,21 @@ export const AgentBridgeView: React.FC = () => {
 
               const bg = cs.backgroundColor;
               const fills: any[] = [];
-              if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") {
+              if (cs.backgroundImage && cs.backgroundImage !== "none" && (cs.backgroundImage.includes("gradient") || cs.backgroundImage.includes("radial-gradient"))) {
                 fills.push({
-                  type: "SOLID",
-                  color: parseColorToHex(bg),
+                  type: cs.backgroundImage.includes("radial-gradient") ? "GRADIENT_RADIAL" : "GRADIENT_LINEAR",
+                  rawGradient: cs.backgroundImage,
                   opacity: parseFloat(cs.opacity) || 1,
                 });
+              } else if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") {
+                const { hex, alpha } = parseColorAndAlpha(bg);
+                if (alpha > 0) {
+                  fills.push({
+                    type: "SOLID",
+                    color: hex,
+                    opacity: alpha * (parseFloat(cs.opacity) || 1),
+                  });
+                }
               }
 
               let imageUrl: string | undefined;
@@ -491,13 +593,77 @@ export const AgentBridgeView: React.FC = () => {
               const borderW = parseFloat(cs.borderWidth) || 0;
               const borderC = cs.borderColor;
               if (borderW > 0 && borderC && borderC !== "transparent" && borderC !== "rgba(0, 0, 0, 0)") {
-                strokes.push({
-                  color: parseColorToHex(borderC),
-                  weight: borderW,
-                  opacity: 1,
-                  position: "INSIDE",
-                  dashPattern: [],
-                });
+                const { hex, alpha } = parseColorAndAlpha(borderC);
+                if (alpha > 0) {
+                  strokes.push({
+                    color: hex,
+                    weight: borderW,
+                    opacity: alpha,
+                    position: "INSIDE",
+                    dashPattern: [],
+                  });
+                }
+              }
+
+              // Effects extraction: box-shadow, backdrop-filter, filter
+              const effects: any[] = [];
+              const boxShadow = cs.boxShadow;
+              if (boxShadow && boxShadow !== "none") {
+                const shadowParts = boxShadow.split(/,(?![^(]*\))/);
+                for (const part of shadowParts) {
+                  const trimmed = part.trim();
+                  if (!trimmed) continue;
+                  const isInner = trimmed.includes("inset");
+                  const clean = trimmed.replace("inset", "").trim();
+                  let colorHex = "#000000";
+                  let colorAlpha = 0.08;
+                  const colorMatch = clean.match(/rgba?\([^)]+\)/);
+                  if (colorMatch) {
+                    const parsed = parseColorAndAlpha(colorMatch[0]);
+                    colorHex = parsed.hex;
+                    colorAlpha = parsed.alpha;
+                  }
+                  const pxMatches = clean.replace(/rgba?\([^)]+\)/, "").match(/-?[\d.]+px|-?\d+/g);
+                  if (pxMatches && pxMatches.length >= 2) {
+                    const ox = parseFloat(pxMatches[0]) || 0;
+                    const oy = parseFloat(pxMatches[1]) || 0;
+                    const blur = pxMatches.length >= 3 ? parseFloat(pxMatches[2]) || 0 : 4;
+                    const spread = pxMatches.length >= 4 ? parseFloat(pxMatches[3]) || 0 : 0;
+                    effects.push({
+                      type: isInner ? "INNER_SHADOW" : "DROP_SHADOW",
+                      color: colorHex,
+                      opacity: colorAlpha,
+                      offset: { x: ox, y: oy },
+                      radius: blur,
+                      spread,
+                      visible: true,
+                    });
+                  }
+                }
+              }
+
+              const backdropFilter = cs.backdropFilter || (cs as any).webkitBackdropFilter;
+              if (backdropFilter && backdropFilter !== "none" && backdropFilter.includes("blur(")) {
+                const blurMatch = backdropFilter.match(/blur\(\s*([\d.]+)px\s*\)/);
+                if (blurMatch) {
+                  effects.push({
+                    type: "BACKGROUND_BLUR",
+                    radius: Math.round(parseFloat(blurMatch[1])),
+                    visible: true,
+                  });
+                }
+              }
+
+              const filter = cs.filter;
+              if (filter && filter !== "none" && filter.includes("blur(")) {
+                const blurMatch = filter.match(/blur\(\s*([\d.]+)px\s*\)/);
+                if (blurMatch) {
+                  effects.push({
+                    type: "LAYER_BLUR",
+                    radius: Math.round(parseFloat(blurMatch[1])),
+                    visible: true,
+                  });
+                }
               }
 
               const display = cs.display;
@@ -507,7 +673,7 @@ export const AgentBridgeView: React.FC = () => {
               const gap = parseFloat(cs.gap) || parseFloat(cs.columnGap) || 0;
 
               const isFlex = display === "flex" || display === "inline-flex";
-              const hasVisualFrame = fills.length > 0 || strokes.length > 0 || (parseFloat(cs.paddingTop) || 0) > 0 || (parseFloat(cs.paddingLeft) || 0) > 0 || (parseFloat(cs.borderRadius) || 0) > 0;
+              const hasVisualFrame = fills.length > 0 || strokes.length > 0 || effects.length > 0 || (parseFloat(cs.paddingTop) || 0) > 0 || (parseFloat(cs.paddingLeft) || 0) > 0 || (parseFloat(cs.borderRadius) || 0) > 0;
               const isTextEl = tag !== "img" && tag !== "svg" && children.length === 0 && (el.textContent || "").trim().length > 0 && !hasVisualFrame;
               const direction = isFlex ? (flexDir === "column" ? "VERTICAL" : "HORIZONTAL") : (hasVisualFrame ? "HORIZONTAL" : "NONE");
 
@@ -589,11 +755,12 @@ export const AgentBridgeView: React.FC = () => {
                 style: {
                   fills,
                   strokes,
-                  effects: [],
+                  effects,
                   cornerRadius: parseFloat(cs.borderRadius) || 0,
                   opacity: parseFloat(cs.opacity) || 1,
                   clipsContent: cs.overflow === "hidden" || cs.overflowX === "hidden" || cs.overflowY === "hidden",
                   visible: cs.display !== "none" && cs.visibility !== "hidden",
+                  position: (cs.position === "absolute" || cs.position === "fixed") ? "absolute" : undefined,
                 },
                 children: (isTextEl || tag === "svg" || tag === "img") ? undefined : children,
               };
@@ -643,6 +810,14 @@ export const AgentBridgeView: React.FC = () => {
             rootNode.name = docTitle;
             rootNode.bounds = { x: 0, y: 0, width: docWidth, height: docHeight };
             rootNode.layout.direction = bodyFlexDir;
+            rootNode.layout.paddingTop = parseFloat(bodyStyle.paddingTop) || 0;
+            rootNode.layout.paddingRight = parseFloat(bodyStyle.paddingRight) || 0;
+            rootNode.layout.paddingBottom = parseFloat(bodyStyle.paddingBottom) || 0;
+            rootNode.layout.paddingLeft = parseFloat(bodyStyle.paddingLeft) || 0;
+            rootNode.layout.itemSpacing = parseFloat(bodyStyle.gap) || parseFloat(bodyStyle.rowGap) || 0;
+            if (bodyStyle.alignItems === "center" || bodyStyle.justifyContent === "center") {
+              rootNode.layout.alignment = "CENTER";
+            }
             rootNode.style.clipsContent = bodyStyle.overflow === "hidden" || bodyStyle.overflowX === "hidden" || bodyStyle.overflowY === "hidden";
 
             // Build compliant DesignAnalysis
@@ -665,22 +840,60 @@ export const AgentBridgeView: React.FC = () => {
 
             const buildResult = await new Promise<any>((resolve) => {
               pendingRequestsRef.current.set("CURRENT_GENERATION", resolve);
-              sendMessage({
+              sendMessageRef.current({
                 type: "START_GENERATION",
                 payload: {
                   analysisJson: JSON.stringify(analysis),
                   imageBase64: "",
-                  settings: { ...settings, createAutoLayout: payload.autoLayout !== false },
+                  settings: { ...settingsRef.current, createAutoLayout: payload.autoLayout !== false },
                 },
               });
               setTimeout(() => resolve({ success: false, error: "Timed out after 90s" }), 90000);
             });
 
-            updateLog(logId, buildResult.success ? "success" : "error", buildResult.frameName || (buildResult.error ?? "Done"));
+            updateLogRef.current(logId, buildResult.success ? "success" : "error", buildResult.frameName || (buildResult.error ?? "Done"));
             ws.send(JSON.stringify({ id, success: buildResult.success, data: buildResult, error: buildResult.error }));
           } catch (err: any) {
-            updateLog(logId, "error", err.message);
+            updateLogRef.current(logId, "error", err.message);
             ws.send(JSON.stringify({ id, success: false, error: err.message }));
+          } finally {
+            isBusyRef.current = false;
+          }
+          return;
+        }
+
+        if (type === "ADJUST_MOBILE_LAYOUT") {
+          if (isBusyRef.current) {
+            ws.send(JSON.stringify({ id, success: false, error: "Figma is currently busy. Please wait." }));
+            return;
+          }
+          isBusyRef.current = true;
+          const logId = Math.random().toString(36).substring(2, 9);
+          addLogRef.current("Mobile Adjust", "pending", "Optimizing mobile layout and spacing in Figma...");
+
+          try {
+            const adjustResult = await new Promise<any>((resolve) => {
+              pendingRequestsRef.current.set(id, resolve);
+              sendMessageRef.current({ type: "EXECUTE_ADJUST_MOBILE_LAYOUT", payload: { requestId: id, ...payload } });
+              setTimeout(() => {
+                if (pendingRequestsRef.current.has(id)) {
+                  pendingRequestsRef.current.delete(id);
+                  resolve({ success: false, error: "Timed out adjusting mobile layout" });
+                }
+              }, 40000);
+            });
+
+            if (!adjustResult || !adjustResult.success) {
+              throw new Error(adjustResult?.error || "Failed to adjust mobile layout");
+            }
+
+            updateLogRef.current(logId, "success", `Mobile layout optimized: ${adjustResult.nodesAdjusted || "all"} nodes!`);
+            ws.send(JSON.stringify({ id, success: true, data: adjustResult }));
+          } catch (err: any) {
+            updateLogRef.current(logId, "error", err.message);
+            ws.send(JSON.stringify({ id, success: false, error: err.message }));
+          } finally {
+            isBusyRef.current = false;
           }
           return;
         }
@@ -691,21 +904,32 @@ export const AgentBridgeView: React.FC = () => {
         console.error("[AgentBridgeView] Message handling error:", err);
       }
     };
-  }, [addLog, updateLog, sendMessage, settings]);
+  }, []);
 
   // Keep connection alive with heartbeat and auto-reconnect
   useEffect(() => {
+    isMountedRef.current = true;
     connectBridge();
     const interval = setInterval(() => {
-      if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
+      if (
+        isMountedRef.current &&
+        (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED)
+      ) {
         connectBridge();
       }
-    }, 4000);
+    }, 5000);
 
     return () => {
+      isMountedRef.current = false;
       clearInterval(interval);
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+      }
       if (wsRef.current) {
+        wsRef.current.onclose = null;
+        wsRef.current.onerror = null;
         wsRef.current.close();
+        wsRef.current = null;
       }
     };
   }, [connectBridge]);
@@ -781,20 +1005,43 @@ export const AgentBridgeView: React.FC = () => {
           </div>
         </div>
 
-        <button
-          onClick={testPing}
-          style={{
-            padding: "5px 10px",
-            fontSize: "11px",
-            background: "var(--bg-secondary)",
-            border: "1px solid var(--border-default)",
-            borderRadius: "6px",
-            color: "var(--text-primary)",
-            cursor: "pointer",
-          }}
-        >
-          ⚡ Test Ping {pingLatency !== null ? `(${pingLatency}ms)` : ""}
-        </button>
+        <div style={{ display: "flex", gap: "6px" }}>
+          <button
+            onClick={() => {
+              sendMessageRef.current({
+                type: "EXECUTE_ADJUST_MOBILE_LAYOUT",
+                payload: { requestId: Math.random().toString(36).substring(2, 9), viewportWidth: 390 },
+              });
+            }}
+            style={{
+              padding: "5px 10px",
+              fontSize: "11px",
+              fontWeight: 600,
+              background: "var(--accent-primary)",
+              border: "none",
+              borderRadius: "6px",
+              color: "#ffffff",
+              cursor: "pointer",
+            }}
+            title="Convert selected frame to responsive Mobile UI (390px)"
+          >
+            📱 Mobile UI (390px)
+          </button>
+          <button
+            onClick={testPing}
+            style={{
+              padding: "5px 10px",
+              fontSize: "11px",
+              background: "var(--bg-secondary)",
+              border: "1px solid var(--border-default)",
+              borderRadius: "6px",
+              color: "var(--text-primary)",
+              cursor: "pointer",
+            }}
+          >
+            ⚡ Test Ping {pingLatency !== null ? `(${pingLatency}ms)` : ""}
+          </button>
+        </div>
       </div>
 
       {/* Instructions Card */}

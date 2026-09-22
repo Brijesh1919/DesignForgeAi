@@ -261,10 +261,10 @@ export const App: React.FC = () => {
               <GenerateAIView />
             ) : inputMode === "website-url" && !htmlContent && !cssContent ? (
               <WebsiteUrlView />
-            ) : inputMode === "agent-bridge" && !htmlContent && !cssContent ? (
-              <AgentBridgeView />
             ) : inputMode === "export-code" && !htmlContent && !cssContent ? (
               <ExportCodeView />
+            ) : inputMode === "agent-bridge" && !htmlContent && !cssContent ? (
+              null
             ) : selectedImage && (htmlContent || cssContent) ? (
               <div style={{ display: "flex", gap: "16px", height: "620px", width: "100%", overflow: "hidden" }}>
                 {/* Left Pane: Original Screenshot */}
@@ -318,6 +318,11 @@ export const App: React.FC = () => {
             ) : (
               <CodeWorkspace />
             )}
+
+            {/* Persistent Agent Bridge Connection */}
+            <div style={{ display: inputMode === "agent-bridge" && !htmlContent && !cssContent ? "block" : "none" }}>
+              <AgentBridgeView />
+            </div>
           </div>
         )}
 
