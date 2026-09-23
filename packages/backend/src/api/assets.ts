@@ -211,7 +211,7 @@ assetsRouter.post(
 
       if (exitCode !== 0 || !fs.existsSync(outputPath)) {
         console.error(`[Assets] Python remove_bg error: ${stderr}`);
-        try { if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath); } catch (e) {}
+        try { if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath); } catch (e) { }
         throw new Error(`Background removal failed: ${stderr || "Process exited with error"}`);
       }
 
@@ -222,7 +222,7 @@ assetsRouter.post(
       try {
         if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
         if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
-      } catch (e) {}
+      } catch (e) { }
 
       console.log(`[Assets] Background removed successfully! (Output length: ${transparentBase64.length})`);
 

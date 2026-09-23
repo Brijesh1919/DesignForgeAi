@@ -82,7 +82,7 @@ export const ExportCodeView: React.FC = () => {
       const height = isWindowExpanded ? 820 : 720;
       sendMessage({ type: "RESIZE_WINDOW", payload: { width, height } });
     } else {
-      sendMessage({ type: "RESIZE_WINDOW", payload: { width: 440, height: 620 } });
+      sendMessage({ type: "RESIZE_WINDOW", payload: { width: 460, height: 660 } });
     }
   }, [extractedHtml, extractedCss, isWindowExpanded, sendMessage]);
 
@@ -280,7 +280,7 @@ Open \`index.html\` in any web browser to preview.`
     setNodeCount(0);
     setAssets([]);
     setExtractError(null);
-    sendMessage({ type: "RESIZE_WINDOW", payload: { width: 440, height: 620 } });
+    sendMessage({ type: "RESIZE_WINDOW", payload: { width: 460, height: 660 } });
   };
 
   // ─── INITIAL VIEW: Select Frame to Extract ───────────────────────

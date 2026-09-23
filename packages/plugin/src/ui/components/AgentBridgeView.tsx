@@ -83,7 +83,8 @@ export const AgentBridgeView: React.FC = () => {
         msg.type === "RECOLOR_THEME_RESULT" ||
         msg.type === "ADJUST_MOBILE_LAYOUT_RESULT" ||
         msg.type === "ADD_PROTOTYPE_EFFECTS_RESULT" ||
-        msg.type === "CREATE_CAROUSEL_COMPONENT_RESULT"
+        msg.type === "CREATE_CAROUSEL_COMPONENT_RESULT" ||
+        msg.type === "PRODUCT_LANDING_PAGE_CREATED"
       ) {
         const requestId = msg.payload?.requestId;
         if (requestId && pendingRequestsRef.current.has(requestId)) {
@@ -972,6 +973,42 @@ export const AgentBridgeView: React.FC = () => {
           return;
         }
 
+        if (type === "CREATE_PRODUCT_LANDING_PAGE") {
+          if (isBusyRef.current) {
+            ws.send(JSON.stringify({ id, success: false, error: "Figma is currently busy. Please wait." }));
+            return;
+          }
+          isBusyRef.current = true;
+          const logId = Math.random().toString(36).substring(2, 9);
+          addLogRef.current("Product Story", "pending", "Creating 8-chapter interactive product landing page in Figma...");
+
+          try {
+            const storyResult = await new Promise<any>((resolve) => {
+              pendingRequestsRef.current.set(id, resolve);
+              sendMessageRef.current({ type: "EXECUTE_CREATE_PRODUCT_LANDING_PAGE", payload: { requestId: id, ...payload } });
+              setTimeout(() => {
+                if (pendingRequestsRef.current.has(id)) {
+                  pendingRequestsRef.current.delete(id);
+                  resolve({ success: false, error: "Timed out generating product landing page" });
+                }
+              }, 60000);
+            });
+
+            if (!storyResult || !storyResult.success) {
+              throw new Error(storyResult?.error || "Failed to create product landing page");
+            }
+
+            updateLogRef.current(logId, "success", `8-Chapter product landing page created (${storyResult.framesCount || 8} frames wired with Smart Animate)!`);
+            ws.send(JSON.stringify({ id, success: true, data: storyResult }));
+          } catch (err: any) {
+            updateLogRef.current(logId, "error", err.message);
+            ws.send(JSON.stringify({ id, success: false, error: err.message }));
+          } finally {
+            isBusyRef.current = false;
+          }
+          return;
+        }
+
         // Unknown command
         ws.send(JSON.stringify({ id, success: false, error: `Unsupported command: ${type}` }));
       } catch (err) {
@@ -1079,80 +1116,22 @@ export const AgentBridgeView: React.FC = () => {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "6px" }}>
-          <button
-            onClick={() => {
-              sendMessageRef.current({
-                type: "EXECUTE_ADJUST_MOBILE_LAYOUT",
-                payload: { requestId: Math.random().toString(36).substring(2, 9), viewportWidth: 390 },
-              });
-            }}
-            style={{
-              padding: "5px 10px",
-              fontSize: "11px",
-              fontWeight: 600,
-              background: "var(--accent-primary)",
-              border: "none",
-              borderRadius: "6px",
-              color: "#ffffff",
-              cursor: "pointer",
-            }}
-            title="Convert selected frame to responsive Mobile UI (390px)"
-          >
-            📱 Mobile UI (390px)
-          </button>
-          <button
-            onClick={() => {
-              sendMessageRef.current({
-                type: "EXECUTE_ADD_PROTOTYPE_EFFECTS",
-                payload: { requestId: Math.random().toString(36).substring(2, 9) },
-              });
-            }}
-            style={{
-              padding: "5px 10px",
-              fontSize: "11px",
-              fontWeight: 600,
-              background: "#6366f1",
-              border: "none",
-              borderRadius: "6px",
-              color: "#ffffff",
-              cursor: "pointer",
-            }}
-            title="Add animations, sticky header, smooth scrolling, and effects to mobile prototype"
-          >
-            ✨ Prototype Effects
-          </button>
-          <button
-            onClick={() => {
-              sendMessageRef.current({
-                type: "EXECUTE_CREATE_CAROUSEL_COMPONENT",
-                payload: { requestId: Math.random().toString(36).substring(2, 9), squareSize: 320 },
-              });
-            }}
-            style={{
-              padding: "5px 10px",
-              fontSize: "11px",
-              fontWeight: 600,
-              background: "#ec4899",
-              border: "none",
-              borderRadius: "6px",
-              color: "#ffffff",
-              cursor: "pointer",
-            }}
-            title="Convert selected frame of 4 images into an interactive single square product carousel"
-          >
-            🎠 Product Carousel
-          </button>
+        <div>
           <button
             onClick={testPing}
             style={{
-              padding: "5px 10px",
+              padding: "6px 12px",
               fontSize: "11px",
+              fontWeight: 600,
               background: "var(--bg-secondary)",
               border: "1px solid var(--border-default)",
               borderRadius: "6px",
               color: "var(--text-primary)",
               cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              transition: "all var(--transition-fast)",
             }}
           >
             ⚡ Test Ping {pingLatency !== null ? `(${pingLatency}ms)` : ""}
@@ -1285,9 +1264,8 @@ export const AgentBridgeView: React.FC = () => {
                   padding: "6px 8px",
                   background: "var(--bg-tertiary)",
                   borderRadius: "4px",
-                  borderLeft: `3px solid ${
-                    log.status === "success" ? "#10b981" : log.status === "error" ? "#ef4444" : "#f59e0b"
-                  }`,
+                  borderLeft: `3px solid ${log.status === "success" ? "#10b981" : log.status === "error" ? "#ef4444" : "#f59e0b"
+                    }`,
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "var(--text-secondary)" }}>

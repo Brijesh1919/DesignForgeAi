@@ -112,6 +112,15 @@ export type UIToPluginMessage =
         nodeId?: string;
         squareSize?: number;
       };
+    }
+  | {
+      type: "EXECUTE_CREATE_PRODUCT_LANDING_PAGE";
+      payload?: {
+        requestId?: string;
+        nodeId?: string;
+        startX?: number;
+        startY?: number;
+      };
     };
 
 // ─── Plugin → UI Messages ────────────────────────────────────
@@ -244,6 +253,16 @@ export type PluginToUIMessage =
         squareSize?: number;
         slideCount?: number;
         details?: string[];
+        error?: string;
+      };
+    }
+  | {
+      type: "PRODUCT_LANDING_PAGE_CREATED";
+      payload: {
+        requestId?: string;
+        success: boolean;
+        framesCount?: number;
+        rootFrameId?: string;
         error?: string;
       };
     }

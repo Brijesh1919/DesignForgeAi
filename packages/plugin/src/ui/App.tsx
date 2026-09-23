@@ -68,7 +68,7 @@ export const App: React.FC = () => {
     } else if (currentView === "upload" && inputMode === "export-code") {
       // Handled internally by ExportCodeView
     } else {
-      sendMessage({ type: "RESIZE_WINDOW", payload: { width: 380, height: 620 } });
+      sendMessage({ type: "RESIZE_WINDOW", payload: { width: 460, height: 660 } });
     }
   }, [currentView, htmlContent, cssContent, inputMode, sendMessage]);
 
@@ -97,7 +97,7 @@ export const App: React.FC = () => {
       <main
         className="app__content"
         style={{
-          padding: inputMode === "export-code" ? "10px 14px" : "16px",
+          padding: inputMode === "export-code" ? "12px 16px" : "16px 18px",
           display: "flex",
           flexDirection: "column",
           flex: 1,
@@ -110,7 +110,7 @@ export const App: React.FC = () => {
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: inputMode === "export-code" ? "8px" : "16px",
+              gap: inputMode === "export-code" ? "10px" : "16px",
               flex: 1,
               height: "100%",
               minHeight: 0,
@@ -118,126 +118,60 @@ export const App: React.FC = () => {
           >
             {/* Input Mode Selector */}
             {(!htmlContent && !cssContent) && (
-              <div
-                style={{
-                  display: "flex",
-                  background: "var(--bg-secondary)",
-                  borderRadius: "8px",
-                  padding: "4px",
-                  border: "1px solid var(--border-default)",
-                  gap: "4px",
-                }}
-              >
+              <div className="feature-tabs" role="tablist">
                 <button
+                  id="tab-screenshot"
+                  role="tab"
+                  aria-selected={inputMode === "screenshot"}
                   onClick={() => setInputMode("screenshot")}
-                  style={{
-                    flex: 1,
-                    padding: "7px 2px",
-                    borderRadius: "6px",
-                    border: "none",
-                    background: inputMode === "screenshot" ? "var(--accent-primary)" : "transparent",
-                    color: inputMode === "screenshot" ? "#ffffff" : "var(--text-secondary)",
-                    cursor: "pointer",
-                    fontWeight: 600,
-                    fontSize: "10.5px",
-                    transition: "var(--transition-fast)",
-                    whiteSpace: "nowrap",
-                  }}
+                  className={`feature-tab ${inputMode === "screenshot" ? "feature-tab--active" : ""}`}
                 >
-                  📸 Photo
+                  <span>📸</span> Photo
                 </button>
                 <button
+                  id="tab-html-css"
+                  role="tab"
+                  aria-selected={inputMode === "html-css"}
                   onClick={() => setInputMode("html-css")}
-                  style={{
-                    flex: 1,
-                    padding: "7px 2px",
-                    borderRadius: "6px",
-                    border: "none",
-                    background: inputMode === "html-css" ? "var(--accent-primary)" : "transparent",
-                    color: inputMode === "html-css" ? "#ffffff" : "var(--text-secondary)",
-                    cursor: "pointer",
-                    fontWeight: 600,
-                    fontSize: "10.5px",
-                    transition: "var(--transition-fast)",
-                    whiteSpace: "nowrap",
-                  }}
+                  className={`feature-tab ${inputMode === "html-css" ? "feature-tab--active" : ""}`}
                 >
-                  📄 Code
+                  <span>📄</span> Code
                 </button>
                 <button
+                  id="tab-generate-ai"
+                  role="tab"
+                  aria-selected={inputMode === "generate-ai"}
                   onClick={() => setInputMode("generate-ai")}
-                  style={{
-                    flex: 1,
-                    padding: "7px 2px",
-                    borderRadius: "6px",
-                    border: "none",
-                    background: inputMode === "generate-ai" ? "var(--accent-primary)" : "transparent",
-                    color: inputMode === "generate-ai" ? "#ffffff" : "var(--text-secondary)",
-                    cursor: "pointer",
-                    fontWeight: 600,
-                    fontSize: "10.5px",
-                    transition: "var(--transition-fast)",
-                    whiteSpace: "nowrap",
-                  }}
+                  className={`feature-tab ${inputMode === "generate-ai" ? "feature-tab--active" : ""}`}
                 >
-                  ✨ AI
+                  <span>✨</span> AI
                 </button>
                 <button
                   id="tab-website-url"
+                  role="tab"
+                  aria-selected={inputMode === "website-url"}
                   onClick={() => setInputMode("website-url")}
-                  style={{
-                    flex: 1,
-                    padding: "7px 2px",
-                    borderRadius: "6px",
-                    border: "none",
-                    background: inputMode === "website-url" ? "var(--accent-primary)" : "transparent",
-                    color: inputMode === "website-url" ? "#ffffff" : "var(--text-secondary)",
-                    cursor: "pointer",
-                    fontWeight: 600,
-                    fontSize: "10.5px",
-                    transition: "var(--transition-fast)",
-                    whiteSpace: "nowrap",
-                  }}
+                  className={`feature-tab ${inputMode === "website-url" ? "feature-tab--active" : ""}`}
                 >
-                  🌐 URL
+                  <span>🌐</span> URL
                 </button>
                 <button
                   id="tab-agent-bridge"
+                  role="tab"
+                  aria-selected={inputMode === "agent-bridge"}
                   onClick={() => setInputMode("agent-bridge")}
-                  style={{
-                    flex: 1,
-                    padding: "7px 2px",
-                    borderRadius: "6px",
-                    border: "none",
-                    background: inputMode === "agent-bridge" ? "var(--accent-primary)" : "transparent",
-                    color: inputMode === "agent-bridge" ? "#ffffff" : "var(--text-secondary)",
-                    cursor: "pointer",
-                    fontWeight: 600,
-                    fontSize: "10.5px",
-                    transition: "var(--transition-fast)",
-                    whiteSpace: "nowrap",
-                  }}
+                  className={`feature-tab ${inputMode === "agent-bridge" ? "feature-tab--active" : ""}`}
                 >
-                  🔌 Agent
+                  <span>🔌</span> Agent
                 </button>
                 <button
                   id="tab-export-code"
+                  role="tab"
+                  aria-selected={inputMode === "export-code"}
                   onClick={() => setInputMode("export-code")}
-                  style={{
-                    flex: 1,
-                    padding: "7px 2px",
-                    borderRadius: "6px",
-                    border: "none",
-                    background: inputMode === "export-code" ? "var(--accent-primary)" : "transparent",
-                    color: inputMode === "export-code" ? "#ffffff" : "var(--text-secondary)",
-                    cursor: "pointer",
-                    fontWeight: 600,
-                    fontSize: "10.5px",
-                    transition: "var(--transition-fast)",
-                    whiteSpace: "nowrap",
-                  }}
+                  className={`feature-tab ${inputMode === "export-code" ? "feature-tab--active" : ""}`}
                 >
-                  &lt;/&gt; Export
+                  <span>&lt;/&gt;</span> Export
                 </button>
               </div>
             )}

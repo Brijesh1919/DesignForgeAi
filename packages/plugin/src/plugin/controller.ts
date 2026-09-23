@@ -35,12 +35,13 @@ import { restructureUINodeLayout } from "./utils/layout-restructurer";
 import { sanitizeFigmaLayoutTree } from "./utils/layout-validator";
 import { runLayoutEngineTests } from "./utils/layout-test-runner";
 import { generateCodeFromFigmaNode } from "./generators/figma-to-code";
+import { generateProductStoryLanding } from "./generators/product-story-landing";
 
 // ─── Plugin Init ─────────────────────────────────────────────
 
 figma.showUI(__html__, {
-  width: 380,
-  height: 620,
+  width: 460,
+  height: 660,
   themeColors: true,
   title: "DesignForge AI",
 });
@@ -118,6 +119,10 @@ figma.ui.onmessage = async (msg: UIToPluginMessage) => {
 
     case "EXECUTE_CREATE_CAROUSEL_COMPONENT":
       await handleCreateCarouselComponent(msg.payload);
+      break;
+
+    case "EXECUTE_CREATE_PRODUCT_LANDING_PAGE":
+      await handleCreateProductLandingPage(msg.payload);
       break;
 
     default:
@@ -332,11 +337,15 @@ async function handleApplyRemoveBackgroundResult(payload: {
       if (node && "fills" in node && item.transparentBase64) {
         const bytes = base64ToUint8Array(item.transparentBase64);
         const newImage = figma.createImage(bytes);
+        const currentFills = Array.isArray(node.fills) ? [...node.fills] : [];
+        const existingImage = currentFills.find((f: any) => f?.type === "IMAGE");
+        const scaleMode = existingImage?.scaleMode || "FILL";
         node.fills = [
           {
             type: "IMAGE",
             imageHash: newImage.hash,
-            scaleMode: "FIT",
+            scaleMode,
+            ...(existingImage?.imageTransform ? { imageTransform: existingImage.imageTransform } : {}),
           },
         ];
         updatedCount++;
@@ -3385,5 +3394,35 @@ async function handleCreateCarouselComponent(payload: any = {}): Promise<void> {
       },
     });
     figma.notify(`❌ Carousel error: ${err.message}`, { error: true, timeout: 4000 });
+  }
+}
+
+async function handleCreateProductLandingPage(payload: any = {}): Promise<void> {
+  try {
+    const result = await generateProductStoryLanding({
+      sourceNodeId: payload.nodeId,
+      startX: payload.startX,
+      startY: payload.startY,
+    });
+    figma.ui.postMessage({
+      type: "PRODUCT_LANDING_PAGE_CREATED",
+      payload: {
+        requestId: payload.requestId,
+        success: result.success,
+        framesCount: result.framesCount,
+        rootFrameId: result.rootFrameId,
+        error: result.error,
+      },
+    });
+  } catch (err: any) {
+    console.error("[Controller] Failed to create product landing page:", err);
+    figma.ui.postMessage({
+      type: "PRODUCT_LANDING_PAGE_CREATED",
+      payload: {
+        requestId: payload.requestId,
+        success: false,
+        error: err.message || "Failed to create product landing page",
+      },
+    });
   }
 }
