@@ -36,6 +36,8 @@ import { sanitizeFigmaLayoutTree } from "./utils/layout-validator";
 import { runLayoutEngineTests } from "./utils/layout-test-runner";
 import { generateCodeFromFigmaNode } from "./generators/figma-to-code";
 import { generateProductStoryLanding } from "./generators/product-story-landing";
+import { generateCinematicSceneAnimation } from "./generators/cinematic-scene-animator";
+import { createFigmaMotionAnimation } from "./generators/figma-motion-animator";
 
 // ─── Plugin Init ─────────────────────────────────────────────
 
@@ -125,6 +127,14 @@ figma.ui.onmessage = async (msg: UIToPluginMessage) => {
       await handleCreateProductLandingPage(msg.payload);
       break;
 
+    case "EXECUTE_ANIMATE_SCENE":
+      await handleAnimateScene(msg.payload);
+      break;
+
+    case "EXECUTE_FIGMA_MOTION_ANIMATION":
+      await handleFigmaMotionAnimation(msg.payload);
+      break;
+
     default:
       break;
   }
@@ -200,6 +210,53 @@ async function handleGetCanvasSelection(requestId?: string, customMaxDepth = 10,
           trigger: r.trigger ? { type: r.trigger.type } : undefined,
           actions: Array.isArray(r.actions) ? r.actions.map((a: any) => ({ type: a.type, destinationId: a.destinationId, navigation: a.navigation })) : undefined,
         }));
+      }
+
+      // Check pluginData & sharedPluginData
+      try {
+        if (typeof (node as any).getPluginDataKeys === "function") {
+          const pKeys = (node as any).getPluginDataKeys();
+          if (pKeys.length > 0) {
+            summary.pluginData = {};
+            for (const k of pKeys) summary.pluginData[k] = (node as any).getPluginData(k);
+          }
+        }
+        if (typeof (node as any).getSharedPluginDataKeys === "function") {
+          for (const ns of ["motion", "figma", "figmotion", "animate", "keyframes", "timeline", "motion_plugin"]) {
+            const spKeys = (node as any).getSharedPluginDataKeys(ns);
+            if (spKeys && spKeys.length > 0) {
+              if (!summary.sharedPluginData) summary.sharedPluginData = {};
+              summary.sharedPluginData[ns] = {};
+              for (const k of spKeys) summary.sharedPluginData[ns][k] = (node as any).getSharedPluginData(ns, k);
+            }
+          }
+        }
+      } catch {}
+
+      // Check figma.motion
+      try {
+        summary.hasFigmaMotion = typeof (figma as any).motion !== "undefined";
+        if (summary.hasFigmaMotion) {
+          const m = (figma as any).motion;
+          const own = Object.getOwnPropertyNames(m);
+          const proto = Object.getPrototypeOf(m) ? Object.getOwnPropertyNames(Object.getPrototypeOf(m)) : [];
+          summary.figmaMotionProps = [...new Set([...own, ...proto])];
+          try {
+            summary.animationStyles = m.figmaAnimationStyles ? m.figmaAnimationStyles() : null;
+          } catch (e: any) { summary.animationStylesError = e.message; }
+        }
+        // Check node motion properties
+        summary.nodeTimelines = (node as any).timelines;
+        summary.nodeManualKeyframeTracks = (node as any).manualKeyframeTracks;
+        summary.nodeAnimations = (node as any).animations;
+        summary.methodSignatures = {
+          applyAnimationStyle: (node as any).applyAnimationStyle ? (node as any).applyAnimationStyle.toString() : null,
+          applyManualKeyframeTrack: (node as any).applyManualKeyframeTrack ? (node as any).applyManualKeyframeTrack.toString() : null,
+          setTimelineDuration: (node as any).setTimelineDuration ? (node as any).setTimelineDuration.toString() : null,
+          playheadPosition: (figma as any).motion?.playheadPosition,
+        };
+      } catch (err: any) {
+        summary.motionCheckError = err.message;
       }
 
       if (node.type === "TEXT") {
@@ -3426,3 +3483,66 @@ async function handleCreateProductLandingPage(payload: any = {}): Promise<void> 
     });
   }
 }
+
+async function handleAnimateScene(payload: any = {}): Promise<void> {
+  try {
+    const result = await generateCinematicSceneAnimation({
+      sourceNodeId: payload.nodeId,
+      startX: payload.startX,
+      startY: payload.startY,
+    });
+    figma.ui.postMessage({
+      type: "ANIMATE_SCENE_RESULT",
+      payload: {
+        requestId: payload.requestId,
+        success: result.success,
+        framesCount: result.framesCount,
+        rootFrameId: result.rootFrameId,
+        error: result.error,
+      },
+    });
+  } catch (err: any) {
+    console.error("[Controller] Failed to animate scene:", err);
+    figma.ui.postMessage({
+      type: "ANIMATE_SCENE_RESULT",
+      payload: {
+        requestId: payload.requestId,
+        success: false,
+        error: err.message || "Failed to animate scene",
+      },
+    });
+  }
+}
+
+async function handleFigmaMotionAnimation(payload: any = {}): Promise<void> {
+  try {
+    const result = await createFigmaMotionAnimation({
+      nodeId: payload.nodeId,
+      duration: payload.duration || 9.0,
+    });
+    figma.ui.postMessage({
+      type: "FIGMA_MOTION_ANIMATION_RESULT",
+      payload: {
+        requestId: payload.requestId,
+        success: result.success,
+        timelineDuration: result.timelineDuration,
+        tracksApplied: result.tracksApplied,
+        layersAnimated: result.layersAnimated,
+        details: result.details,
+        error: result.error,
+      },
+    });
+  } catch (err: any) {
+    console.error("[Controller] Failed to create Figma Motion animation:", err);
+    figma.ui.postMessage({
+      type: "FIGMA_MOTION_ANIMATION_RESULT",
+      payload: {
+        requestId: payload.requestId,
+        success: false,
+        error: err.message || "Failed to create Figma Motion animation",
+      },
+    });
+  }
+}
+
+

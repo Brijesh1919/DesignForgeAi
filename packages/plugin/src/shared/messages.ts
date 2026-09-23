@@ -113,13 +113,29 @@ export type UIToPluginMessage =
         squareSize?: number;
       };
     }
-  | {
+    | {
       type: "EXECUTE_CREATE_PRODUCT_LANDING_PAGE";
       payload?: {
         requestId?: string;
         nodeId?: string;
         startX?: number;
         startY?: number;
+      };
+    }
+  | {
+      type: "EXECUTE_ANIMATE_SCENE";
+      payload?: {
+        requestId?: string;
+        nodeId?: string;
+        startX?: number;
+        startY?: number;
+      };
+    }
+  | {
+      type: "EXECUTE_FIGMA_MOTION_ANIMATION";
+      payload?: {
+        requestId?: string;
+        nodeId?: string;
       };
     };
 
@@ -263,6 +279,25 @@ export type PluginToUIMessage =
         success: boolean;
         framesCount?: number;
         rootFrameId?: string;
+        error?: string;
+      };
+    }
+  | {
+      type: "ANIMATE_SCENE_RESULT";
+      payload: {
+        requestId?: string;
+        success: boolean;
+        framesCount?: number;
+        rootFrameId?: string;
+        error?: string;
+      };
+    }
+  | {
+      type: "FIGMA_MOTION_ANIMATION_RESULT";
+      payload: {
+        requestId?: string;
+        success: boolean;
+        results?: any;
         error?: string;
       };
     }

@@ -84,7 +84,9 @@ export const AgentBridgeView: React.FC = () => {
         msg.type === "ADJUST_MOBILE_LAYOUT_RESULT" ||
         msg.type === "ADD_PROTOTYPE_EFFECTS_RESULT" ||
         msg.type === "CREATE_CAROUSEL_COMPONENT_RESULT" ||
-        msg.type === "PRODUCT_LANDING_PAGE_CREATED"
+        msg.type === "PRODUCT_LANDING_PAGE_CREATED" ||
+        msg.type === "ANIMATE_SCENE_RESULT" ||
+        msg.type === "FIGMA_MOTION_ANIMATION_RESULT"
       ) {
         const requestId = msg.payload?.requestId;
         if (requestId && pendingRequestsRef.current.has(requestId)) {
@@ -1000,6 +1002,78 @@ export const AgentBridgeView: React.FC = () => {
 
             updateLogRef.current(logId, "success", `8-Chapter product landing page created (${storyResult.framesCount || 8} frames wired with Smart Animate)!`);
             ws.send(JSON.stringify({ id, success: true, data: storyResult }));
+          } catch (err: any) {
+            updateLogRef.current(logId, "error", err.message);
+            ws.send(JSON.stringify({ id, success: false, error: err.message }));
+          } finally {
+            isBusyRef.current = false;
+          }
+          return;
+        }
+
+        if (type === "ANIMATE_SCENE") {
+          if (isBusyRef.current) {
+            ws.send(JSON.stringify({ id, success: false, error: "Figma is currently busy. Please wait." }));
+            return;
+          }
+          isBusyRef.current = true;
+          const logId = Math.random().toString(36).substring(2, 9);
+          addLogRef.current("2D Animation", "pending", "Creating 2D cinematic animation with Smart Animate physics loop...");
+
+          try {
+            const animResult = await new Promise<any>((resolve) => {
+              pendingRequestsRef.current.set(id, resolve);
+              sendMessageRef.current({ type: "EXECUTE_ANIMATE_SCENE", payload: { requestId: id, ...payload } });
+              setTimeout(() => {
+                if (pendingRequestsRef.current.has(id)) {
+                  pendingRequestsRef.current.delete(id);
+                  resolve({ success: false, error: "Timed out generating 2D animation" });
+                }
+              }, 60000);
+            });
+
+            if (!animResult || !animResult.success) {
+              throw new Error(animResult?.error || "Failed to animate scene");
+            }
+
+            updateLogRef.current(logId, "success", `2D Animation generated (${animResult.framesCount || 9} keyframes wired with Smart Animate physics loop)!`);
+            ws.send(JSON.stringify({ id, success: true, data: animResult }));
+          } catch (err: any) {
+            updateLogRef.current(logId, "error", err.message);
+            ws.send(JSON.stringify({ id, success: false, error: err.message }));
+          } finally {
+            isBusyRef.current = false;
+          }
+          return;
+        }
+
+        if (type === "FIGMA_MOTION_ANIMATION") {
+          if (isBusyRef.current) {
+            ws.send(JSON.stringify({ id, success: false, error: "Figma is currently busy. Please wait." }));
+            return;
+          }
+          isBusyRef.current = true;
+          const logId = Math.random().toString(36).substring(2, 9);
+          addLogRef.current("Figma Motion", "pending", "Building Figma Motion timeline with keyframes...");
+
+          try {
+            const motionResult = await new Promise<any>((resolve) => {
+              pendingRequestsRef.current.set(id, resolve);
+              sendMessageRef.current({ type: "EXECUTE_FIGMA_MOTION_ANIMATION", payload: { requestId: id, ...payload } });
+              setTimeout(() => {
+                if (pendingRequestsRef.current.has(id)) {
+                  pendingRequestsRef.current.delete(id);
+                  resolve({ success: false, error: "Timed out creating Figma Motion timeline" });
+                }
+              }, 60000);
+            });
+
+            if (!motionResult || !motionResult.success) {
+              throw new Error(motionResult?.error || "Failed to create Figma Motion timeline");
+            }
+
+            updateLogRef.current(logId, "success", `Figma Motion timeline & keyframes created!`);
+            ws.send(JSON.stringify({ id, success: true, data: motionResult }));
           } catch (err: any) {
             updateLogRef.current(logId, "error", err.message);
             ws.send(JSON.stringify({ id, success: false, error: err.message }));
