@@ -86,7 +86,8 @@ export const AgentBridgeView: React.FC = () => {
         msg.type === "CREATE_CAROUSEL_COMPONENT_RESULT" ||
         msg.type === "PRODUCT_LANDING_PAGE_CREATED" ||
         msg.type === "ANIMATE_SCENE_RESULT" ||
-        msg.type === "FIGMA_MOTION_ANIMATION_RESULT"
+        msg.type === "FIGMA_MOTION_ANIMATION_RESULT" ||
+        msg.type === "GENERATE_NIGHT_TO_DAY_RESULT"
       ) {
         const requestId = msg.payload?.requestId;
         if (requestId && pendingRequestsRef.current.has(requestId)) {
@@ -1073,6 +1074,42 @@ export const AgentBridgeView: React.FC = () => {
             }
 
             updateLogRef.current(logId, "success", `Figma Motion timeline & keyframes created!`);
+            ws.send(JSON.stringify({ id, success: true, data: motionResult }));
+          } catch (err: any) {
+            updateLogRef.current(logId, "error", err.message);
+            ws.send(JSON.stringify({ id, success: false, error: err.message }));
+          } finally {
+            isBusyRef.current = false;
+          }
+          return;
+        }
+
+        if (type === "GENERATE_NIGHT_TO_DAY") {
+          if (isBusyRef.current) {
+            ws.send(JSON.stringify({ id, success: false, error: "Figma is currently busy. Please wait." }));
+            return;
+          }
+          isBusyRef.current = true;
+          const logId = Math.random().toString(36).substring(2, 9);
+          addLogRef.current("Night to Day", "pending", "Creating 2D illustrated landscape & Figma Motion timeline...");
+
+          try {
+            const motionResult = await new Promise<any>((resolve) => {
+              pendingRequestsRef.current.set(id, resolve);
+              sendMessageRef.current({ type: "EXECUTE_GENERATE_NIGHT_TO_DAY", payload: { requestId: id, ...payload } });
+              setTimeout(() => {
+                if (pendingRequestsRef.current.has(id)) {
+                  pendingRequestsRef.current.delete(id);
+                  resolve({ success: false, error: "Timed out generating Night to Day Motion scene" });
+                }
+              }, 60000);
+            });
+
+            if (!motionResult || !motionResult.success) {
+              throw new Error(motionResult?.error || "Failed to generate Night to Day scene");
+            }
+
+            updateLogRef.current(logId, "success", `Night to Day 2D scene & Figma Motion timeline generated!`);
             ws.send(JSON.stringify({ id, success: true, data: motionResult }));
           } catch (err: any) {
             updateLogRef.current(logId, "error", err.message);

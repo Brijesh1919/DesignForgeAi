@@ -137,6 +137,14 @@ export type UIToPluginMessage =
         requestId?: string;
         nodeId?: string;
       };
+    }
+  | {
+      type: "EXECUTE_GENERATE_NIGHT_TO_DAY";
+      payload?: {
+        requestId?: string;
+        frameId?: string;
+        duration?: number;
+      };
     };
 
 // ─── Plugin → UI Messages ────────────────────────────────────
@@ -298,6 +306,19 @@ export type PluginToUIMessage =
         requestId?: string;
         success: boolean;
         results?: any;
+        error?: string;
+      };
+    }
+  | {
+      type: "GENERATE_NIGHT_TO_DAY_RESULT";
+      payload: {
+        requestId?: string;
+        success: boolean;
+        frameName?: string;
+        frameId?: string;
+        tracksApplied?: number;
+        layersCreated?: string[];
+        details?: string[];
         error?: string;
       };
     }

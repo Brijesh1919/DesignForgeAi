@@ -38,6 +38,7 @@ import { generateCodeFromFigmaNode } from "./generators/figma-to-code";
 import { generateProductStoryLanding } from "./generators/product-story-landing";
 import { generateCinematicSceneAnimation } from "./generators/cinematic-scene-animator";
 import { createFigmaMotionAnimation } from "./generators/figma-motion-animator";
+import { generateNightToDayMotionScene } from "./generators/night-to-day-animator";
 
 // ─── Plugin Init ─────────────────────────────────────────────
 
@@ -133,6 +134,10 @@ figma.ui.onmessage = async (msg: UIToPluginMessage) => {
 
     case "EXECUTE_FIGMA_MOTION_ANIMATION":
       await handleFigmaMotionAnimation(msg.payload);
+      break;
+
+    case "EXECUTE_GENERATE_NIGHT_TO_DAY":
+      await handleGenerateNightToDay(msg.payload);
       break;
 
     default:
@@ -3540,6 +3545,38 @@ async function handleFigmaMotionAnimation(payload: any = {}): Promise<void> {
         requestId: payload.requestId,
         success: false,
         error: err.message || "Failed to create Figma Motion animation",
+      },
+    });
+  }
+}
+
+async function handleGenerateNightToDay(payload: any = {}): Promise<void> {
+  try {
+    const result = await generateNightToDayMotionScene({
+      frameId: payload.frameId,
+      duration: payload.duration || 10.0,
+    });
+    figma.ui.postMessage({
+      type: "GENERATE_NIGHT_TO_DAY_RESULT",
+      payload: {
+        requestId: payload.requestId,
+        success: result.success,
+        frameName: result.frameName,
+        frameId: result.frameId,
+        tracksApplied: result.tracksApplied,
+        layersCreated: result.layersCreated,
+        details: result.details,
+        error: result.error,
+      },
+    });
+  } catch (err: any) {
+    console.error("[Controller] Failed to generate Night to Day scene:", err);
+    figma.ui.postMessage({
+      type: "GENERATE_NIGHT_TO_DAY_RESULT",
+      payload: {
+        requestId: payload.requestId,
+        success: false,
+        error: err.message || "Failed to generate Night to Day scene",
       },
     });
   }
