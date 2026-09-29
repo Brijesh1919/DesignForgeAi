@@ -111,6 +111,18 @@ export type UIToPluginMessage =
         requestId?: string;
         nodeId?: string;
         squareSize?: number;
+        mode?: "infinite_marquee" | "square";
+        viewportWidth?: number;
+        viewportHeight?: number;
+        duration?: number;
+        infinite?: boolean;
+      };
+    }
+  | {
+      type: "EXECUTE_EVAL_SCRIPT";
+      payload?: {
+        requestId?: string;
+        code?: string;
       };
     }
     | {
@@ -143,6 +155,22 @@ export type UIToPluginMessage =
       payload?: {
         requestId?: string;
         frameId?: string;
+        duration?: number;
+      };
+    }
+  | {
+      type: "EXECUTE_CREATE_COLOR_SWITCHER";
+      payload?: {
+        requestId?: string;
+        frameId?: string;
+        cardId?: string;
+      };
+    }
+  | {
+      type: "EXECUTE_CREATE_LOADER_BUFFER";
+      payload?: {
+        requestId?: string;
+        nodeId?: string;
         duration?: number;
       };
     };
@@ -276,7 +304,20 @@ export type PluginToUIMessage =
         instanceId?: string;
         squareSize?: number;
         slideCount?: number;
+        viewportWidth?: number;
+        viewportHeight?: number;
+        duration?: number;
+        mode?: string;
         details?: string[];
+        error?: string;
+      };
+    }
+  | {
+      type: "EVAL_SCRIPT_RESULT";
+      payload: {
+        requestId?: string;
+        success: boolean;
+        data?: any;
         error?: string;
       };
     }
@@ -318,6 +359,32 @@ export type PluginToUIMessage =
         frameId?: string;
         tracksApplied?: number;
         layersCreated?: string[];
+        details?: string[];
+        error?: string;
+      };
+    }
+  | {
+      type: "CREATE_COLOR_SWITCHER_RESULT";
+      payload: {
+        requestId?: string;
+        success: boolean;
+        componentSetId?: string;
+        componentSetName?: string;
+        instanceId?: string;
+        variantsCount?: number;
+        details?: string[];
+        error?: string;
+      };
+    }
+  | {
+      type: "CREATE_LOADER_BUFFER_RESULT";
+      payload: {
+        requestId?: string;
+        success: boolean;
+        componentSetId?: string;
+        componentSetName?: string;
+        motionFrameId?: string;
+        instanceId?: string;
         details?: string[];
         error?: string;
       };

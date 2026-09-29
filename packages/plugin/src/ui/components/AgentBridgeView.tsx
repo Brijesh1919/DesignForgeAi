@@ -87,7 +87,10 @@ export const AgentBridgeView: React.FC = () => {
         msg.type === "PRODUCT_LANDING_PAGE_CREATED" ||
         msg.type === "ANIMATE_SCENE_RESULT" ||
         msg.type === "FIGMA_MOTION_ANIMATION_RESULT" ||
-        msg.type === "GENERATE_NIGHT_TO_DAY_RESULT"
+        msg.type === "GENERATE_NIGHT_TO_DAY_RESULT" ||
+        msg.type === "CREATE_COLOR_SWITCHER_RESULT" ||
+        msg.type === "CREATE_LOADER_BUFFER_RESULT" ||
+        msg.type === "EVAL_SCRIPT_RESULT"
       ) {
         const requestId = msg.payload?.requestId;
         if (requestId && pendingRequestsRef.current.has(requestId)) {
@@ -1111,6 +1114,114 @@ export const AgentBridgeView: React.FC = () => {
 
             updateLogRef.current(logId, "success", `Night to Day 2D scene & Figma Motion timeline generated!`);
             ws.send(JSON.stringify({ id, success: true, data: motionResult }));
+          } catch (err: any) {
+            updateLogRef.current(logId, "error", err.message);
+            ws.send(JSON.stringify({ id, success: false, error: err.message }));
+          } finally {
+            isBusyRef.current = false;
+          }
+          return;
+        }
+
+        if (type === "CREATE_COLOR_SWITCHER") {
+          if (isBusyRef.current) {
+            ws.send(JSON.stringify({ id, success: false, error: "Figma is currently busy. Please wait." }));
+            return;
+          }
+          isBusyRef.current = true;
+          const logId = Math.random().toString(36).substring(2, 9);
+          addLogRef.current("Color Switcher", "pending", "Creating interactive prototype component set with variants...");
+
+          try {
+            const switcherResult = await new Promise<any>((resolve) => {
+              pendingRequestsRef.current.set(id, resolve);
+              sendMessageRef.current({ type: "EXECUTE_CREATE_COLOR_SWITCHER", payload: { requestId: id, ...payload } });
+              setTimeout(() => {
+                if (pendingRequestsRef.current.has(id)) {
+                  pendingRequestsRef.current.delete(id);
+                  resolve({ success: false, error: "Timed out generating color switcher component" });
+                }
+              }, 60000);
+            });
+
+            if (!switcherResult || !switcherResult.success) {
+              throw new Error(switcherResult?.error || "Failed to create color switcher component");
+            }
+
+            updateLogRef.current(logId, "success", `Interactive Color Switcher created (${switcherResult.variantsCount || 4} variants wired with Smart Animate)!`);
+            ws.send(JSON.stringify({ id, success: true, data: switcherResult }));
+          } catch (err: any) {
+            updateLogRef.current(logId, "error", err.message);
+            ws.send(JSON.stringify({ id, success: false, error: err.message }));
+          } finally {
+            isBusyRef.current = false;
+          }
+          return;
+        }
+
+        if (type === "CREATE_LOADER_BUFFER") {
+          if (isBusyRef.current) {
+            ws.send(JSON.stringify({ id, success: false, error: "Figma is currently busy. Please wait." }));
+            return;
+          }
+          isBusyRef.current = true;
+          const logId = Math.random().toString(36).substring(2, 9);
+          addLogRef.current("Loader Buffer", "pending", "Creating animated loader buffer (Motion & Prototype)...");
+
+          try {
+            const loaderResult = await new Promise<any>((resolve) => {
+              pendingRequestsRef.current.set(id, resolve);
+              sendMessageRef.current({ type: "EXECUTE_CREATE_LOADER_BUFFER", payload: { requestId: id, ...payload } });
+              setTimeout(() => {
+                if (pendingRequestsRef.current.has(id)) {
+                  pendingRequestsRef.current.delete(id);
+                  resolve({ success: false, error: "Timed out generating loader buffer animation" });
+                }
+              }, 60000);
+            });
+
+            if (!loaderResult || !loaderResult.success) {
+              throw new Error(loaderResult?.error || "Failed to create loader buffer animation");
+            }
+
+            updateLogRef.current(logId, "success", `Loader Buffer animation created (Motion + Prototype)!`);
+            ws.send(JSON.stringify({ id, success: true, data: loaderResult }));
+          } catch (err: any) {
+            updateLogRef.current(logId, "error", err.message);
+            ws.send(JSON.stringify({ id, success: false, error: err.message }));
+          } finally {
+            isBusyRef.current = false;
+          }
+          return;
+        }
+
+        if (type === "EVAL_SCRIPT") {
+          if (isBusyRef.current) {
+            ws.send(JSON.stringify({ id, success: false, error: "Figma is currently busy. Please wait." }));
+            return;
+          }
+          isBusyRef.current = true;
+          const logId = Math.random().toString(36).substring(2, 9);
+          addLogRef.current("Eval Script", "pending", "Executing custom script in Figma sandbox...");
+
+          try {
+            const evalResult = await new Promise<any>((resolve) => {
+              pendingRequestsRef.current.set(id, resolve);
+              sendMessageRef.current({ type: "EXECUTE_EVAL_SCRIPT", payload: { requestId: id, code: payload.code } });
+              setTimeout(() => {
+                if (pendingRequestsRef.current.has(id)) {
+                  pendingRequestsRef.current.delete(id);
+                  resolve({ success: false, error: "Timed out executing custom script" });
+                }
+              }, 60000);
+            });
+
+            if (!evalResult || !evalResult.success) {
+              throw new Error(evalResult?.error || "Failed to execute custom script");
+            }
+
+            updateLogRef.current(logId, "success", `Custom script executed successfully!`);
+            ws.send(JSON.stringify({ id, success: true, data: evalResult }));
           } catch (err: any) {
             updateLogRef.current(logId, "error", err.message);
             ws.send(JSON.stringify({ id, success: false, error: err.message }));

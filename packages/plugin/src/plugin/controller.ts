@@ -39,6 +39,8 @@ import { generateProductStoryLanding } from "./generators/product-story-landing"
 import { generateCinematicSceneAnimation } from "./generators/cinematic-scene-animator";
 import { createFigmaMotionAnimation } from "./generators/figma-motion-animator";
 import { generateNightToDayMotionScene } from "./generators/night-to-day-animator";
+import { generateColorSwitcherComponent } from "./generators/color-switcher-component";
+import { generateLoaderBufferAnimation } from "./generators/loader-buffer-animator";
 
 // ─── Plugin Init ─────────────────────────────────────────────
 
@@ -140,6 +142,18 @@ figma.ui.onmessage = async (msg: UIToPluginMessage) => {
       await handleGenerateNightToDay(msg.payload);
       break;
 
+    case "EXECUTE_CREATE_COLOR_SWITCHER":
+      await handleCreateColorSwitcher(msg.payload);
+      break;
+
+    case "EXECUTE_CREATE_LOADER_BUFFER":
+      await handleCreateLoaderBuffer(msg.payload);
+      break;
+
+    case "EXECUTE_EVAL_SCRIPT":
+      await handleEvalScript(msg.payload);
+      break;
+
     default:
       break;
   }
@@ -202,7 +216,22 @@ async function handleGetCanvasSelection(requestId?: string, customMaxDepth = 10,
           ? (node as any).effects.map((e: any) => ({ type: String(e.type || ""), radius: typeof e.radius === "number" ? e.radius : 0, visible: Boolean(e.visible) }))
           : undefined,
         fills: "fills" in node && Array.isArray((node as any).fills)
-          ? (node as any).fills.map((f: any) => ({ type: String(f.type || ""), visible: f.visible !== false, opacity: typeof f.opacity === "number" ? f.opacity : 1 }))
+          ? (node as any).fills.map((f: any) => ({
+              type: String(f.type || ""),
+              visible: f.visible !== false,
+              opacity: typeof f.opacity === "number" ? f.opacity : 1,
+              color: f.color ? { r: Math.round(f.color.r * 255), g: Math.round(f.color.g * 255), b: Math.round(f.color.b * 255) } : undefined,
+              gradientStops: f.gradientStops ? f.gradientStops.map((s: any) => ({ position: s.position, color: s.color })) : undefined,
+              imageHash: typeof f.imageHash === "string" ? f.imageHash : undefined,
+            }))
+          : undefined,
+        arcData: "arcData" in node ? (node as any).arcData : undefined,
+        strokes: "strokes" in node && Array.isArray((node as any).strokes)
+          ? (node as any).strokes.map((s: any) => ({
+              type: String(s.type || ""),
+              visible: s.visible !== false,
+              color: s.color ? { r: Math.round(s.color.r * 255), g: Math.round(s.color.g * 255), b: Math.round(s.color.b * 255) } : undefined,
+            }))
           : undefined,
         cornerRadius: "cornerRadius" in node ? safeNumber((node as any).cornerRadius) : undefined,
         strokeWeight: "strokeWeight" in node ? safeNumber((node as any).strokeWeight) : undefined,
@@ -2986,28 +3015,200 @@ async function handleCreateCarouselComponent(payload: any = {}): Promise<void> {
       }
     }
     if (!targetNode) {
+      targetNode = (await figma.getNodeByIdAsync("305:3407")) as FrameNode;
+    }
+    if (!targetNode) {
       targetNode = (await figma.getNodeByIdAsync("777:4809")) as FrameNode;
     }
     if (!targetNode) {
-      throw new Error("No frame selected. Please select the frame of 4 images.");
+      throw new Error("No frame selected. Please select the product carousel frame.");
     }
 
-    figma.notify(`⚡ Creating interactive square product carousel from "${targetNode.name}"...`, { timeout: 3500 });
-
-    // Collect the 4 product image nodes from targetNode
-    let imageNodes: SceneNode[] = [];
+    // Collect the product card nodes from targetNode
+    let cardNodes: SceneNode[] = [];
     if ("children" in targetNode && targetNode.children.length > 0) {
-      imageNodes = [...targetNode.children];
-      if (imageNodes.length === 1 && "children" in imageNodes[0] && (imageNodes[0] as any).children.length >= 2) {
-        imageNodes = [...(imageNodes[0] as any).children];
+      if (targetNode.children.length === 1 && "children" in targetNode.children[0] && (targetNode.children[0] as any).children.length >= 2) {
+        cardNodes = [...(targetNode.children[0] as any).children];
+      } else {
+        cardNodes = [...targetNode.children];
       }
     }
 
-    if (imageNodes.length === 0) {
-      throw new Error("Selected frame does not contain child product images.");
+    if (cardNodes.length === 0) {
+      throw new Error("Selected frame does not contain child product cards.");
     }
 
-    const slideCount = imageNodes.length;
+    const slideCount = cardNodes.length;
+    const viewportWidth = payload.viewportWidth || targetNode.width || 1319;
+    const viewportHeight = payload.viewportHeight || targetNode.height || 394;
+    const isInfiniteMarquee = payload.mode === "infinite_marquee" || payload.infinite !== false || viewportWidth > 500 || slideCount > 4;
+
+    if (isInfiniteMarquee) {
+      figma.notify(`⚡ Creating seamless infinite right-to-left marquee carousel from "${targetNode.name}"...`, { timeout: 3500 });
+
+      // Determine spacing
+      let itemSpacing = 4;
+      if (targetNode.children.length === 1 && "itemSpacing" in targetNode.children[0]) {
+        itemSpacing = (targetNode.children[0] as any).itemSpacing ?? 4;
+      } else if ("itemSpacing" in targetNode) {
+        itemSpacing = (targetNode as any).itemSpacing ?? 4;
+      }
+
+      // Calculate total cycle width
+      const singleCycleWidth = cardNodes.reduce((sum, c) => sum + c.width, 0) + (cardNodes.length - 1) * itemSpacing;
+      const repeatDistance = Math.round(singleCycleWidth + itemSpacing);
+
+      // Duration: slow, calm, gentle right-to-left flow (e.g. 30s)
+      const duration = payload.duration || 30;
+
+      const variants: ComponentNode[] = [];
+
+      for (let stateIdx = 0; stateIdx < 2; stateIdx++) {
+        const variant = figma.createComponent();
+        variant.name = stateIdx === 0 ? "State=Start" : "State=Loop";
+        variant.resize(viewportWidth, viewportHeight);
+        variant.clipsContent = true; // Crucial: visible in only width of 1319 and height of 394!
+        variant.cornerRadius = targetNode.cornerRadius || 0;
+        variant.fills = targetNode.fills ? JSON.parse(JSON.stringify(targetNode.fills)) : [];
+        variant.strokes = targetNode.strokes ? JSON.parse(JSON.stringify(targetNode.strokes)) : [];
+        variant.strokeWeight = targetNode.strokeWeight || 0;
+        variant.layoutMode = "NONE";
+
+        // Slides Track (MUST have identical name across all variants for Smart Animate)
+        const track = figma.createFrame();
+        track.name = "Slides Track";
+        track.layoutMode = "HORIZONTAL";
+        track.primaryAxisSizingMode = "AUTO";
+        track.counterAxisSizingMode = "AUTO";
+        track.itemSpacing = itemSpacing;
+        track.paddingLeft = 0;
+        track.paddingRight = 0;
+        track.paddingTop = 0;
+        track.paddingBottom = 0;
+        track.fills = [];
+        track.clipsContent = false;
+
+        // Cycle 1: original cards
+        for (let j = 0; j < cardNodes.length; j++) {
+          track.appendChild(cardNodes[j].clone());
+        }
+        // Cycle 2: duplicated cards for seamless continuous infinite loop
+        for (let j = 0; j < cardNodes.length; j++) {
+          track.appendChild(cardNodes[j].clone());
+        }
+
+        track.x = stateIdx === 0 ? 0 : -repeatDistance;
+        track.y = 0;
+
+        variant.appendChild(track);
+        figma.currentPage.appendChild(variant);
+        variants.push(variant);
+      }
+
+      // Combine as Variants
+      const componentSet = figma.combineAsVariants(variants, figma.currentPage);
+      componentSet.name = "Infinite Product Carousel (Continuous Marquee)";
+      componentSet.layoutMode = "HORIZONTAL";
+      componentSet.itemSpacing = 40;
+      componentSet.paddingLeft = 24;
+      componentSet.paddingRight = 24;
+      componentSet.paddingTop = 24;
+      componentSet.paddingBottom = 24;
+      componentSet.fills = [{ type: "SOLID", color: { r: 0.96, g: 0.97, b: 0.98 }, opacity: 1 }];
+      componentSet.strokes = [{ type: "SOLID", color: { r: 0.88, g: 0.9, b: 0.92 }, opacity: 1 }];
+      componentSet.strokeWeight = 1;
+      componentSet.cornerRadius = 16;
+      componentSet.x = targetNode.x;
+      componentSet.y = targetNode.y + targetNode.height + 60;
+
+      // Reactions:
+      // State=Start -> State=Loop: AFTER_TIMEOUT (0.001s) -> SMART_ANIMATE LINEAR (duration: 30s)
+      const toLoopReaction = {
+        trigger: { type: "AFTER_TIMEOUT", timeout: 0.001 },
+        actions: [
+          {
+            type: "NODE",
+            destinationId: variants[1].id,
+            navigation: "CHANGE_TO",
+            transition: {
+              type: "SMART_ANIMATE",
+              duration: duration,
+              easing: { type: "LINEAR" },
+            },
+          },
+        ],
+      };
+
+      // State=Loop -> State=Start: AFTER_TIMEOUT (0.001s) -> INSTANT (Seamless invisible reset with NO comeback!)
+      const toStartReaction = {
+        trigger: { type: "AFTER_TIMEOUT", timeout: 0.001 },
+        actions: [
+          {
+            type: "NODE",
+            destinationId: variants[0].id,
+            navigation: "CHANGE_TO",
+            transition: null,
+          },
+        ],
+      };
+
+      await (variants[0] as any).setReactionsAsync([toLoopReaction]);
+      await (variants[1] as any).setReactionsAsync([toStartReaction]);
+
+      // Create live ready-to-preview Instance of Variant 0
+      const instance = variants[0].createInstance();
+      instance.name = `Infinite Product Carousel — Live (${viewportWidth}x${viewportHeight})`;
+      const parentContainer = targetNode.parent || figma.currentPage;
+      const targetIdx = targetNode.parent ? targetNode.parent.children.indexOf(targetNode) : -1;
+      if (targetIdx >= 0) {
+        targetNode.parent!.insertChild(targetIdx + 1, instance);
+      } else {
+        parentContainer.appendChild(instance);
+      }
+      instance.x = targetNode.x;
+      instance.y = targetNode.y;
+
+      // Hide targetNode so user sees the new interactive instance seamlessly
+      targetNode.visible = false;
+
+      // Set prototype flow starting point
+      figma.currentPage.flowStartingPoints = [
+        { nodeId: instance.id, name: "Infinite Product Carousel (Continuous)" },
+      ];
+
+      // Select instance and scroll into view
+      figma.currentPage.selection = [instance];
+      figma.viewport.scrollAndZoomIntoView([instance]);
+
+      figma.notify(`✓ Infinite Product Carousel Ready! (${slideCount} cards, seamless right-to-left marquee). Press Play ▶ to preview.`, { timeout: 4500 });
+
+      figma.ui.postMessage({
+        type: "CREATE_CAROUSEL_COMPONENT_RESULT",
+        payload: {
+          requestId,
+          success: true,
+          componentSetId: componentSet.id,
+          instanceId: instance.id,
+          slideCount,
+          viewportWidth,
+          viewportHeight,
+          duration,
+          mode: "infinite_marquee",
+          details: [
+            `Viewport: ${viewportWidth} × ${viewportHeight} with clipsContent=true`,
+            `${slideCount} product cards duplicated into 2-cycle continuous track (${slideCount * 2} cards total)`,
+            `Right-to-left smooth motion at steady pace (SMART_ANIMATE, ${duration}s, LINEAR)`,
+            "Instant invisible loop reset on cycle completion (Zero comeback / Zero rewind)",
+            "Automatic prototype playback without any buttons",
+            "Placed interactive instance at original frame position",
+          ],
+        },
+      });
+      return;
+    }
+
+    figma.notify(`⚡ Creating interactive square product carousel from "${targetNode.name}"...`, { timeout: 3500 });
+    let imageNodes = cardNodes;
     const squareSize = payload.squareSize || 320;
 
     // Load fonts for chevrons & badges
@@ -3459,6 +3660,33 @@ async function handleCreateCarouselComponent(payload: any = {}): Promise<void> {
   }
 }
 
+async function handleEvalScript(payload: any = {}): Promise<void> {
+  const requestId = payload.requestId;
+  try {
+    const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+    const fn = new AsyncFunction("figma", payload.code);
+    const result = await fn(figma);
+    figma.ui.postMessage({
+      type: "EVAL_SCRIPT_RESULT",
+      payload: {
+        requestId,
+        success: true,
+        data: result,
+      },
+    });
+  } catch (err: any) {
+    console.error("[Controller] handleEvalScript error:", err);
+    figma.ui.postMessage({
+      type: "EVAL_SCRIPT_RESULT",
+      payload: {
+        requestId,
+        success: false,
+        error: err.message || String(err),
+      },
+    });
+  }
+}
+
 async function handleCreateProductLandingPage(payload: any = {}): Promise<void> {
   try {
     const result = await generateProductStoryLanding({
@@ -3577,6 +3805,70 @@ async function handleGenerateNightToDay(payload: any = {}): Promise<void> {
         requestId: payload.requestId,
         success: false,
         error: err.message || "Failed to generate Night to Day scene",
+      },
+    });
+  }
+}
+
+async function handleCreateColorSwitcher(payload: any = {}): Promise<void> {
+  try {
+    const result = await generateColorSwitcherComponent({
+      frameId: payload.frameId,
+      cardId: payload.cardId,
+    });
+    figma.ui.postMessage({
+      type: "CREATE_COLOR_SWITCHER_RESULT",
+      payload: {
+        requestId: payload.requestId,
+        success: result.success,
+        componentSetId: result.componentSetId,
+        componentSetName: result.componentSetName,
+        instanceId: result.instanceId,
+        variantsCount: result.variantsCount,
+        details: result.details,
+        error: result.error,
+      },
+    });
+  } catch (err: any) {
+    console.error("[Controller] Failed to create color switcher component:", err);
+    figma.ui.postMessage({
+      type: "CREATE_COLOR_SWITCHER_RESULT",
+      payload: {
+        requestId: payload.requestId,
+        success: false,
+        error: err.message || "Failed to create color switcher component",
+      },
+    });
+  }
+}
+
+async function handleCreateLoaderBuffer(payload: any = {}): Promise<void> {
+  try {
+    const result = await generateLoaderBufferAnimation({
+      nodeId: payload.nodeId,
+      duration: payload.duration || 1.0,
+    });
+    figma.ui.postMessage({
+      type: "CREATE_LOADER_BUFFER_RESULT",
+      payload: {
+        requestId: payload.requestId,
+        success: result.success,
+        componentSetId: result.componentSetId,
+        componentSetName: result.componentSetName,
+        motionFrameId: result.motionFrameId,
+        instanceId: result.instanceId,
+        details: result.details,
+        error: result.error,
+      },
+    });
+  } catch (err: any) {
+    console.error("[Controller] Failed to create loader buffer animation:", err);
+    figma.ui.postMessage({
+      type: "CREATE_LOADER_BUFFER_RESULT",
+      payload: {
+        requestId: payload.requestId,
+        success: false,
+        error: err.message || "Failed to create loader buffer animation",
       },
     });
   }
