@@ -1274,6 +1274,7 @@ async function handleExportFrameCode(requestId?: string, nodeId?: string): Promi
         html: codeResult.html,
         css: codeResult.css,
         combinedHtml: codeResult.combinedHtml,
+        json: codeResult.json,
         nodeCount: codeResult.nodeCount,
         assets: codeResult.assets,
       },
@@ -3088,13 +3089,17 @@ async function handleCreateCarouselComponent(payload: any = {}): Promise<void> {
         track.fills = [];
         track.clipsContent = false;
 
-        // Cycle 1: original cards
+        // Cycle 1: original cards with unique 1-to-1 indexed names for Smart Animate
         for (let j = 0; j < cardNodes.length; j++) {
-          track.appendChild(cardNodes[j].clone());
+          const clone = cardNodes[j].clone();
+          clone.name = `Card ${String(j + 1).padStart(2, "0")}`;
+          track.appendChild(clone);
         }
         // Cycle 2: duplicated cards for seamless continuous infinite loop
         for (let j = 0; j < cardNodes.length; j++) {
-          track.appendChild(cardNodes[j].clone());
+          const clone = cardNodes[j].clone();
+          clone.name = `Card ${String(cardNodes.length + j + 1).padStart(2, "0")}`;
+          track.appendChild(clone);
         }
 
         track.x = stateIdx === 0 ? 0 : -repeatDistance;

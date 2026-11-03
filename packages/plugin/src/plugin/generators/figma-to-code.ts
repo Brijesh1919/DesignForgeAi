@@ -17,6 +17,7 @@ export interface FigmaToCodeResult {
   html: string;
   css: string;
   combinedHtml: string;
+  json?: string;
   frameName: string;
   nodeId: string;
   width: number;
@@ -691,6 +692,75 @@ async function convertNode(
   return `${indent}<${tag} class="${className}"></${tag}>\n`;
 }
 
+function serializeNodeToJson(node: SceneNode, maxDepth = 12, depth = 0): any {
+  if (!node || depth > maxDepth) return null;
+  const jsonNode: any = {
+    id: node.id,
+    name: node.name,
+    type: node.type,
+    width: Math.round(node.width),
+    height: Math.round(node.height),
+    x: Math.round(node.x),
+    y: Math.round(node.y),
+    visible: node.visible,
+    opacity: "opacity" in node ? +((node as any).opacity ?? 1).toFixed(2) : 1,
+  };
+
+  if ("layoutMode" in node && (node as any).layoutMode && (node as any).layoutMode !== "NONE") {
+    jsonNode.layout = {
+      mode: (node as any).layoutMode,
+      primaryAxisAlignItems: (node as any).primaryAxisAlignItems,
+      counterAxisAlignItems: (node as any).counterAxisAlignItems,
+      itemSpacing: (node as any).itemSpacing,
+      padding: {
+        top: (node as any).paddingTop || 0,
+        right: (node as any).paddingRight || 0,
+        bottom: (node as any).paddingBottom || 0,
+        left: (node as any).paddingLeft || 0,
+      },
+    };
+  }
+
+  if ("cornerRadius" in node && typeof (node as any).cornerRadius === "number" && (node as any).cornerRadius > 0) {
+    jsonNode.cornerRadius = (node as any).cornerRadius;
+  }
+
+  if ("fills" in node && Array.isArray((node as any).fills) && (node as any).fills.length > 0) {
+    jsonNode.fills = (node as any).fills.map((f: any) => ({
+      type: f.type,
+      visible: f.visible !== false,
+      color: f.color ? colorToCssRgba(f.color, f.opacity ?? 1) : undefined,
+    }));
+  }
+
+  if ("strokes" in node && Array.isArray((node as any).strokes) && (node as any).strokes.length > 0) {
+    jsonNode.strokes = (node as any).strokes.map((s: any) => ({
+      type: s.type,
+      visible: s.visible !== false,
+      color: s.color ? colorToCssRgba(s.color, s.opacity ?? 1) : undefined,
+    }));
+    jsonNode.strokeWeight = (node as any).strokeWeight;
+  }
+
+  if (node.type === "TEXT" && "characters" in node) {
+    jsonNode.text = {
+      characters: (node as any).characters,
+      fontSize: typeof (node as any).fontSize === "number" ? Math.round((node as any).fontSize) : undefined,
+      fontFamily: typeof (node as any).fontName === "object" ? (node as any).fontName?.family : undefined,
+      fontWeight: typeof (node as any).fontName === "object" ? (node as any).fontName?.style : undefined,
+      textAlign: (node as any).textAlignHorizontal,
+    };
+  }
+
+  if ("children" in node && Array.isArray((node as any).children) && (node as any).children.length > 0) {
+    jsonNode.children = (node as any).children
+      .map((child: SceneNode) => serializeNodeToJson(child, maxDepth, depth + 1))
+      .filter(Boolean);
+  }
+
+  return jsonNode;
+}
+
 // ─── Main Export Function ──────────────────────────────────────
 
 export async function generateCodeFromFigmaNode(targetNode: SceneNode): Promise<FigmaToCodeResult> {
@@ -746,10 +816,14 @@ ${previewBodyHtml}
 </body>
 </html>`;
 
+  const jsonTree = serializeNodeToJson(targetNode);
+  const json = JSON.stringify(jsonTree, null, 2);
+
   return {
     html: standaloneHtml,
     css,
     combinedHtml,
+    json,
     frameName: targetNode.name,
     nodeId: targetNode.id,
     width: Math.round(targetNode.width),

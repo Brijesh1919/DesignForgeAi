@@ -3,6 +3,15 @@
  *
  * Extracts clean, modern HTML & CSS directly from any selected Figma frame.
  * 100% offline, zero AI/API key dependencies.
+ * Supports multiple export targets:
+ * - HTML + CSS
+ * - React
+ * - Next.js
+ * - Vue
+ * - Tailwind
+ * - React + Tailwind
+ * - JSON
+ *
  * Features a fully stretchable workstation:
  * - Draggable splitter to freely stretch preview & code panes
  * - 1-click Full Preview (100% width) / Split / Full Code presets
@@ -12,9 +21,18 @@
  * - 100% full-height vertical stretch
  */
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import JSZip from "jszip";
 import { useFigmaMessages } from "../hooks/useFigmaMessages";
+import {
+  ExportFormat,
+  EXPORT_FORMAT_OPTIONS,
+  htmlToReact,
+  htmlToNext,
+  htmlToVue,
+  htmlToTailwind,
+  htmlToReactTailwind,
+} from "../utils/code-converters";
 
 interface SelectedFrameInfo {
   id: string;
@@ -33,6 +51,23 @@ interface ExportedAsset {
   mimeType: string;
 }
 
+interface CodeTabItem {
+  id: string;
+  label: string;
+  code: string;
+  extension: string;
+  mimeType: string;
+}
+
+function toPascalCase(str: string): string {
+  const cleaned = str.replace(/[^a-zA-Z0-9]+/g, " ").trim();
+  if (!cleaned) return "Component";
+  return cleaned
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join("");
+}
+
 export const ExportCodeView: React.FC = () => {
   const { sendMessage } = useFigmaMessages();
 
@@ -40,15 +75,19 @@ export const ExportCodeView: React.FC = () => {
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
 
-  // Extracted code state
+  // Selected format state
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("html-css");
+
+  // Extracted raw code state
   const [extractedHtml, setExtractedHtml] = useState<string>("");
   const [extractedCss, setExtractedCss] = useState<string>("");
   const [combinedHtml, setCombinedHtml] = useState<string>("");
+  const [extractedJson, setExtractedJson] = useState<string>("");
   const [nodeCount, setNodeCount] = useState<number>(0);
   const [assets, setAssets] = useState<ExportedAsset[]>([]);
 
   // UI state
-  const [activeCodeTab, setActiveCodeTab] = useState<"html" | "css" | "combined">("html");
+  const [activeCodeTab, setActiveCodeTab] = useState<string>("html");
   const [copiedType, setCopiedType] = useState<string | null>(null);
   const [iframeKey, setIframeKey] = useState<number>(0);
 
@@ -82,7 +121,7 @@ export const ExportCodeView: React.FC = () => {
       const height = isWindowExpanded ? 820 : 720;
       sendMessage({ type: "RESIZE_WINDOW", payload: { width, height } });
     } else {
-      sendMessage({ type: "RESIZE_WINDOW", payload: { width: 460, height: 660 } });
+      sendMessage({ type: "RESIZE_WINDOW", payload: { width: 480, height: 690 } });
     }
   }, [extractedHtml, extractedCss, isWindowExpanded, sendMessage]);
 
@@ -105,6 +144,7 @@ export const ExportCodeView: React.FC = () => {
           setExtractedHtml(msg.payload.html || "");
           setExtractedCss(msg.payload.css || "");
           setCombinedHtml(msg.payload.combinedHtml || "");
+          setExtractedJson(msg.payload.json || "");
           setNodeCount(msg.payload.nodeCount || 0);
           setAssets(msg.payload.assets || []);
           setExtractError(null);
@@ -117,6 +157,74 @@ export const ExportCodeView: React.FC = () => {
     window.addEventListener("message", handlePluginMessage);
     return () => window.removeEventListener("message", handlePluginMessage);
   }, []);
+
+  // Compute converted formats on the fly
+  const frameName = selectedFrame?.name || "Component";
+
+  const convertedCode = useMemo(() => {
+    if (!extractedHtml) return null;
+    const reactCode = htmlToReact(extractedHtml, frameName);
+    const nextCode = htmlToNext(extractedHtml, frameName);
+    const vueCode = htmlToVue(extractedHtml, extractedCss, frameName);
+    const tailwindHtml = htmlToTailwind(extractedHtml, extractedCss);
+    const reactTailwindCode = htmlToReactTailwind(extractedHtml, extractedCss, frameName);
+
+    return {
+      reactCode,
+      nextCode,
+      vueCode,
+      tailwindHtml,
+      reactTailwindCode,
+    };
+  }, [extractedHtml, extractedCss, frameName]);
+
+  // Dynamic tabs based on selected export format
+  const codeTabs = useMemo((): CodeTabItem[] => {
+    const compName = toPascalCase(frameName);
+    switch (exportFormat) {
+      case "html-css":
+        return [
+          { id: "html", label: "index.html", code: extractedHtml, extension: ".html", mimeType: "text/html" },
+          { id: "css", label: "style.css", code: extractedCss, extension: ".css", mimeType: "text/css" },
+          { id: "combined", label: "Single File", code: combinedHtml, extension: ".html", mimeType: "text/html" },
+        ];
+      case "react":
+        return [
+          { id: "component", label: `${compName}.tsx`, code: convertedCode?.reactCode || "", extension: ".tsx", mimeType: "text/typescript" },
+          { id: "css", label: "style.css", code: extractedCss, extension: ".css", mimeType: "text/css" },
+        ];
+      case "nextjs":
+        return [
+          { id: "component", label: `${compName}.tsx`, code: convertedCode?.nextCode || "", extension: ".tsx", mimeType: "text/typescript" },
+          { id: "css", label: "style.css", code: extractedCss, extension: ".css", mimeType: "text/css" },
+        ];
+      case "vue":
+        return [
+          { id: "component", label: `${compName}.vue`, code: convertedCode?.vueCode || "", extension: ".vue", mimeType: "text/plain" },
+        ];
+      case "tailwind":
+        return [
+          { id: "html", label: "index.html", code: convertedCode?.tailwindHtml || "", extension: ".html", mimeType: "text/html" },
+          { id: "css", label: "style.css", code: extractedCss, extension: ".css", mimeType: "text/css" },
+        ];
+      case "react-tailwind":
+        return [
+          { id: "component", label: `${compName}.tsx`, code: convertedCode?.reactTailwindCode || "", extension: ".tsx", mimeType: "text/typescript" },
+        ];
+      case "json":
+        return [
+          { id: "json", label: "design.json", code: extractedJson || "{}", extension: ".json", mimeType: "application/json" },
+        ];
+      default:
+        return [
+          { id: "html", label: "index.html", code: extractedHtml, extension: ".html", mimeType: "text/html" },
+          { id: "css", label: "style.css", code: extractedCss, extension: ".css", mimeType: "text/css" },
+        ];
+    }
+  }, [exportFormat, frameName, extractedHtml, extractedCss, combinedHtml, extractedJson, convertedCode]);
+
+  const activeTabItem = codeTabs.find((t) => t.id === activeCodeTab) || codeTabs[0];
+  const activeCode = activeTabItem?.code || "";
 
   // Measure preview viewport width for auto-fit scaling
   useEffect(() => {
@@ -179,15 +287,13 @@ export const ExportCodeView: React.FC = () => {
     sendMessage({ type: "GET_CANVAS_SELECTION" });
   };
 
-  const handleCopy = async (type: "html" | "css" | "combined") => {
-    let text = "";
-    if (type === "html") text = extractedHtml;
-    else if (type === "css") text = extractedCss;
-    else text = combinedHtml;
+  const handleCopy = async () => {
+    if (!activeTabItem) return;
+    const text = activeTabItem.code;
 
     try {
       await navigator.clipboard.writeText(text);
-      setCopiedType(type);
+      setCopiedType(activeTabItem.id);
       setTimeout(() => setCopiedType(null), 2000);
     } catch {
       const textarea = document.createElement("textarea");
@@ -196,14 +302,20 @@ export const ExportCodeView: React.FC = () => {
       textarea.select();
       document.execCommand("copy");
       document.body.removeChild(textarea);
-      setCopiedType(type);
+      setCopiedType(activeTabItem.id);
       setTimeout(() => setCopiedType(null), 2000);
     }
   };
 
-  const handleDownloadHtml = () => {
-    const filename = `${(selectedFrame?.name || "design").toLowerCase().replace(/[^a-z0-9]+/g, "-")}.html`;
-    const blob = new Blob([combinedHtml], { type: "text/html;charset=utf-8" });
+  const handleDownloadSingleFile = () => {
+    if (!activeTabItem) return;
+    const baseName = (selectedFrame?.name || "design").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    let filename = `${baseName}${activeTabItem.extension}`;
+    if (activeTabItem.id === "component") {
+      const compName = toPascalCase(selectedFrame?.name || "Component");
+      filename = `${compName}${activeTabItem.extension}`;
+    }
+    const blob = new Blob([activeTabItem.code], { type: `${activeTabItem.mimeType};charset=utf-8` });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -218,40 +330,159 @@ export const ExportCodeView: React.FC = () => {
     try {
       const zip = new JSZip();
       const baseName = (selectedFrame?.name || "design").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const compName = toPascalCase(selectedFrame?.name || "Component");
 
-      zip.file("index.html", extractedHtml);
-      zip.file("style.css", extractedCss);
-
-      // Add assets/ folder to ZIP
-      if (assets && assets.length > 0) {
-        const assetsFolder = zip.folder("assets");
-        if (assetsFolder) {
-          for (const asset of assets) {
-            const cleanBase64 = asset.base64.replace(/^data:[^;]+;base64,/, "");
-            assetsFolder.file(asset.filename, cleanBase64, { base64: true });
+      // Add assets folder if any
+      const addAssets = () => {
+        if (assets && assets.length > 0) {
+          const assetsFolder = zip.folder("assets");
+          if (assetsFolder) {
+            for (const asset of assets) {
+              const cleanBase64 = asset.base64.replace(/^data:[^;]+;base64,/, "");
+              assetsFolder.file(asset.filename, cleanBase64, { base64: true });
+            }
           }
         }
+      };
+
+      switch (exportFormat) {
+        case "html-css":
+          zip.file("index.html", extractedHtml);
+          zip.file("style.css", extractedCss);
+          addAssets();
+          zip.file(
+            "README.md",
+            `# ${selectedFrame?.name || "Exported Design"}\n\nExported HTML + CSS from Figma using DesignForge AI.\n\nOpen \`index.html\` in your browser to preview.`
+          );
+          break;
+
+        case "react":
+          zip.file(`src/${compName}.tsx`, convertedCode?.reactCode || "");
+          zip.file("src/style.css", extractedCss);
+          addAssets();
+          zip.file(
+            "package.json",
+            JSON.stringify(
+              {
+                name: baseName,
+                version: "1.0.0",
+                private: true,
+                dependencies: {
+                  react: "^18.2.0",
+                  "react-dom": "^18.2.0",
+                },
+              },
+              null,
+              2
+            )
+          );
+          zip.file(
+            "README.md",
+            `# ${compName} (React Component)\n\nExported from Figma using DesignForge AI.\n\nImport \`<${compName} />\` and import \`./style.css\` into your React project.`
+          );
+          break;
+
+        case "nextjs":
+          zip.file(`app/components/${compName}.tsx`, convertedCode?.nextCode || "");
+          zip.file("app/components/style.css", extractedCss);
+          addAssets();
+          zip.file(
+            "package.json",
+            JSON.stringify(
+              {
+                name: baseName,
+                version: "1.0.0",
+                private: true,
+                dependencies: {
+                  next: "^14.0.0",
+                  react: "^18.2.0",
+                  "react-dom": "^18.2.0",
+                },
+              },
+              null,
+              2
+            )
+          );
+          zip.file(
+            "README.md",
+            `# ${compName} (Next.js Client Component)\n\nExported from Figma using DesignForge AI.\n\nReady for Next.js App Router (\`'use client'\`).`
+          );
+          break;
+
+        case "vue":
+          zip.file(`src/components/${compName}.vue`, convertedCode?.vueCode || "");
+          addAssets();
+          zip.file(
+            "package.json",
+            JSON.stringify(
+              {
+                name: baseName,
+                version: "1.0.0",
+                private: true,
+                dependencies: {
+                  vue: "^3.4.0",
+                },
+              },
+              null,
+              2
+            )
+          );
+          zip.file(
+            "README.md",
+            `# ${compName} (Vue 3 SFC)\n\nExported from Figma using DesignForge AI.\n\nVue 3 Single File Component with \`<script setup lang="ts">\` and \`<style scoped>\`.`
+          );
+          break;
+
+        case "tailwind":
+          zip.file("index.html", convertedCode?.tailwindHtml || "");
+          zip.file("style.css", extractedCss);
+          addAssets();
+          zip.file(
+            "README.md",
+            `# ${selectedFrame?.name || "Exported Design"} (Tailwind CSS)\n\nExported from Figma using DesignForge AI.\nIncludes Tailwind utility classes.`
+          );
+          break;
+
+        case "react-tailwind":
+          zip.file(`src/${compName}.tsx`, convertedCode?.reactTailwindCode || "");
+          addAssets();
+          zip.file(
+            "package.json",
+            JSON.stringify(
+              {
+                name: baseName,
+                version: "1.0.0",
+                private: true,
+                dependencies: {
+                  react: "^18.2.0",
+                  "react-dom": "^18.2.0",
+                  tailwindcss: "^3.4.0",
+                },
+              },
+              null,
+              2
+            )
+          );
+          zip.file(
+            "README.md",
+            `# ${compName} (React + Tailwind CSS)\n\nExported from Figma using DesignForge AI.\nZero external CSS needed — fully styled with Tailwind utility classes!`
+          );
+          break;
+
+        case "json":
+          zip.file("design.json", extractedJson || "{}");
+          zip.file(
+            "README.md",
+            `# ${selectedFrame?.name || "Exported Design"} (Figma Tree JSON)\n\nComplete Figma layer tree metadata exported using DesignForge AI.`
+          );
+          break;
       }
-
-      zip.file(
-        "README.md",
-        `# ${selectedFrame?.name || "Exported Design"}
-
-Exported from Figma using DesignForge AI (Zero AI / Direct DOM extraction).
-
-## Project Structure:
-- \`index.html\`: Semantic HTML structure
-- \`style.css\`: Complete CSS styles
-- \`assets/\`: Extracted visual assets (${assets.length} file${assets.length === 1 ? "" : "s"})
-
-Open \`index.html\` in any web browser to preview.`
-      );
 
       const content = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(content);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${baseName}-code.zip`;
+      link.download = `${baseName}-${exportFormat}.zip`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -277,16 +508,17 @@ Open \`index.html\` in any web browser to preview.`
     setExtractedHtml("");
     setExtractedCss("");
     setCombinedHtml("");
+    setExtractedJson("");
     setNodeCount(0);
     setAssets([]);
     setExtractError(null);
-    sendMessage({ type: "RESIZE_WINDOW", payload: { width: 460, height: 660 } });
+    sendMessage({ type: "RESIZE_WINDOW", payload: { width: 480, height: 690 } });
   };
 
   // ─── INITIAL VIEW: Select Frame to Extract ───────────────────────
   if (!extractedHtml && !extractedCss) {
     return (
-      <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
         {/* Header Title */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
@@ -301,7 +533,7 @@ Open \`index.html\` in any web browser to preview.`
                 gap: "8px",
               }}
             >
-              <span>&lt;/&gt;</span> Export HTML & CSS
+              <span>&lt;/&gt;</span> Export Code
             </h3>
             <p style={{ fontSize: "12px", color: "var(--text-secondary)", margin: 0 }}>
               Convert any Figma frame into clean code · 100% offline & zero AI required
@@ -334,10 +566,10 @@ Open \`index.html\` in any web browser to preview.`
               background: "linear-gradient(135deg, rgba(21, 94, 239, 0.08) 0%, rgba(56, 189, 248, 0.08) 100%)",
               border: "1px solid rgba(56, 189, 248, 0.3)",
               borderRadius: "10px",
-              padding: "16px",
+              padding: "14px 16px",
               display: "flex",
               flexDirection: "column",
-              gap: "12px",
+              gap: "10px",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -400,7 +632,7 @@ Open \`index.html\` in any web browser to preview.`
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
                 gap: "8px",
-                padding: "10px",
+                padding: "8px 10px",
                 background: "rgba(0,0,0,0.15)",
                 borderRadius: "6px",
                 fontSize: "11px",
@@ -417,7 +649,7 @@ Open \`index.html\` in any web browser to preview.`
         ) : (
           <div
             style={{
-              padding: "24px 16px",
+              padding: "20px 16px",
               border: "1.5px dashed var(--border-default)",
               borderRadius: "10px",
               textAlign: "center",
@@ -425,25 +657,121 @@ Open \`index.html\` in any web browser to preview.`
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: "10px",
+              gap: "8px",
             }}
           >
-            <div style={{ fontSize: "28px" }}>👆</div>
+            <div style={{ fontSize: "26px" }}>👆</div>
             <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)" }}>
               Select a frame on canvas
             </div>
             <p style={{ fontSize: "11.5px", color: "var(--text-secondary)", margin: 0, maxWidth: "260px" }}>
-              Click on any frame, card, section, or page design in Figma to extract its full HTML & CSS.
+              Click on any frame, card, section, or page design in Figma to extract its full code.
             </p>
             <button
               onClick={handleRefreshSelection}
               className="btn btn--secondary"
-              style={{ fontSize: "11px", padding: "6px 12px", marginTop: "4px" }}
+              style={{ fontSize: "11px", padding: "5px 12px", marginTop: "2px" }}
             >
               🔄 Detect Selected Frame
             </button>
           </div>
         )}
+
+        {/* ─── EXPORT AS OPTION GROUP ─── */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+            background: "var(--bg-secondary)",
+            border: "1px solid var(--border-default)",
+            borderRadius: "10px",
+            padding: "12px 14px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "12px",
+              fontWeight: 700,
+              color: "var(--text-primary)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <span>Export as</span>
+            <span
+              style={{
+                fontSize: "10px",
+                color: "var(--accent-primary)",
+                background: "rgba(99, 102, 241, 0.12)",
+                padding: "2px 6px",
+                borderRadius: "4px",
+                fontWeight: 600,
+              }}
+            >
+              {EXPORT_FORMAT_OPTIONS.find((f) => f.id === exportFormat)?.badge}
+            </span>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+            {EXPORT_FORMAT_OPTIONS.map((opt) => {
+              const isSelected = exportFormat === opt.id;
+              return (
+                <div
+                  key={opt.id}
+                  onClick={() => setExportFormat(opt.id)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "6px 10px",
+                    borderRadius: "6px",
+                    border: isSelected
+                      ? "1px solid var(--accent-primary)"
+                      : "1px solid transparent",
+                    background: isSelected
+                      ? "rgba(99, 102, 241, 0.12)"
+                      : "var(--bg-tertiary)",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+                    <span
+                      style={{
+                        fontSize: "14px",
+                        color: isSelected ? "var(--accent-primary)" : "var(--text-secondary)",
+                        lineHeight: 1,
+                        userSelect: "none",
+                      }}
+                    >
+                      {isSelected ? "●" : "○"}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: isSelected ? 700 : 500,
+                        color: isSelected ? "var(--text-primary)" : "var(--text-secondary)",
+                      }}
+                    >
+                      {opt.label}
+                    </span>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: "10.5px",
+                      color: "var(--text-secondary)",
+                      opacity: 0.85,
+                    }}
+                  >
+                    {opt.description}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Extraction Button */}
         <button
@@ -452,7 +780,7 @@ Open \`index.html\` in any web browser to preview.`
           className="btn btn--primary btn--full btn--lg"
           style={{
             fontSize: "13px",
-            padding: "12px",
+            padding: "11px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -463,12 +791,12 @@ Open \`index.html\` in any web browser to preview.`
           {isExtracting ? (
             <>
               <div className="spinner" style={{ width: "16px", height: "16px" }} />
-              <span>Extracting HTML & CSS...</span>
+              <span>Extracting {EXPORT_FORMAT_OPTIONS.find((f) => f.id === exportFormat)?.label || "Code"}...</span>
             </>
           ) : (
             <>
               <span>&lt;/&gt;</span>
-              <span>Extract HTML & CSS</span>
+              <span>Extract {EXPORT_FORMAT_OPTIONS.find((f) => f.id === exportFormat)?.label || "Code"}</span>
             </>
           )}
         </button>
@@ -494,18 +822,18 @@ Open \`index.html\` in any web browser to preview.`
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
             gap: "10px",
-            marginTop: "6px",
+            marginTop: "2px",
           }}
         >
           <div
             style={{
               background: "var(--bg-secondary)",
-              padding: "10px 12px",
+              padding: "9px 12px",
               borderRadius: "8px",
               border: "1px solid var(--border-default)",
             }}
           >
-            <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-primary)", marginBottom: "3px" }}>
+            <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-primary)", marginBottom: "2px" }}>
               ⚡ 100% Offline
             </div>
             <div style={{ fontSize: "10px", color: "var(--text-secondary)" }}>
@@ -515,12 +843,12 @@ Open \`index.html\` in any web browser to preview.`
           <div
             style={{
               background: "var(--bg-secondary)",
-              padding: "10px 12px",
+              padding: "9px 12px",
               borderRadius: "8px",
               border: "1px solid var(--border-default)",
             }}
           >
-            <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-primary)", marginBottom: "3px" }}>
+            <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-primary)", marginBottom: "2px" }}>
               📦 Stretchable Preview
             </div>
             <div style={{ fontSize: "10px", color: "var(--text-secondary)" }}>
@@ -533,9 +861,6 @@ Open \`index.html\` in any web browser to preview.`
   }
 
   // ─── STRETCHABLE WORKSTATION VIEW ─────────────────────────────────
-
-  const activeCode =
-    activeCodeTab === "html" ? extractedHtml : activeCodeTab === "css" ? extractedCss : combinedHtml;
 
   // Compute scale factor for Auto-Fit
   const designWidth = selectedFrame?.width || 1440;
@@ -608,7 +933,7 @@ Open \`index.html\` in any web browser to preview.`
                 fontSize: "12px",
                 fontWeight: 700,
                 color: "var(--text-primary)",
-                maxWidth: "180px",
+                maxWidth: "160px",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -645,7 +970,35 @@ Open \`index.html\` in any web browser to preview.`
           </div>
         </div>
 
-        {/* Center: View Layout Switcher (Split / Full Preview / Full Code) */}
+        {/* Center-Left: Format Switcher Dropdown */}
+        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+          <span style={{ fontSize: "11px", color: "var(--text-secondary)", fontWeight: 600 }}>Export as:</span>
+          <select
+            value={exportFormat}
+            onChange={(e) => {
+              const newFormat = e.target.value as ExportFormat;
+              setExportFormat(newFormat);
+            }}
+            style={{
+              background: "var(--bg-tertiary)",
+              border: "1px solid var(--border-default)",
+              color: "var(--text-primary)",
+              borderRadius: "6px",
+              padding: "3px 8px",
+              fontSize: "11px",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            {EXPORT_FORMAT_OPTIONS.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Center-Right: View Layout Switcher (Split / Full Preview / Full Code) */}
         <div
           style={{
             display: "flex",
@@ -723,7 +1076,7 @@ Open \`index.html\` in any web browser to preview.`
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           {/* Copy Button */}
           <button
-            onClick={() => handleCopy(activeCodeTab)}
+            onClick={handleCopy}
             className="btn btn--secondary"
             style={{
               padding: "4px 9px",
@@ -733,15 +1086,15 @@ Open \`index.html\` in any web browser to preview.`
               gap: "4px",
             }}
           >
-            <span>{copiedType === activeCodeTab ? "✓" : "📋"}</span>
-            <span>{copiedType === activeCodeTab ? "Copied!" : `Copy ${activeCodeTab.toUpperCase()}`}</span>
+            <span>{copiedType === activeTabItem?.id ? "✓" : "📋"}</span>
+            <span>{copiedType === activeTabItem?.id ? "Copied!" : `Copy ${activeTabItem?.label || "Code"}`}</span>
           </button>
 
-          {/* Download HTML Button */}
+          {/* Download Single File Button */}
           <button
-            onClick={handleDownloadHtml}
+            onClick={handleDownloadSingleFile}
             className="btn btn--secondary"
-            title="Download single .html file"
+            title={`Download single ${activeTabItem?.extension || ""} file`}
             style={{
               padding: "4px 9px",
               fontSize: "11px",
@@ -751,14 +1104,14 @@ Open \`index.html\` in any web browser to preview.`
             }}
           >
             <span>⬇</span>
-            <span>.html</span>
+            <span>{activeTabItem?.extension || ".code"}</span>
           </button>
 
           {/* Download ZIP Button */}
           <button
             onClick={handleDownloadZip}
             className="btn btn--primary"
-            title="Download index.html + style.css as ZIP"
+            title={`Download complete ${EXPORT_FORMAT_OPTIONS.find((f) => f.id === exportFormat)?.label || ""} package as ZIP`}
             style={{
               padding: "4px 10px",
               fontSize: "11px",
@@ -832,51 +1185,27 @@ Open \`index.html\` in any web browser to preview.`
             }}
           >
             <div style={{ display: "flex", gap: "4px" }}>
-              <button
-                onClick={() => setActiveCodeTab("html")}
-                style={{
-                  padding: "4px 9px",
-                  borderRadius: "4px",
-                  border: "none",
-                  background: activeCodeTab === "html" ? "var(--bg-primary)" : "transparent",
-                  color: activeCodeTab === "html" ? "var(--text-primary)" : "var(--text-secondary)",
-                  fontSize: "11px",
-                  fontWeight: activeCodeTab === "html" ? 700 : 500,
-                  cursor: "pointer",
-                }}
-              >
-                index.html
-              </button>
-              <button
-                onClick={() => setActiveCodeTab("css")}
-                style={{
-                  padding: "4px 9px",
-                  borderRadius: "4px",
-                  border: "none",
-                  background: activeCodeTab === "css" ? "var(--bg-primary)" : "transparent",
-                  color: activeCodeTab === "css" ? "var(--text-primary)" : "var(--text-secondary)",
-                  fontSize: "11px",
-                  fontWeight: activeCodeTab === "css" ? 700 : 500,
-                  cursor: "pointer",
-                }}
-              >
-                style.css
-              </button>
-              <button
-                onClick={() => setActiveCodeTab("combined")}
-                style={{
-                  padding: "4px 9px",
-                  borderRadius: "4px",
-                  border: "none",
-                  background: activeCodeTab === "combined" ? "var(--bg-primary)" : "transparent",
-                  color: activeCodeTab === "combined" ? "var(--text-primary)" : "var(--text-secondary)",
-                  fontSize: "11px",
-                  fontWeight: activeCodeTab === "combined" ? 700 : 500,
-                  cursor: "pointer",
-                }}
-              >
-                Single File
-              </button>
+              {codeTabs.map((tab) => {
+                const isActive = tab.id === activeTabItem?.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveCodeTab(tab.id)}
+                    style={{
+                      padding: "4px 9px",
+                      borderRadius: "4px",
+                      border: "none",
+                      background: isActive ? "var(--bg-primary)" : "transparent",
+                      color: isActive ? "var(--text-primary)" : "var(--text-secondary)",
+                      fontSize: "11px",
+                      fontWeight: isActive ? 700 : 500,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
             </div>
 
             <span style={{ fontSize: "10px", color: "var(--text-secondary)" }}>

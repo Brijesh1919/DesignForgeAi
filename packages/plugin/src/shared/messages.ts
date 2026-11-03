@@ -263,6 +263,7 @@ export type PluginToUIMessage =
         html: string;
         css: string;
         combinedHtml: string;
+        json?: string;
         nodeCount: number;
         assets?: Array<{
           filename: string;
