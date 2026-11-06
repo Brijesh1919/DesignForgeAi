@@ -1,0 +1,1434 @@
+{
+  "typoSection": {
+    "name": "04 Typography",
+    "type": "FRAME",
+    "w": 1440,
+    "h": 1476,
+    "children": [
+      {
+        "name": "Section Header",
+        "type": "FRAME",
+        "w": 1152,
+        "h": 112,
+        "children": [
+          {
+            "name": "Eyebrow",
+            "type": "FRAME",
+            "w": 86,
+            "h": 16,
+            "children": [
+              {
+                "name": "Pennant Mark",
+                "type": "POLYGON",
+                "w": 12,
+                "h": 12
+              },
+              {
+                "name": "03 — TYPE",
+                "type": "TEXT",
+                "w": 66,
+                "h": 16,
+                "text": "03 — TYPE",
+                "fontSize": 11,
+                "fontName": {
+                  "family": "Manrope",
+                  "style": "ExtraBold",
+                  "variationSettings": {
+                    "wght": 800
+                  }
+                },
+                "lineHeight": {
+                  "unit": "PIXELS",
+                  "value": 16
+                },
+                "letterSpacing": {
+                  "unit": "PERCENT",
+                  "value": 12
+                }
+              }
+            ]
+          },
+          {
+            "name": "Typography",
+            "type": "TEXT",
+            "w": 1152,
+            "h": 52,
+            "text": "Typography",
+            "fontSize": 48,
+            "fontName": {
+              "family": "Manrope",
+              "style": "ExtraBold",
+              "variationSettings": {
+                "wght": 800
+              }
+            },
+            "lineHeight": {
+              "unit": "PIXELS",
+              "value": 52
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": -1
+            }
+          },
+          {
+            "name": "One family. Manrope delivers a modern, highly readable voice for headings, product data and interface text.",
+            "type": "TEXT",
+            "w": 1152,
+            "h": 24,
+            "text": "One family. Manrope delivers a modern, highly read",
+            "fontSize": 16,
+            "fontName": {
+              "family": "Manrope",
+              "style": "Regular",
+              "variationSettings": {
+                "wght": 400
+              }
+            },
+            "lineHeight": {
+              "unit": "PIXELS",
+              "value": 24
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            }
+          }
+        ]
+      },
+      {
+        "name": "Specimen",
+        "type": "FRAME",
+        "w": 1152,
+        "h": 299,
+        "children": [
+          {
+            "name": "Aa",
+            "type": "TEXT",
+            "w": 203,
+            "h": 219,
+            "text": "Aa",
+            "fontSize": 160,
+            "fontName": {
+              "family": "Manrope",
+              "style": "ExtraBold",
+              "variationSettings": {
+                "wght": 800
+              }
+            },
+            "lineHeight": {
+              "unit": "AUTO"
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            }
+          },
+          {
+            "name": "Info",
+            "type": "FRAME",
+            "w": 805,
+            "h": 139,
+            "children": [
+              {
+                "name": "Manrope",
+                "type": "TEXT",
+                "w": 130,
+                "h": 36,
+                "text": "Manrope",
+                "fontSize": 30,
+                "fontName": {
+                  "family": "Manrope",
+                  "style": "ExtraBold",
+                  "variationSettings": {
+                    "wght": 800
+                  }
+                },
+                "lineHeight": {
+                  "unit": "PIXELS",
+                  "value": 36
+                },
+                "letterSpacing": {
+                  "unit": "PERCENT",
+                  "value": -0.5
+                }
+              },
+              {
+                "name": "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789 $.,:;!?&@#%",
+                "type": "TEXT",
+                "w": 805,
+                "h": 72,
+                "text": "ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvw",
+                "fontSize": 16,
+                "fontName": {
+                  "family": "Manrope",
+                  "style": "Regular",
+                  "variationSettings": {
+                    "wght": 400
+                  }
+                },
+                "lineHeight": {
+                  "unit": "PIXELS",
+                  "value": 24
+                },
+                "letterSpacing": {
+                  "unit": "PERCENT",
+                  "value": 0
+                }
+              },
+              {
+                "name": "Weights",
+                "type": "FRAME",
+                "w": 344,
+                "h": 19,
+                "children": [
+                  {
+                    "name": "Regular",
+                    "type": "TEXT",
+                    "w": 50,
+                    "h": 19,
+                    "text": "Regular",
+                    "fontSize": 14,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Regular",
+                      "variationSettings": {
+                        "wght": 400
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "AUTO"
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "name": "Medium",
+                    "type": "TEXT",
+                    "w": 53,
+                    "h": 19,
+                    "text": "Medium",
+                    "fontSize": 14,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Medium",
+                      "variationSettings": {
+                        "wght": 500
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "AUTO"
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "name": "SemiBold",
+                    "type": "TEXT",
+                    "w": 63,
+                    "h": 19,
+                    "text": "SemiBold",
+                    "fontSize": 14,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "SemiBold",
+                      "variationSettings": {
+                        "wght": 600
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "AUTO"
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "name": "Bold",
+                    "type": "TEXT",
+                    "w": 31,
+                    "h": 19,
+                    "text": "Bold",
+                    "fontSize": 14,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Bold",
+                      "variationSettings": {
+                        "wght": 700
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "AUTO"
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "name": "ExtraBold",
+                    "type": "TEXT",
+                    "w": 67,
+                    "h": 19,
+                    "text": "ExtraBold",
+                    "fontSize": 14,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "ExtraBold",
+                      "variationSettings": {
+                        "wght": 800
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "AUTO"
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Scale",
+        "type": "FRAME",
+        "w": 1152,
+        "h": 825,
+        "children": [
+          {
+            "name": "Type / Heading/H1",
+            "type": "FRAME",
+            "w": 1152,
+            "h": 85,
+            "children": [
+              {
+                "name": "Meta",
+                "type": "FRAME",
+                "w": 260,
+                "h": 41,
+                "children": [
+                  {
+                    "name": "Heading/H1",
+                    "type": "TEXT",
+                    "w": 85,
+                    "h": 21,
+                    "text": "Heading/H1",
+                    "fontSize": 15,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Bold",
+                      "variationSettings": {
+                        "wght": 700
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 21
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "name": "48 / 52 · ExtraBold · −1%",
+                    "type": "TEXT",
+                    "w": 130,
+                    "h": 18,
+                    "text": "48 / 52 · ExtraBold · −1%",
+                    "fontSize": 12,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Medium",
+                      "variationSettings": {
+                        "wght": 500
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 18
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Make every brand impossible to miss",
+                "type": "TEXT",
+                "w": 860,
+                "h": 52,
+                "text": "Make every brand impossible to miss",
+                "fontSize": 48,
+                "fontName": {
+                  "family": "Manrope",
+                  "style": "ExtraBold",
+                  "variationSettings": {
+                    "wght": 800
+                  }
+                },
+                "lineHeight": {
+                  "unit": "PIXELS",
+                  "value": 52
+                },
+                "letterSpacing": {
+                  "unit": "PERCENT",
+                  "value": -1
+                }
+              }
+            ]
+          },
+          {
+            "name": "Type / Heading/H2",
+            "type": "FRAME",
+            "w": 1152,
+            "h": 74,
+            "children": [
+              {
+                "name": "Meta",
+                "type": "FRAME",
+                "w": 260,
+                "h": 41,
+                "children": [
+                  {
+                    "name": "Heading/H2",
+                    "type": "TEXT",
+                    "w": 87,
+                    "h": 21,
+                    "text": "Heading/H2",
+                    "fontSize": 15,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Bold",
+                      "variationSettings": {
+                        "wght": 700
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 21
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "name": "30 / 36 · ExtraBold · −0.5%",
+                    "type": "TEXT",
+                    "w": 143,
+                    "h": 18,
+                    "text": "30 / 36 · ExtraBold · −0.5%",
+                    "fontSize": 12,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Medium",
+                      "variationSettings": {
+                        "wght": 500
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 18
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Top-selling products",
+                "type": "TEXT",
+                "w": 860,
+                "h": 36,
+                "text": "Top-selling products",
+                "fontSize": 30,
+                "fontName": {
+                  "family": "Manrope",
+                  "style": "ExtraBold",
+                  "variationSettings": {
+                    "wght": 800
+                  }
+                },
+                "lineHeight": {
+                  "unit": "PIXELS",
+                  "value": 36
+                },
+                "letterSpacing": {
+                  "unit": "PERCENT",
+                  "value": -0.5
+                }
+              }
+            ]
+          },
+          {
+            "name": "Type / Heading/H3",
+            "type": "FRAME",
+            "w": 1152,
+            "h": 74,
+            "children": [
+              {
+                "name": "Meta",
+                "type": "FRAME",
+                "w": 260,
+                "h": 41,
+                "children": [
+                  {
+                    "name": "Heading/H3",
+                    "type": "TEXT",
+                    "w": 87,
+                    "h": 21,
+                    "text": "Heading/H3",
+                    "fontSize": 15,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Bold",
+                      "variationSettings": {
+                        "wght": 700
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 21
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "name": "18 / 24 · ExtraBold",
+                    "type": "TEXT",
+                    "w": 98,
+                    "h": 18,
+                    "text": "18 / 24 · ExtraBold",
+                    "fontSize": 12,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Medium",
+                      "variationSettings": {
+                        "wght": 500
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 18
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Christmas stocking",
+                "type": "TEXT",
+                "w": 860,
+                "h": 24,
+                "text": "Christmas stocking",
+                "fontSize": 18,
+                "fontName": {
+                  "family": "Manrope",
+                  "style": "ExtraBold",
+                  "variationSettings": {
+                    "wght": 800
+                  }
+                },
+                "lineHeight": {
+                  "unit": "PIXELS",
+                  "value": 24
+                },
+                "letterSpacing": {
+                  "unit": "PERCENT",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          {
+            "name": "Type / Body/Large",
+            "type": "FRAME",
+            "w": 1152,
+            "h": 74,
+            "children": [
+              {
+                "name": "Meta",
+                "type": "FRAME",
+                "w": 260,
+                "h": 41,
+                "children": [
+                  {
+                    "name": "Body/Large",
+                    "type": "TEXT",
+                    "w": 84,
+                    "h": 21,
+                    "text": "Body/Large",
+                    "fontSize": 15,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Bold",
+                      "variationSettings": {
+                        "wght": 700
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 21
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "name": "16 / 24 · Regular",
+                    "type": "TEXT",
+                    "w": 87,
+                    "h": 18,
+                    "text": "16 / 24 · Regular",
+                    "fontSize": 12,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Medium",
+                      "variationSettings": {
+                        "wght": 500
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 18
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Custom flags, banners, tents and trade show displays for distributors.",
+                "type": "TEXT",
+                "w": 860,
+                "h": 24,
+                "text": "Custom flags, banners, tents and trade show displa",
+                "fontSize": 16,
+                "fontName": {
+                  "family": "Manrope",
+                  "style": "Regular",
+                  "variationSettings": {
+                    "wght": 400
+                  }
+                },
+                "lineHeight": {
+                  "unit": "PIXELS",
+                  "value": 24
+                },
+                "letterSpacing": {
+                  "unit": "PERCENT",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          {
+            "name": "Type / Body/Title",
+            "type": "FRAME",
+            "w": 1152,
+            "h": 74,
+            "children": [
+              {
+                "name": "Meta",
+                "type": "FRAME",
+                "w": 260,
+                "h": 41,
+                "children": [
+                  {
+                    "name": "Body/Title",
+                    "type": "TEXT",
+                    "w": 76,
+                    "h": 21,
+                    "text": "Body/Title",
+                    "fontSize": 15,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Bold",
+                      "variationSettings": {
+                        "wght": 700
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 21
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "name": "15 / 21 · Bold",
+                    "type": "TEXT",
+                    "w": 66,
+                    "h": 18,
+                    "text": "15 / 21 · Bold",
+                    "fontSize": 12,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Medium",
+                      "variationSettings": {
+                        "wght": 500
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 18
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "6' digitally printed stretch table covers",
+                "type": "TEXT",
+                "w": 860,
+                "h": 21,
+                "text": "6' digitally printed stretch table covers",
+                "fontSize": 15,
+                "fontName": {
+                  "family": "Manrope",
+                  "style": "Bold",
+                  "variationSettings": {
+                    "wght": 700
+                  }
+                },
+                "lineHeight": {
+                  "unit": "PIXELS",
+                  "value": 21
+                },
+                "letterSpacing": {
+                  "unit": "PERCENT",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          {
+            "name": "Type / Body/Default",
+            "type": "FRAME",
+            "w": 1152,
+            "h": 74,
+            "children": [
+              {
+                "name": "Meta",
+                "type": "FRAME",
+                "w": 260,
+                "h": 41,
+                "children": [
+                  {
+                    "name": "Body/Default",
+                    "type": "TEXT",
+                    "w": 97,
+                    "h": 21,
+                    "text": "Body/Default",
+                    "fontSize": 15,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Bold",
+                      "variationSettings": {
+                        "wght": 700
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 21
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "name": "14 / 22 · Medium",
+                    "type": "TEXT",
+                    "w": 89,
+                    "h": 18,
+                    "text": "14 / 22 · Medium",
+                    "fontSize": 12,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Medium",
+                      "variationSettings": {
+                        "wght": 500
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 18
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Quantity-based pricing on every item.",
+                "type": "TEXT",
+                "w": 860,
+                "h": 22,
+                "text": "Quantity-based pricing on every item.",
+                "fontSize": 14,
+                "fontName": {
+                  "family": "Manrope",
+                  "style": "Medium",
+                  "variationSettings": {
+                    "wght": 500
+                  }
+                },
+                "lineHeight": {
+                  "unit": "PIXELS",
+                  "value": 22
+                },
+                "letterSpacing": {
+                  "unit": "PERCENT",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          {
+            "name": "Type / Body/Small",
+            "type": "FRAME",
+            "w": 1152,
+            "h": 74,
+            "children": [
+              {
+                "name": "Meta",
+                "type": "FRAME",
+                "w": 260,
+                "h": 41,
+                "children": [
+                  {
+                    "name": "Body/Small",
+                    "type": "TEXT",
+                    "w": 84,
+                    "h": 21,
+                    "text": "Body/Small",
+                    "fontSize": 15,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Bold",
+                      "variationSettings": {
+                        "wght": 700
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 21
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "name": "12 / 18 · Medium",
+                    "type": "TEXT",
+                    "w": 87,
+                    "h": 18,
+                    "text": "12 / 18 · Medium",
+                    "fontSize": 12,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Medium",
+                      "variationSettings": {
+                        "wght": 500
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 18
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Item code DTCS-6 · 25+ qty price",
+                "type": "TEXT",
+                "w": 860,
+                "h": 18,
+                "text": "Item code DTCS-6 · 25+ qty price",
+                "fontSize": 12,
+                "fontName": {
+                  "family": "Manrope",
+                  "style": "Medium",
+                  "variationSettings": {
+                    "wght": 500
+                  }
+                },
+                "lineHeight": {
+                  "unit": "PIXELS",
+                  "value": 18
+                },
+                "letterSpacing": {
+                  "unit": "PERCENT",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          {
+            "name": "Type / Label/Button",
+            "type": "FRAME",
+            "w": 1152,
+            "h": 74,
+            "children": [
+              {
+                "name": "Meta",
+                "type": "FRAME",
+                "w": 260,
+                "h": 41,
+                "children": [
+                  {
+                    "name": "Label/Button",
+                    "type": "TEXT",
+                    "w": 96,
+                    "h": 21,
+                    "text": "Label/Button",
+                    "fontSize": 15,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Bold",
+                      "variationSettings": {
+                        "wght": 700
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 21
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "name": "14 / 20 · Bold",
+                    "type": "TEXT",
+                    "w": 69,
+                    "h": 18,
+                    "text": "14 / 20 · Bold",
+                    "fontSize": 12,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Medium",
+                      "variationSettings": {
+                        "wght": 500
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 18
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "View details",
+                "type": "TEXT",
+                "w": 860,
+                "h": 20,
+                "text": "View details",
+                "fontSize": 14,
+                "fontName": {
+                  "family": "Manrope",
+                  "style": "Bold",
+                  "variationSettings": {
+                    "wght": 700
+                  }
+                },
+                "lineHeight": {
+                  "unit": "PIXELS",
+                  "value": 20
+                },
+                "letterSpacing": {
+                  "unit": "PERCENT",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          {
+            "name": "Type / Label/Eyebrow",
+            "type": "FRAME",
+            "w": 1152,
+            "h": 74,
+            "children": [
+              {
+                "name": "Meta",
+                "type": "FRAME",
+                "w": 260,
+                "h": 41,
+                "children": [
+                  {
+                    "name": "Label/Eyebrow",
+                    "type": "TEXT",
+                    "w": 108,
+                    "h": 21,
+                    "text": "Label/Eyebrow",
+                    "fontSize": 15,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Bold",
+                      "variationSettings": {
+                        "wght": 700
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 21
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "name": "11 / 16 · ExtraBold · +12% · UPPERCASE",
+                    "type": "TEXT",
+                    "w": 207,
+                    "h": 18,
+                    "text": "11 / 16 · ExtraBold · +12% · UPPERCASE",
+                    "fontSize": 12,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Medium",
+                      "variationSettings": {
+                        "wght": 500
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 18
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "Best sellers",
+                "type": "TEXT",
+                "w": 860,
+                "h": 16,
+                "text": "Best sellers",
+                "fontSize": 11,
+                "fontName": {
+                  "family": "Manrope",
+                  "style": "ExtraBold",
+                  "variationSettings": {
+                    "wght": 800
+                  }
+                },
+                "lineHeight": {
+                  "unit": "PIXELS",
+                  "value": 16
+                },
+                "letterSpacing": {
+                  "unit": "PERCENT",
+                  "value": 12
+                }
+              }
+            ]
+          },
+          {
+            "name": "Type / Label/Tier",
+            "type": "FRAME",
+            "w": 1152,
+            "h": 74,
+            "children": [
+              {
+                "name": "Meta",
+                "type": "FRAME",
+                "w": 260,
+                "h": 41,
+                "children": [
+                  {
+                    "name": "Label/Tier",
+                    "type": "TEXT",
+                    "w": 74,
+                    "h": 21,
+                    "text": "Label/Tier",
+                    "fontSize": 15,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Bold",
+                      "variationSettings": {
+                        "wght": 700
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 21
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "name": "10 / 14 · Bold",
+                    "type": "TEXT",
+                    "w": 67,
+                    "h": 18,
+                    "text": "10 / 14 · Bold",
+                    "fontSize": 12,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Medium",
+                      "variationSettings": {
+                        "wght": 500
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 18
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "$255 $230 $200.50",
+                "type": "TEXT",
+                "w": 860,
+                "h": 14,
+                "text": "$255  $230  $200.50",
+                "fontSize": 10,
+                "fontName": {
+                  "family": "Manrope",
+                  "style": "Bold",
+                  "variationSettings": {
+                    "wght": 700
+                  }
+                },
+                "lineHeight": {
+                  "unit": "PIXELS",
+                  "value": 14
+                },
+                "letterSpacing": {
+                  "unit": "PERCENT",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          {
+            "name": "Type / Price/Large",
+            "type": "FRAME",
+            "w": 1152,
+            "h": 74,
+            "children": [
+              {
+                "name": "Meta",
+                "type": "FRAME",
+                "w": 260,
+                "h": 41,
+                "children": [
+                  {
+                    "name": "Price/Large",
+                    "type": "TEXT",
+                    "w": 85,
+                    "h": 21,
+                    "text": "Price/Large",
+                    "fontSize": 15,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Bold",
+                      "variationSettings": {
+                        "wght": 700
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 21
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "name": "22 / 26 · ExtraBold · −0.5%",
+                    "type": "TEXT",
+                    "w": 143,
+                    "h": 18,
+                    "text": "22 / 26 · ExtraBold · −0.5%",
+                    "fontSize": 12,
+                    "fontName": {
+                      "family": "Manrope",
+                      "style": "Medium",
+                      "variationSettings": {
+                        "wght": 500
+                      }
+                    },
+                    "lineHeight": {
+                      "unit": "PIXELS",
+                      "value": 18
+                    },
+                    "letterSpacing": {
+                      "unit": "PERCENT",
+                      "value": 0
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "$140.00",
+                "type": "TEXT",
+                "w": 860,
+                "h": 26,
+                "text": "$140.00",
+                "fontSize": 22,
+                "fontName": {
+                  "family": "Manrope",
+                  "style": "ExtraBold",
+                  "variationSettings": {
+                    "wght": 800
+                  }
+                },
+                "lineHeight": {
+                  "unit": "PIXELS",
+                  "value": 26
+                },
+                "letterSpacing": {
+                  "unit": "PERCENT",
+                  "value": -0.5
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "localTextStyles": [
+    {
+      "id": "S:f30e6602653e4c5b29dec734a8beb35ecb44c5c3,",
+      "name": "body/sm",
+      "fontSize": 12,
+      "fontName": {
+        "family": "Manrope",
+        "style": "Medium",
+        "variationSettings": {
+          "wght": 500
+        }
+      },
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 20
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": 0
+      }
+    },
+    {
+      "id": "S:ea3f1d483fd8175260d025fb5ae775289cfa9893,",
+      "name": "body/md",
+      "fontSize": 16,
+      "fontName": {
+        "family": "Inter",
+        "style": "Medium",
+        "variationSettings": {
+          "slnt": 0,
+          "wght": 500
+        }
+      },
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 24
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": 0
+      }
+    },
+    {
+      "id": "S:ec77e1addfae0bb43f41b501d30e3b1334f0410a,",
+      "name": "body/lg",
+      "fontSize": 20,
+      "fontName": {
+        "family": "Inter",
+        "style": "Medium",
+        "variationSettings": {
+          "slnt": 0,
+          "wght": 500
+        }
+      },
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 32
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": 0
+      }
+    },
+    {
+      "id": "S:5c3ec066ceaec5bf62096b02d1f56c247e2fd15b,",
+      "name": "body/sm-semibold",
+      "fontSize": 12,
+      "fontName": {
+        "family": "Manrope",
+        "style": "SemiBold",
+        "variationSettings": {
+          "wght": 600
+        }
+      },
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 20
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": 0
+      }
+    },
+    {
+      "id": "S:4c9a9671e23f927e0336b57df91defdb63531480,",
+      "name": "body/md-semibold",
+      "fontSize": 16,
+      "fontName": {
+        "family": "Inter",
+        "style": "Semi Bold",
+        "variationSettings": {
+          "slnt": 0,
+          "wght": 600
+        }
+      },
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 24
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": 0
+      }
+    },
+    {
+      "id": "S:aa78985cc603f95d902306a51e0e23717906dfd0,",
+      "name": "body/lg-semibold",
+      "fontSize": 20,
+      "fontName": {
+        "family": "Inter",
+        "style": "Semi Bold",
+        "variationSettings": {
+          "slnt": 0,
+          "wght": 600
+        }
+      },
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 32
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": 0
+      }
+    },
+    {
+      "id": "S:9ae82db7b27ff6e4cbbd15b5d6a02f4030424226,",
+      "name": "body/sm-bold",
+      "fontSize": 12,
+      "fontName": {
+        "family": "Manrope",
+        "style": "Bold",
+        "variationSettings": {
+          "wght": 700
+        }
+      },
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 20
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": 0
+      }
+    },
+    {
+      "id": "S:000da571686bf0fac6529680f9bc704e3deb81f6,",
+      "name": "body/md-bold",
+      "fontSize": 16,
+      "fontName": {
+        "family": "Inter",
+        "style": "Bold",
+        "variationSettings": {
+          "slnt": 0,
+          "wght": 700
+        }
+      },
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 24
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": 0
+      }
+    },
+    {
+      "id": "S:7876a57041a69fe13173aa9582a79513a94ba975,",
+      "name": "body/lg-bold",
+      "fontSize": 20,
+      "fontName": {
+        "family": "Inter",
+        "style": "Bold",
+        "variationSettings": {
+          "slnt": 0,
+          "wght": 700
+        }
+      },
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 32
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": 0
+      }
+    }
+  ]
+}

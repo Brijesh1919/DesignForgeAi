@@ -1,0 +1,466 @@
+{
+  "stylesInfo": [
+    {
+      "layerName": "Type / Heading/H1",
+      "styleName": "Heading/H1",
+      "specString": "48 / 52 · ExtraBold · −1%",
+      "sampleText": "Make every brand impossible to miss",
+      "fontName": {
+        "family": "Manrope",
+        "style": "ExtraBold",
+        "variationSettings": {
+          "wght": 800
+        }
+      },
+      "fontSize": 48,
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 52
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": -1
+      },
+      "textCase": "ORIGINAL",
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.05098039284348488,
+            "g": 0.13333334028720856,
+            "b": 0.250980406999588
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:da2263105e1782055a9ac9c1cda0a0d0692f4f57/1:5"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "layerName": "Type / Heading/H2",
+      "styleName": "Heading/H2",
+      "specString": "30 / 36 · ExtraBold · −0.5%",
+      "sampleText": "Top-selling products",
+      "fontName": {
+        "family": "Manrope",
+        "style": "ExtraBold",
+        "variationSettings": {
+          "wght": 800
+        }
+      },
+      "fontSize": 30,
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 36
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": -0.5
+      },
+      "textCase": "ORIGINAL",
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.05098039284348488,
+            "g": 0.13333334028720856,
+            "b": 0.250980406999588
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:da2263105e1782055a9ac9c1cda0a0d0692f4f57/1:5"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "layerName": "Type / Heading/H3",
+      "styleName": "Heading/H3",
+      "specString": "18 / 24 · ExtraBold",
+      "sampleText": "Christmas stocking",
+      "fontName": {
+        "family": "Manrope",
+        "style": "ExtraBold",
+        "variationSettings": {
+          "wght": 800
+        }
+      },
+      "fontSize": 18,
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 24
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": 0
+      },
+      "textCase": "ORIGINAL",
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.05098039284348488,
+            "g": 0.13333334028720856,
+            "b": 0.250980406999588
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:da2263105e1782055a9ac9c1cda0a0d0692f4f57/1:5"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "layerName": "Type / Body/Large",
+      "styleName": "Body/Large",
+      "specString": "16 / 24 · Regular",
+      "sampleText": "Custom flags, banners, tents and trade show displays for distributors.",
+      "fontName": {
+        "family": "Manrope",
+        "style": "Regular",
+        "variationSettings": {
+          "wght": 400
+        }
+      },
+      "fontSize": 16,
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 24
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": 0
+      },
+      "textCase": "ORIGINAL",
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.05098039284348488,
+            "g": 0.13333334028720856,
+            "b": 0.250980406999588
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:da2263105e1782055a9ac9c1cda0a0d0692f4f57/1:5"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "layerName": "Type / Body/Title",
+      "styleName": "Body/Title",
+      "specString": "15 / 21 · Bold",
+      "sampleText": "6' digitally printed stretch table covers",
+      "fontName": {
+        "family": "Manrope",
+        "style": "Bold",
+        "variationSettings": {
+          "wght": 700
+        }
+      },
+      "fontSize": 15,
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 21
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": 0
+      },
+      "textCase": "ORIGINAL",
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.05098039284348488,
+            "g": 0.13333334028720856,
+            "b": 0.250980406999588
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:da2263105e1782055a9ac9c1cda0a0d0692f4f57/1:5"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "layerName": "Type / Body/Default",
+      "styleName": "Body/Default",
+      "specString": "14 / 22 · Medium",
+      "sampleText": "Quantity-based pricing on every item.",
+      "fontName": {
+        "family": "Manrope",
+        "style": "Medium",
+        "variationSettings": {
+          "wght": 500
+        }
+      },
+      "fontSize": 14,
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 22
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": 0
+      },
+      "textCase": "ORIGINAL",
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.05098039284348488,
+            "g": 0.13333334028720856,
+            "b": 0.250980406999588
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:da2263105e1782055a9ac9c1cda0a0d0692f4f57/1:5"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "layerName": "Type / Body/Small",
+      "styleName": "Body/Small",
+      "specString": "12 / 18 · Medium",
+      "sampleText": "Item code DTCS-6 · 25+ qty price",
+      "fontName": {
+        "family": "Manrope",
+        "style": "Medium",
+        "variationSettings": {
+          "wght": 500
+        }
+      },
+      "fontSize": 12,
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 18
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": 0
+      },
+      "textCase": "ORIGINAL",
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.05098039284348488,
+            "g": 0.13333334028720856,
+            "b": 0.250980406999588
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:da2263105e1782055a9ac9c1cda0a0d0692f4f57/1:5"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "layerName": "Type / Label/Button",
+      "styleName": "Label/Button",
+      "specString": "14 / 20 · Bold",
+      "sampleText": "View details",
+      "fontName": {
+        "family": "Manrope",
+        "style": "Bold",
+        "variationSettings": {
+          "wght": 700
+        }
+      },
+      "fontSize": 14,
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 20
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": 0
+      },
+      "textCase": "ORIGINAL",
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.05098039284348488,
+            "g": 0.13333334028720856,
+            "b": 0.250980406999588
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:da2263105e1782055a9ac9c1cda0a0d0692f4f57/1:5"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "layerName": "Type / Label/Eyebrow",
+      "styleName": "Label/Eyebrow",
+      "specString": "11 / 16 · ExtraBold · +12% · UPPERCASE",
+      "sampleText": "Best sellers",
+      "fontName": {
+        "family": "Manrope",
+        "style": "ExtraBold",
+        "variationSettings": {
+          "wght": 800
+        }
+      },
+      "fontSize": 11,
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 16
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": 12
+      },
+      "textCase": "UPPER",
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.05098039284348488,
+            "g": 0.13333334028720856,
+            "b": 0.250980406999588
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:da2263105e1782055a9ac9c1cda0a0d0692f4f57/1:5"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "layerName": "Type / Label/Tier",
+      "styleName": "Label/Tier",
+      "specString": "10 / 14 · Bold",
+      "sampleText": "$255  $230  $200.50",
+      "fontName": {
+        "family": "Manrope",
+        "style": "Bold",
+        "variationSettings": {
+          "wght": 700
+        }
+      },
+      "fontSize": 10,
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 14
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": 0
+      },
+      "textCase": "ORIGINAL",
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.05098039284348488,
+            "g": 0.13333334028720856,
+            "b": 0.250980406999588
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:da2263105e1782055a9ac9c1cda0a0d0692f4f57/1:5"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "layerName": "Type / Price/Large",
+      "styleName": "Price/Large",
+      "specString": "22 / 26 · ExtraBold · −0.5%",
+      "sampleText": "$140.00",
+      "fontName": {
+        "family": "Manrope",
+        "style": "ExtraBold",
+        "variationSettings": {
+          "wght": 800
+        }
+      },
+      "fontSize": 22,
+      "lineHeight": {
+        "unit": "PIXELS",
+        "value": 26
+      },
+      "letterSpacing": {
+        "unit": "PERCENT",
+        "value": -0.5
+      },
+      "textCase": "ORIGINAL",
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.05098039284348488,
+            "g": 0.13333334028720856,
+            "b": 0.250980406999588
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:da2263105e1782055a9ac9c1cda0a0d0692f4f57/1:5"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
