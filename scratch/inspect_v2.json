@@ -1,0 +1,217 @@
+{
+  "name": "Posh Xessories | Simplified Homepage v2",
+  "id": "17:7216",
+  "x": 9832,
+  "y": -277,
+  "w": 1440,
+  "h": 3028,
+  "bodySections": [
+    {
+      "name": "Header",
+      "id": "17:7218",
+      "w": 1440,
+      "h": 69,
+      "childrenCount": 1,
+      "childrenNames": [
+        "Container:margin"
+      ]
+    },
+    {
+      "name": "Main Content",
+      "id": "17:7247",
+      "w": 1440,
+      "h": 2615,
+      "childrenCount": 5,
+      "childrenNames": [
+        "Section",
+        "Container:margin",
+        "Container:margin",
+        "Container:margin",
+        "Section"
+      ]
+    },
+    {
+      "name": "Footer:margin",
+      "id": "17:7464",
+      "w": 1440,
+      "h": 349,
+      "childrenCount": 1,
+      "childrenNames": [
+        "Footer"
+      ]
+    }
+  ],
+  "mainSections": [
+    {
+      "name": "Section",
+      "id": "17:7248",
+      "w": 1440,
+      "h": 779,
+      "type": "FRAME",
+      "childrenCount": 2,
+      "childrenNames": [
+        "Container:margin",
+        "Container:margin"
+      ]
+    },
+    {
+      "name": "Container:margin",
+      "id": "17:7311",
+      "w": 1440,
+      "h": 699,
+      "type": "FRAME",
+      "childrenCount": 1,
+      "childrenNames": [
+        "Container"
+      ]
+    },
+    {
+      "name": "Container:margin",
+      "id": "17:7385",
+      "w": 1440,
+      "h": 329,
+      "type": "FRAME",
+      "childrenCount": 1,
+      "childrenNames": [
+        "Container"
+      ]
+    },
+    {
+      "name": "Container:margin",
+      "id": "17:7398",
+      "w": 1440,
+      "h": 541,
+      "type": "FRAME",
+      "childrenCount": 1,
+      "childrenNames": [
+        "Container"
+      ]
+    },
+    {
+      "name": "Section",
+      "id": "17:7451",
+      "w": 1440,
+      "h": 267,
+      "type": "FRAME",
+      "childrenCount": 1,
+      "childrenNames": [
+        "Container"
+      ]
+    }
+  ],
+  "allImagesCount": 14,
+  "allImages": [
+    {
+      "nodeName": "Image (Branded journals with client logos)",
+      "nodeId": "17:7276",
+      "w": 541,
+      "h": 499,
+      "hash": "df4bba0a9467ce46cfaf29ff39a3bef993fb82ba",
+      "scaleMode": "CROP"
+    },
+    {
+      "nodeName": "Image",
+      "nodeId": "17:7278",
+      "w": 54,
+      "h": 54,
+      "hash": "bbdf1340bd6a32fecd172be4550d12a0fc3bb6aa",
+      "scaleMode": "FIT"
+    },
+    {
+      "nodeName": "Image",
+      "nodeId": "17:7287",
+      "w": 76,
+      "h": 76,
+      "hash": "51f15da5298768c124a2099fc777514829a78a60",
+      "scaleMode": "FIT"
+    },
+    {
+      "nodeName": "Image",
+      "nodeId": "17:7290",
+      "w": 76,
+      "h": 76,
+      "hash": "0cebb3a95ee925b7f4534a82d25507f75a2f7b10",
+      "scaleMode": "FIT"
+    },
+    {
+      "nodeName": "Image",
+      "nodeId": "17:7293",
+      "w": 76,
+      "h": 76,
+      "hash": "8dcb3836316be569d7871ce2926229c5ad34d3ae",
+      "scaleMode": "FIT"
+    },
+    {
+      "nodeName": "Image",
+      "nodeId": "17:7296",
+      "w": 76,
+      "h": 76,
+      "hash": "36ffd210e4eca8bc44652ea9ff70d791aaf76d1f",
+      "scaleMode": "FIT"
+    },
+    {
+      "nodeName": "Image",
+      "nodeId": "17:7299",
+      "w": 76,
+      "h": 76,
+      "hash": "604cec058a98d1aa20fecefe76f6a579bccd98d7",
+      "scaleMode": "FIT"
+    },
+    {
+      "nodeName": "Image",
+      "nodeId": "17:7302",
+      "w": 76,
+      "h": 76,
+      "hash": "e4651da1f8634c00f79c5460903d77c235b4f285",
+      "scaleMode": "FIT"
+    },
+    {
+      "nodeName": "Image",
+      "nodeId": "17:7305",
+      "w": 76,
+      "h": 76,
+      "hash": "bbdf1340bd6a32fecd172be4550d12a0fc3bb6aa",
+      "scaleMode": "FIT"
+    },
+    {
+      "nodeName": "image_047 1",
+      "nodeId": "17:7327",
+      "w": 150,
+      "h": 150,
+      "hash": "f5f268cb593f8e3f81b0986bdb024f774790e8c5",
+      "scaleMode": "FILL"
+    },
+    {
+      "nodeName": "image_032 1",
+      "nodeId": "17:7342",
+      "w": 166,
+      "h": 166,
+      "hash": "47851d5b18c67a22347d97e8c9bfabce3ecc1089",
+      "scaleMode": "FILL"
+    },
+    {
+      "nodeName": "image_031 1",
+      "nodeId": "17:7357",
+      "w": 166,
+      "h": 166,
+      "hash": "74a1a6ae11ac82b38c12baded0399cdecc427afa",
+      "scaleMode": "FILL"
+    },
+    {
+      "nodeName": "image_029 1",
+      "nodeId": "17:7372",
+      "w": 166,
+      "h": 166,
+      "hash": "19f197e33989c4b558be6c7cf9281ea405bd6ba3",
+      "scaleMode": "FILL"
+    },
+    {
+      "nodeName": "Image (Awards: number 1 in California, SAGE rated supplier, ASI 5-star supplier, PRO supplier)",
+      "nodeId": "17:7450",
+      "w": 1134,
+      "h": 97,
+      "hash": "602c2705f1c18bf9081c2d7abd8479e0efca7c75",
+      "scaleMode": "FILL"
+    }
+  ]
+}

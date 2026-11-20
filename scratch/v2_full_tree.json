@@ -1,0 +1,3147 @@
+{
+  "name": "Posh Xessories | Simplified Homepage v2",
+  "type": "FRAME",
+  "w": 1440,
+  "h": 3028,
+  "children": [
+    {
+      "name": "Body",
+      "type": "FRAME",
+      "w": 1440,
+      "h": 3033,
+      "children": [
+        {
+          "name": "Header",
+          "type": "FRAME",
+          "w": 1440,
+          "h": 69,
+          "children": [
+            {
+              "name": "Container:margin",
+              "type": "FRAME",
+              "w": 1440,
+              "h": 68,
+              "children": [
+                {
+                  "name": "Container",
+                  "type": "FRAME",
+                  "w": 1200,
+                  "h": 68,
+                  "children": [
+                    {
+                      "name": "Link - Posh Xessories home",
+                      "type": "FRAME",
+                      "w": 241,
+                      "h": 39,
+                      "children": [
+                        {
+                          "name": "Bold Text",
+                          "type": "FRAME",
+                          "w": 241,
+                          "h": 25,
+                          "children": [
+                            {
+                              "name": "POSH",
+                              "type": "TEXT",
+                              "w": 67,
+                              "h": 25,
+                              "text": "POSH",
+                              "fontSize": 25,
+                              "fontName": {
+                                "family": "DM Sans",
+                                "style": "Regular",
+                                "variationSettings": {
+                                  "opsz": 14,
+                                  "wght": 400
+                                }
+                              }
+                            },
+                            {
+                              "name": "Italic Text:margin",
+                              "type": "FRAME",
+                              "w": 25,
+                              "h": 20,
+                              "children": [
+                                {
+                                  "name": "Italic Text",
+                                  "type": "FRAME",
+                                  "w": 23,
+                                  "h": 20,
+                                  "children": [
+                                    {
+                                      "name": "Icon",
+                                      "type": "FRAME",
+                                      "w": 23,
+                                      "h": 20,
+                                      "children": [
+                                        {
+                                          "name": "Vector",
+                                          "type": "VECTOR",
+                                          "w": 21,
+                                          "h": 18
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "ESSORIES",
+                              "type": "TEXT",
+                              "w": 113,
+                              "h": 25,
+                              "text": "ESSORIES",
+                              "fontSize": 25,
+                              "fontName": {
+                                "family": "DM Sans",
+                                "style": "Regular",
+                                "variationSettings": {
+                                  "opsz": 14,
+                                  "wght": 400
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Small:margin",
+                          "type": "FRAME",
+                          "w": 241,
+                          "h": 14,
+                          "children": [
+                            {
+                              "name": "Small",
+                              "type": "FRAME",
+                              "w": 241,
+                              "h": 9,
+                              "children": [
+                                {
+                                  "name": "ASI 79028 | PPAI 206478 | SAGE 64870 | UPIC POSHX",
+                                  "type": "TEXT",
+                                  "w": 241,
+                                  "h": 9,
+                                  "text": "ASI 79028 | PPAI 206478 | SAGE 64870 | UPIC POSHX",
+                                  "fontSize": 9,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "Regular",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 400
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Navigation",
+                      "type": "FRAME",
+                      "w": 499,
+                      "h": 40,
+                      "children": [
+                        {
+                          "name": "Button",
+                          "type": "FRAME",
+                          "w": 88,
+                          "h": 40,
+                          "children": [
+                            {
+                              "name": "Products",
+                              "type": "TEXT",
+                              "w": 64,
+                              "h": 24,
+                              "text": "Products",
+                              "fontSize": 15,
+                              "fontName": {
+                                "family": "DM Sans",
+                                "style": "Medium",
+                                "variationSettings": {
+                                  "opsz": 14,
+                                  "wght": 500
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Link",
+                          "type": "FRAME",
+                          "w": 175,
+                          "h": 40,
+                          "children": [
+                            {
+                              "name": "E-flyers / Promotions",
+                              "type": "TEXT",
+                              "w": 151,
+                              "h": 24,
+                              "text": "E-flyers / Promotions",
+                              "fontSize": 15,
+                              "fontName": {
+                                "family": "DM Sans",
+                                "style": "Medium",
+                                "variationSettings": {
+                                  "opsz": 14,
+                                  "wght": 500
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Link",
+                          "type": "FRAME",
+                          "w": 116,
+                          "h": 40,
+                          "children": [
+                            {
+                              "name": "How to order",
+                              "type": "TEXT",
+                              "w": 92,
+                              "h": 24,
+                              "text": "How to order",
+                              "fontSize": 15,
+                              "fontName": {
+                                "family": "DM Sans",
+                                "style": "Medium",
+                                "variationSettings": {
+                                  "opsz": 14,
+                                  "wght": 500
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Link",
+                          "type": "FRAME",
+                          "w": 108,
+                          "h": 40,
+                          "children": [
+                            {
+                              "name": "My account",
+                              "type": "TEXT",
+                              "w": 84,
+                              "h": 24,
+                              "text": "My account",
+                              "fontSize": 15,
+                              "fontName": {
+                                "family": "DM Sans",
+                                "style": "Medium",
+                                "variationSettings": {
+                                  "opsz": 14,
+                                  "wght": 500
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Container:transform",
+                      "type": "FRAME",
+                      "w": 154,
+                      "h": 44,
+                      "children": []
+                    },
+                    {
+                      "name": "Container",
+                      "type": "FRAME",
+                      "w": 158,
+                      "h": 41,
+                      "children": [
+                        {
+                          "name": "Button",
+                          "type": "FRAME",
+                          "w": 61,
+                          "h": 41,
+                          "children": [
+                            {
+                              "name": "Login",
+                              "type": "TEXT",
+                              "w": 41,
+                              "h": 25,
+                              "text": "Login",
+                              "fontSize": 16,
+                              "fontName": {
+                                "family": "DM Sans",
+                                "style": "SemiBold",
+                                "variationSettings": {
+                                  "opsz": 14,
+                                  "wght": 600
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Button",
+                          "type": "FRAME",
+                          "w": 89,
+                          "h": 38,
+                          "children": [
+                            {
+                              "name": "Register",
+                              "type": "TEXT",
+                              "w": 57,
+                              "h": 23,
+                              "text": "Register",
+                              "fontSize": 14.5,
+                              "fontName": {
+                                "family": "DM Sans",
+                                "style": "SemiBold",
+                                "variationSettings": {
+                                  "opsz": 14,
+                                  "wght": 600
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Main Content",
+          "type": "FRAME",
+          "w": 1440,
+          "h": 2615,
+          "children": [
+            {
+              "name": "Section",
+              "type": "FRAME",
+              "w": 1440,
+              "h": 779,
+              "children": [
+                {
+                  "name": "Container:margin",
+                  "type": "FRAME",
+                  "w": 1440,
+                  "h": 465,
+                  "children": [
+                    {
+                      "name": "Container",
+                      "type": "FRAME",
+                      "w": 1200,
+                      "h": 465,
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "w": 559,
+                          "h": 380,
+                          "children": [
+                            {
+                              "name": "Heading 1",
+                              "type": "FRAME",
+                              "w": 559,
+                              "h": 205,
+                              "children": [
+                                {
+                                  "name": "Promotional products your clients will keep.",
+                                  "type": "TEXT",
+                                  "w": 559,
+                                  "h": 205,
+                                  "text": "Promotional products your clients will keep.",
+                                  "fontSize": 62,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "Bold",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 700
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Paragraph",
+                              "type": "FRAME",
+                              "w": 495,
+                              "h": 44,
+                              "children": [
+                                {
+                                  "name": "Search by name or SKU, or start with a category.",
+                                  "type": "TEXT",
+                                  "w": 398,
+                                  "h": 28,
+                                  "text": "Search by name or SKU, or start with a category.",
+                                  "fontSize": 18,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "Regular",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 400
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container:margin",
+                              "type": "FRAME",
+                              "w": 559,
+                              "h": 82,
+                              "children": [
+                                {
+                                  "name": "Form",
+                                  "type": "FRAME",
+                                  "w": 559,
+                                  "h": 56,
+                                  "children": [
+                                    {
+                                      "name": "Search Input - Search products",
+                                      "type": "FRAME",
+                                      "w": 440,
+                                      "h": 56,
+                                      "children": [
+                                        {
+                                          "name": "Try “TX-2107” or “journals”",
+                                          "type": "TEXT",
+                                          "w": 400,
+                                          "h": 22,
+                                          "text": "Try “TX-2107” or “journals”",
+                                          "fontSize": 17,
+                                          "fontName": {
+                                            "family": "DM Sans",
+                                            "style": "Regular",
+                                            "variationSettings": {
+                                              "opsz": 14,
+                                              "wght": 400
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button:margin",
+                                      "type": "FRAME",
+                                      "w": 119,
+                                      "h": 56,
+                                      "children": [
+                                        {
+                                          "name": "Button",
+                                          "type": "FRAME",
+                                          "w": 107,
+                                          "h": 44,
+                                          "children": [
+                                            {
+                                              "name": "Search",
+                                              "type": "TEXT",
+                                              "w": 55,
+                                              "h": 25,
+                                              "text": "Search",
+                                              "fontSize": 16,
+                                              "fontName": {
+                                                "family": "DM Sans",
+                                                "style": "Bold",
+                                                "variationSettings": {
+                                                  "opsz": 14,
+                                                  "wght": 700
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "w": 559,
+                              "h": 50,
+                              "children": [
+                                {
+                                  "name": "Text",
+                                  "type": "FRAME",
+                                  "w": 49,
+                                  "h": 22,
+                                  "children": [
+                                    {
+                                      "name": "Popular",
+                                      "type": "TEXT",
+                                      "w": 49,
+                                      "h": 22,
+                                      "text": "Popular",
+                                      "fontSize": 14,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Regular",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 400
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "w": 98,
+                                  "h": 34,
+                                  "children": [
+                                    {
+                                      "name": "Drinkware",
+                                      "type": "TEXT",
+                                      "w": 68,
+                                      "h": 22,
+                                      "text": "Drinkware",
+                                      "fontSize": 14,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "SemiBold",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 600
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "w": 88,
+                                  "h": 34,
+                                  "children": [
+                                    {
+                                      "name": "Journals",
+                                      "type": "TEXT",
+                                      "w": 58,
+                                      "h": 22,
+                                      "text": "Journals",
+                                      "fontSize": 14,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "SemiBold",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 600
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "w": 115,
+                                  "h": 34,
+                                  "children": [
+                                    {
+                                      "name": "Power banks",
+                                      "type": "TEXT",
+                                      "w": 85,
+                                      "h": 22,
+                                      "text": "Power banks",
+                                      "fontSize": 14,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "SemiBold",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 600
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "w": 96,
+                                  "h": 34,
+                                  "children": [
+                                    {
+                                      "name": "Tote bags",
+                                      "type": "TEXT",
+                                      "w": 66,
+                                      "h": 22,
+                                      "text": "Tote bags",
+                                      "fontSize": 14,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "SemiBold",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 600
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "w": 505,
+                          "h": 465,
+                          "children": [
+                            {
+                              "name": "Image (Branded journals with client logos):transform",
+                              "type": "FRAME",
+                              "w": 505,
+                              "h": 465,
+                              "children": [
+                                {
+                                  "name": "Image (Branded journals with client logos)",
+                                  "type": "FRAME",
+                                  "w": 541,
+                                  "h": 499,
+                                  "imageHash": "df4bba0a9467ce46cfaf29ff39a3bef993fb82ba",
+                                  "scaleMode": "CROP",
+                                  "children": []
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Button - Request a quote for TX-2107",
+                              "type": "FRAME",
+                              "w": 239,
+                              "h": 74,
+                              "children": [
+                                {
+                                  "name": "Image",
+                                  "type": "FRAME",
+                                  "w": 54,
+                                  "h": 54,
+                                  "imageHash": "bbdf1340bd6a32fecd172be4550d12a0fc3bb6aa",
+                                  "scaleMode": "FIT",
+                                  "children": []
+                                },
+                                {
+                                  "name": "Text",
+                                  "type": "FRAME",
+                                  "w": 147,
+                                  "h": 44,
+                                  "children": [
+                                    {
+                                      "name": "Bold Text",
+                                      "type": "FRAME",
+                                      "w": 147,
+                                      "h": 23,
+                                      "children": [
+                                        {
+                                          "name": "TX-2107 Card Holder",
+                                          "type": "TEXT",
+                                          "w": 147,
+                                          "h": 23,
+                                          "text": "TX-2107 Card Holder",
+                                          "fontSize": 14.5,
+                                          "fontName": {
+                                            "family": "DM Sans",
+                                            "style": "Bold",
+                                            "variationSettings": {
+                                              "opsz": 14,
+                                              "wght": 700
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "$8.98 to $11.50 each",
+                                      "type": "TEXT",
+                                      "w": 122,
+                                      "h": 21,
+                                      "text": "$8.98 to $11.50 each",
+                                      "fontSize": 13,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Regular",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 400
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "Container:margin",
+                  "type": "FRAME",
+                  "w": 1440,
+                  "h": 202,
+                  "children": [
+                    {
+                      "name": "Container",
+                      "type": "FRAME",
+                      "w": 1200,
+                      "h": 154,
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "w": 1136,
+                          "h": 154,
+                          "children": [
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "w": 132,
+                              "h": 154,
+                              "children": [
+                                {
+                                  "name": "Image",
+                                  "type": "FRAME",
+                                  "w": 76,
+                                  "h": 76,
+                                  "imageHash": "51f15da5298768c124a2099fc777514829a78a60",
+                                  "scaleMode": "FIT",
+                                  "children": []
+                                },
+                                {
+                                  "name": "Drinkware",
+                                  "type": "TEXT",
+                                  "w": 71,
+                                  "h": 19,
+                                  "text": "Drinkware",
+                                  "fontSize": 14.5,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "SemiBold",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 600
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "w": 132,
+                              "h": 154,
+                              "children": [
+                                {
+                                  "name": "Image",
+                                  "type": "FRAME",
+                                  "w": 76,
+                                  "h": 76,
+                                  "imageHash": "0cebb3a95ee925b7f4534a82d25507f75a2f7b10",
+                                  "scaleMode": "FIT",
+                                  "children": []
+                                },
+                                {
+                                  "name": "Journals & Jotters",
+                                  "type": "TEXT",
+                                  "w": 114,
+                                  "h": 37,
+                                  "text": "Journals & Jotters",
+                                  "fontSize": 14.5,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "SemiBold",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 600
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "w": 132,
+                              "h": 154,
+                              "children": [
+                                {
+                                  "name": "Image",
+                                  "type": "FRAME",
+                                  "w": 76,
+                                  "h": 76,
+                                  "imageHash": "8dcb3836316be569d7871ce2926229c5ad34d3ae",
+                                  "scaleMode": "FIT",
+                                  "children": []
+                                },
+                                {
+                                  "name": "Padfolios",
+                                  "type": "TEXT",
+                                  "w": 64,
+                                  "h": 19,
+                                  "text": "Padfolios",
+                                  "fontSize": 14.5,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "SemiBold",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 600
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "w": 132,
+                              "h": 154,
+                              "children": [
+                                {
+                                  "name": "Image",
+                                  "type": "FRAME",
+                                  "w": 76,
+                                  "h": 76,
+                                  "imageHash": "36ffd210e4eca8bc44652ea9ff70d791aaf76d1f",
+                                  "scaleMode": "FIT",
+                                  "children": []
+                                },
+                                {
+                                  "name": "Power Banks",
+                                  "type": "TEXT",
+                                  "w": 88,
+                                  "h": 19,
+                                  "text": "Power Banks",
+                                  "fontSize": 14.5,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "SemiBold",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 600
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "w": 132,
+                              "h": 154,
+                              "children": [
+                                {
+                                  "name": "Image",
+                                  "type": "FRAME",
+                                  "w": 76,
+                                  "h": 76,
+                                  "imageHash": "604cec058a98d1aa20fecefe76f6a579bccd98d7",
+                                  "scaleMode": "FIT",
+                                  "children": []
+                                },
+                                {
+                                  "name": "Metal Pens",
+                                  "type": "TEXT",
+                                  "w": 77,
+                                  "h": 19,
+                                  "text": "Metal Pens",
+                                  "fontSize": 14.5,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "SemiBold",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 600
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "w": 132,
+                              "h": 154,
+                              "children": [
+                                {
+                                  "name": "Image",
+                                  "type": "FRAME",
+                                  "w": 76,
+                                  "h": 76,
+                                  "imageHash": "e4651da1f8634c00f79c5460903d77c235b4f285",
+                                  "scaleMode": "FIT",
+                                  "children": []
+                                },
+                                {
+                                  "name": "Tote Bags",
+                                  "type": "TEXT",
+                                  "w": 68,
+                                  "h": 19,
+                                  "text": "Tote Bags",
+                                  "fontSize": 14.5,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "SemiBold",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 600
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "w": 132,
+                              "h": 154,
+                              "children": [
+                                {
+                                  "name": "Image",
+                                  "type": "FRAME",
+                                  "w": 76,
+                                  "h": 76,
+                                  "imageHash": "bbdf1340bd6a32fecd172be4550d12a0fc3bb6aa",
+                                  "scaleMode": "FIT",
+                                  "children": []
+                                },
+                                {
+                                  "name": "Business Card Cases",
+                                  "type": "TEXT",
+                                  "w": 114,
+                                  "h": 37,
+                                  "text": "Business Card Cases",
+                                  "fontSize": 14.5,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "SemiBold",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 600
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "w": 132,
+                              "h": 154,
+                              "children": [
+                                {
+                                  "name": "Text",
+                                  "type": "FRAME",
+                                  "w": 18,
+                                  "h": 30,
+                                  "children": [
+                                    {
+                                      "name": "+",
+                                      "type": "TEXT",
+                                      "w": 18,
+                                      "h": 30,
+                                      "text": "+",
+                                      "fontSize": 30,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "SemiBold",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 600
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "All categories",
+                                  "type": "TEXT",
+                                  "w": 95,
+                                  "h": 19,
+                                  "text": "All categories",
+                                  "fontSize": 14.5,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "SemiBold",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 600
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Container:margin",
+              "type": "FRAME",
+              "w": 1440,
+              "h": 699,
+              "children": [
+                {
+                  "name": "Container",
+                  "type": "FRAME",
+                  "w": 1200,
+                  "h": 542,
+                  "children": [
+                    {
+                      "name": "Container",
+                      "type": "FRAME",
+                      "w": 1136,
+                      "h": 67,
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "w": 294,
+                          "h": 67,
+                          "children": [
+                            {
+                              "name": "Heading 2",
+                              "type": "FRAME",
+                              "w": 294,
+                              "h": 36,
+                              "children": [
+                                {
+                                  "name": "Featured products",
+                                  "type": "TEXT",
+                                  "w": 267,
+                                  "h": 36,
+                                  "text": "Featured products",
+                                  "fontSize": 32,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "Bold",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 700
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Paragraph",
+                              "type": "FRAME",
+                              "w": 294,
+                              "h": 31,
+                              "children": [
+                                {
+                                  "name": "Price per unit. It drops as quantity rises.",
+                                  "type": "TEXT",
+                                  "w": 294,
+                                  "h": 25,
+                                  "text": "Price per unit. It drops as quantity rises.",
+                                  "fontSize": 16,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "Regular",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 400
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Button",
+                          "type": "FRAME",
+                          "w": 134,
+                          "h": 25,
+                          "children": [
+                            {
+                              "name": "View all products",
+                              "type": "TEXT",
+                              "w": 134,
+                              "h": 25,
+                              "text": "View all products",
+                              "fontSize": 16,
+                              "fontName": {
+                                "family": "DM Sans",
+                                "style": "SemiBold",
+                                "variationSettings": {
+                                  "opsz": 14,
+                                  "wght": 600
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Container:margin",
+                      "type": "FRAME",
+                      "w": 1136,
+                      "h": 434,
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "w": 1136,
+                          "h": 412,
+                          "children": [
+                            {
+                              "name": "Article",
+                              "type": "FRAME",
+                              "w": 269,
+                              "h": 412,
+                              "children": [
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "w": 267,
+                                  "h": 219,
+                                  "children": [
+                                    {
+                                      "name": "Text",
+                                      "type": "FRAME",
+                                      "w": 69,
+                                      "h": 24,
+                                      "children": [
+                                        {
+                                          "name": "Featured",
+                                          "type": "TEXT",
+                                          "w": 52,
+                                          "h": 18,
+                                          "text": "Featured",
+                                          "fontSize": 11.5,
+                                          "fontName": {
+                                            "family": "DM Sans",
+                                            "style": "Bold",
+                                            "variationSettings": {
+                                              "opsz": 14,
+                                              "wght": 700
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "image_047 1",
+                                      "type": "RECTANGLE",
+                                      "w": 150,
+                                      "h": 150,
+                                      "imageHash": "f5f268cb593f8e3f81b0986bdb024f774790e8c5",
+                                      "scaleMode": "FILL"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "w": 267,
+                                  "h": 191,
+                                  "children": [
+                                    {
+                                      "name": "Heading 3",
+                                      "type": "FRAME",
+                                      "w": 235,
+                                      "h": 41,
+                                      "children": [
+                                        {
+                                          "name": "Pro Series | Elite TPU Leather Business Card Holde",
+                                          "type": "TEXT",
+                                          "w": 235,
+                                          "h": 41,
+                                          "text": "Pro Series | Elite TPU Leather Business Card Holder",
+                                          "fontSize": 15.5,
+                                          "fontName": {
+                                            "family": "DM Sans",
+                                            "style": "SemiBold",
+                                            "variationSettings": {
+                                              "opsz": 14,
+                                              "wght": 600
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Text",
+                                      "type": "FRAME",
+                                      "w": 235,
+                                      "h": 21,
+                                      "children": [
+                                        {
+                                          "name": "SKU TX-2107",
+                                          "type": "TEXT",
+                                          "w": 77,
+                                          "h": 21,
+                                          "text": "SKU TX-2107",
+                                          "fontSize": 13,
+                                          "fontName": {
+                                            "family": "DM Sans",
+                                            "style": "Regular",
+                                            "variationSettings": {
+                                              "opsz": 14,
+                                              "wght": 400
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Container",
+                                      "type": "FRAME",
+                                      "w": 235,
+                                      "h": 37,
+                                      "children": [
+                                        {
+                                          "name": "$8.98 to $11.50",
+                                          "type": "TEXT",
+                                          "w": 112,
+                                          "h": 31,
+                                          "text": "$8.98 to $11.50",
+                                          "fontSize": 14,
+                                          "fontName": null
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button:margin",
+                                      "type": "FRAME",
+                                      "w": 235,
+                                      "h": 50,
+                                      "children": [
+                                        {
+                                          "name": "Button",
+                                          "type": "FRAME",
+                                          "w": 235,
+                                          "h": 38,
+                                          "children": [
+                                            {
+                                              "name": "Request quote",
+                                              "type": "TEXT",
+                                              "w": 102,
+                                              "h": 23,
+                                              "text": "Request quote",
+                                              "fontSize": 14.5,
+                                              "fontName": {
+                                                "family": "DM Sans",
+                                                "style": "SemiBold",
+                                                "variationSettings": {
+                                                  "opsz": 14,
+                                                  "wght": 600
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Article",
+                              "type": "FRAME",
+                              "w": 269,
+                              "h": 412,
+                              "children": [
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "w": 267,
+                                  "h": 219,
+                                  "children": [
+                                    {
+                                      "name": "Text",
+                                      "type": "FRAME",
+                                      "w": 69,
+                                      "h": 24,
+                                      "children": [
+                                        {
+                                          "name": "Featured",
+                                          "type": "TEXT",
+                                          "w": 52,
+                                          "h": 18,
+                                          "text": "Featured",
+                                          "fontSize": 11.5,
+                                          "fontName": {
+                                            "family": "DM Sans",
+                                            "style": "Bold",
+                                            "variationSettings": {
+                                              "opsz": 14,
+                                              "wght": 700
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "image_032 1",
+                                      "type": "RECTANGLE",
+                                      "w": 166,
+                                      "h": 166,
+                                      "imageHash": "47851d5b18c67a22347d97e8c9bfabce3ecc1089",
+                                      "scaleMode": "FILL"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "w": 267,
+                                  "h": 191,
+                                  "children": [
+                                    {
+                                      "name": "Heading 3",
+                                      "type": "FRAME",
+                                      "w": 235,
+                                      "h": 41,
+                                      "children": [
+                                        {
+                                          "name": "Summit 32oz Double Wall Vacuum Insulated 18/8",
+                                          "type": "TEXT",
+                                          "w": 235,
+                                          "h": 41,
+                                          "text": "Summit 32oz Double Wall Vacuum Insulated 18/8",
+                                          "fontSize": 15.5,
+                                          "fontName": {
+                                            "family": "DM Sans",
+                                            "style": "SemiBold",
+                                            "variationSettings": {
+                                              "opsz": 14,
+                                              "wght": 600
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Text",
+                                      "type": "FRAME",
+                                      "w": 235,
+                                      "h": 21,
+                                      "children": [
+                                        {
+                                          "name": "SKU DW-8966",
+                                          "type": "TEXT",
+                                          "w": 87,
+                                          "h": 21,
+                                          "text": "SKU DW-8966",
+                                          "fontSize": 13,
+                                          "fontName": {
+                                            "family": "DM Sans",
+                                            "style": "Regular",
+                                            "variationSettings": {
+                                              "opsz": 14,
+                                              "wght": 400
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Container",
+                                      "type": "FRAME",
+                                      "w": 235,
+                                      "h": 37,
+                                      "children": [
+                                        {
+                                          "name": "$10.28 to $12.62",
+                                          "type": "TEXT",
+                                          "w": 120,
+                                          "h": 31,
+                                          "text": "$10.28 to $12.62",
+                                          "fontSize": 14,
+                                          "fontName": null
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button:margin",
+                                      "type": "FRAME",
+                                      "w": 235,
+                                      "h": 50,
+                                      "children": [
+                                        {
+                                          "name": "Button",
+                                          "type": "FRAME",
+                                          "w": 235,
+                                          "h": 38,
+                                          "children": [
+                                            {
+                                              "name": "Request quote",
+                                              "type": "TEXT",
+                                              "w": 102,
+                                              "h": 23,
+                                              "text": "Request quote",
+                                              "fontSize": 14.5,
+                                              "fontName": {
+                                                "family": "DM Sans",
+                                                "style": "SemiBold",
+                                                "variationSettings": {
+                                                  "opsz": 14,
+                                                  "wght": 600
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Article",
+                              "type": "FRAME",
+                              "w": 269,
+                              "h": 412,
+                              "children": [
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "w": 267,
+                                  "h": 219,
+                                  "children": [
+                                    {
+                                      "name": "Text",
+                                      "type": "FRAME",
+                                      "w": 69,
+                                      "h": 24,
+                                      "children": [
+                                        {
+                                          "name": "Featured",
+                                          "type": "TEXT",
+                                          "w": 52,
+                                          "h": 18,
+                                          "text": "Featured",
+                                          "fontSize": 11.5,
+                                          "fontName": {
+                                            "family": "DM Sans",
+                                            "style": "Bold",
+                                            "variationSettings": {
+                                              "opsz": 14,
+                                              "wght": 700
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "image_031 1",
+                                      "type": "RECTANGLE",
+                                      "w": 166,
+                                      "h": 166,
+                                      "imageHash": "74a1a6ae11ac82b38c12baded0399cdecc427afa",
+                                      "scaleMode": "FILL"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "w": 267,
+                                  "h": 191,
+                                  "children": [
+                                    {
+                                      "name": "Heading 3",
+                                      "type": "FRAME",
+                                      "w": 235,
+                                      "h": 41,
+                                      "children": [
+                                        {
+                                          "name": "Madison 4000 mAh Slim Power Bank",
+                                          "type": "TEXT",
+                                          "w": 235,
+                                          "h": 41,
+                                          "text": "Madison 4000 mAh Slim Power Bank",
+                                          "fontSize": 15.5,
+                                          "fontName": {
+                                            "family": "DM Sans",
+                                            "style": "SemiBold",
+                                            "variationSettings": {
+                                              "opsz": 14,
+                                              "wght": 600
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Text",
+                                      "type": "FRAME",
+                                      "w": 235,
+                                      "h": 21,
+                                      "children": [
+                                        {
+                                          "name": "SKU EX-8067",
+                                          "type": "TEXT",
+                                          "w": 81,
+                                          "h": 21,
+                                          "text": "SKU EX-8067",
+                                          "fontSize": 13,
+                                          "fontName": {
+                                            "family": "DM Sans",
+                                            "style": "Regular",
+                                            "variationSettings": {
+                                              "opsz": 14,
+                                              "wght": 400
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Container",
+                                      "type": "FRAME",
+                                      "w": 235,
+                                      "h": 37,
+                                      "children": [
+                                        {
+                                          "name": "$9.98 to $9.98",
+                                          "type": "TEXT",
+                                          "w": 109,
+                                          "h": 31,
+                                          "text": "$9.98 to $9.98",
+                                          "fontSize": 14,
+                                          "fontName": null
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button:margin",
+                                      "type": "FRAME",
+                                      "w": 235,
+                                      "h": 50,
+                                      "children": [
+                                        {
+                                          "name": "Button",
+                                          "type": "FRAME",
+                                          "w": 235,
+                                          "h": 38,
+                                          "children": [
+                                            {
+                                              "name": "Request quote",
+                                              "type": "TEXT",
+                                              "w": 102,
+                                              "h": 23,
+                                              "text": "Request quote",
+                                              "fontSize": 14.5,
+                                              "fontName": {
+                                                "family": "DM Sans",
+                                                "style": "SemiBold",
+                                                "variationSettings": {
+                                                  "opsz": 14,
+                                                  "wght": 600
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Article",
+                              "type": "FRAME",
+                              "w": 269,
+                              "h": 412,
+                              "children": [
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "w": 267,
+                                  "h": 219,
+                                  "children": [
+                                    {
+                                      "name": "Text",
+                                      "type": "FRAME",
+                                      "w": 69,
+                                      "h": 24,
+                                      "children": [
+                                        {
+                                          "name": "Featured",
+                                          "type": "TEXT",
+                                          "w": 52,
+                                          "h": 18,
+                                          "text": "Featured",
+                                          "fontSize": 11.5,
+                                          "fontName": {
+                                            "family": "DM Sans",
+                                            "style": "Bold",
+                                            "variationSettings": {
+                                              "opsz": 14,
+                                              "wght": 700
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "image_029 1",
+                                      "type": "RECTANGLE",
+                                      "w": 166,
+                                      "h": 166,
+                                      "imageHash": "19f197e33989c4b558be6c7cf9281ea405bd6ba3",
+                                      "scaleMode": "FILL"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "w": 267,
+                                  "h": 191,
+                                  "children": [
+                                    {
+                                      "name": "Heading 3",
+                                      "type": "FRAME",
+                                      "w": 235,
+                                      "h": 40,
+                                      "children": [
+                                        {
+                                          "name": "Oceanside Key Chain",
+                                          "type": "TEXT",
+                                          "w": 158,
+                                          "h": 21,
+                                          "text": "Oceanside Key Chain",
+                                          "fontSize": 15.5,
+                                          "fontName": {
+                                            "family": "DM Sans",
+                                            "style": "SemiBold",
+                                            "variationSettings": {
+                                              "opsz": 14,
+                                              "wght": 600
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Text",
+                                      "type": "FRAME",
+                                      "w": 235,
+                                      "h": 21,
+                                      "children": [
+                                        {
+                                          "name": "SKU TX-8810",
+                                          "type": "TEXT",
+                                          "w": 78,
+                                          "h": 21,
+                                          "text": "SKU TX-8810",
+                                          "fontSize": 13,
+                                          "fontName": {
+                                            "family": "DM Sans",
+                                            "style": "Regular",
+                                            "variationSettings": {
+                                              "opsz": 14,
+                                              "wght": 400
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Container",
+                                      "type": "FRAME",
+                                      "w": 235,
+                                      "h": 37,
+                                      "children": [
+                                        {
+                                          "name": "$4.18 to $5.13",
+                                          "type": "TEXT",
+                                          "w": 101,
+                                          "h": 31,
+                                          "text": "$4.18 to $5.13",
+                                          "fontSize": 14,
+                                          "fontName": null
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button:margin",
+                                      "type": "FRAME",
+                                      "w": 235,
+                                      "h": 50,
+                                      "children": [
+                                        {
+                                          "name": "Button",
+                                          "type": "FRAME",
+                                          "w": 235,
+                                          "h": 38,
+                                          "children": [
+                                            {
+                                              "name": "Request quote",
+                                              "type": "TEXT",
+                                              "w": 102,
+                                              "h": 23,
+                                              "text": "Request quote",
+                                              "fontSize": 14.5,
+                                              "fontName": {
+                                                "family": "DM Sans",
+                                                "style": "SemiBold",
+                                                "variationSettings": {
+                                                  "opsz": 14,
+                                                  "wght": 600
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Paragraph",
+                      "type": "FRAME",
+                      "w": 1136,
+                      "h": 41,
+                      "children": [
+                        {
+                          "name": "Prices for the featured items come from the live s",
+                          "type": "TEXT",
+                          "w": 905,
+                          "h": 21,
+                          "text": "Prices for the featured items come from the live site. Other products are image placeholders; connect the product feed for real names, SKUs and tiers.",
+                          "fontSize": 13,
+                          "fontName": {
+                            "family": "DM Sans",
+                            "style": "Regular",
+                            "variationSettings": {
+                              "opsz": 14,
+                              "wght": 400
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Container:margin",
+              "type": "FRAME",
+              "w": 1440,
+              "h": 329,
+              "children": [
+                {
+                  "name": "Container",
+                  "type": "FRAME",
+                  "w": 1200,
+                  "h": 257,
+                  "children": [
+                    {
+                      "name": "Container",
+                      "type": "FRAME",
+                      "w": 1136,
+                      "h": 257,
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "w": 519,
+                          "h": 69,
+                          "children": [
+                            {
+                              "name": "Heading 2",
+                              "type": "FRAME",
+                              "w": 519,
+                              "h": 36,
+                              "children": [
+                                {
+                                  "name": "Not sure what to choose?",
+                                  "type": "TEXT",
+                                  "w": 360,
+                                  "h": 36,
+                                  "text": "Not sure what to choose?",
+                                  "fontSize": 32,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "Bold",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 700
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Paragraph",
+                              "type": "FRAME",
+                              "w": 519,
+                              "h": 33,
+                              "children": [
+                                {
+                                  "name": "Share your budget, quantity and deadline, and we w",
+                                  "type": "TEXT",
+                                  "w": 520,
+                                  "h": 25,
+                                  "text": "Share your budget, quantity and deadline, and we will suggest options.",
+                                  "fontSize": 16,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "Regular",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 400
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "w": 302,
+                          "h": 169,
+                          "children": [
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "w": 170,
+                              "h": 169,
+                              "children": [
+                                {
+                                  "name": "Request a quote",
+                                  "type": "TEXT",
+                                  "w": 126,
+                                  "h": 25,
+                                  "text": "Request a quote",
+                                  "fontSize": 16,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "SemiBold",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 600
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "w": 122,
+                              "h": 169,
+                              "children": [
+                                {
+                                  "name": "Click to call",
+                                  "type": "TEXT",
+                                  "w": 90,
+                                  "h": 25,
+                                  "text": "Click to call",
+                                  "fontSize": 16,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "SemiBold",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 600
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Container:margin",
+              "type": "FRAME",
+              "w": 1440,
+              "h": 541,
+              "children": [
+                {
+                  "name": "Container",
+                  "type": "FRAME",
+                  "w": 1200,
+                  "h": 397,
+                  "children": [
+                    {
+                      "name": "Container",
+                      "type": "FRAME",
+                      "w": 1136,
+                      "h": 36,
+                      "children": [
+                        {
+                          "name": "Heading 2",
+                          "type": "FRAME",
+                          "w": 277,
+                          "h": 36,
+                          "children": [
+                            {
+                              "name": "Ordering resources",
+                              "type": "TEXT",
+                              "w": 277,
+                              "h": 36,
+                              "text": "Ordering resources",
+                              "fontSize": 32,
+                              "fontName": {
+                                "family": "DM Sans",
+                                "style": "Bold",
+                                "variationSettings": {
+                                  "opsz": 14,
+                                  "wght": 700
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Container:margin",
+                      "type": "FRAME",
+                      "w": 1136,
+                      "h": 115,
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "w": 1136,
+                          "h": 93,
+                          "children": [
+                            {
+                              "name": "Link",
+                              "type": "FRAME",
+                              "w": 274,
+                              "h": 93,
+                              "children": [
+                                {
+                                  "name": "Bold Text",
+                                  "type": "FRAME",
+                                  "w": 232,
+                                  "h": 25,
+                                  "children": [
+                                    {
+                                      "name": "E-catalog",
+                                      "type": "TEXT",
+                                      "w": 77,
+                                      "h": 25,
+                                      "text": "E-catalog",
+                                      "fontSize": 16,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Bold",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 700
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Text",
+                                  "type": "FRAME",
+                                  "w": 232,
+                                  "h": 23,
+                                  "children": [
+                                    {
+                                      "name": "Browse the full catalog",
+                                      "type": "TEXT",
+                                      "w": 152,
+                                      "h": 23,
+                                      "text": "Browse the full catalog",
+                                      "fontSize": 14.5,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Regular",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 400
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Link",
+                              "type": "FRAME",
+                              "w": 274,
+                              "h": 93,
+                              "children": [
+                                {
+                                  "name": "Bold Text",
+                                  "type": "FRAME",
+                                  "w": 232,
+                                  "h": 25,
+                                  "children": [
+                                    {
+                                      "name": "E-flyers",
+                                      "type": "TEXT",
+                                      "w": 63,
+                                      "h": 25,
+                                      "text": "E-flyers",
+                                      "fontSize": 16,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Bold",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 700
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Text",
+                                  "type": "FRAME",
+                                  "w": 232,
+                                  "h": 23,
+                                  "children": [
+                                    {
+                                      "name": "Current promotions",
+                                      "type": "TEXT",
+                                      "w": 133,
+                                      "h": 23,
+                                      "text": "Current promotions",
+                                      "fontSize": 14.5,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Regular",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 400
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Link",
+                              "type": "FRAME",
+                              "w": 274,
+                              "h": 93,
+                              "children": [
+                                {
+                                  "name": "Bold Text",
+                                  "type": "FRAME",
+                                  "w": 232,
+                                  "h": 25,
+                                  "children": [
+                                    {
+                                      "name": "Decoration price guide",
+                                      "type": "TEXT",
+                                      "w": 180,
+                                      "h": 25,
+                                      "text": "Decoration price guide",
+                                      "fontSize": 16,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Bold",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 700
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Text",
+                                  "type": "FRAME",
+                                  "w": 232,
+                                  "h": 23,
+                                  "children": [
+                                    {
+                                      "name": "Imprint options and costs",
+                                      "type": "TEXT",
+                                      "w": 173,
+                                      "h": 23,
+                                      "text": "Imprint options and costs",
+                                      "fontSize": 14.5,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Regular",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 400
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Link",
+                              "type": "FRAME",
+                              "w": 274,
+                              "h": 93,
+                              "children": [
+                                {
+                                  "name": "Bold Text",
+                                  "type": "FRAME",
+                                  "w": 232,
+                                  "h": 25,
+                                  "children": [
+                                    {
+                                      "name": "How to order",
+                                      "type": "TEXT",
+                                      "w": 101,
+                                      "h": 25,
+                                      "text": "How to order",
+                                      "fontSize": 16,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Bold",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 700
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Text",
+                                  "type": "FRAME",
+                                  "w": 232,
+                                  "h": 23,
+                                  "children": [
+                                    {
+                                      "name": "From quote to delivery",
+                                      "type": "TEXT",
+                                      "w": 153,
+                                      "h": 23,
+                                      "text": "From quote to delivery",
+                                      "fontSize": 14.5,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Regular",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 400
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Container:margin",
+                      "type": "FRAME",
+                      "w": 1136,
+                      "h": 118,
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "w": 1136,
+                          "h": 74,
+                          "children": [
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "w": 365,
+                              "h": 74,
+                              "children": [
+                                {
+                                  "name": "Italic Text",
+                                  "type": "FRAME",
+                                  "w": 44,
+                                  "h": 44,
+                                  "children": [
+                                    {
+                                      "name": "1",
+                                      "type": "TEXT",
+                                      "w": 7,
+                                      "h": 28,
+                                      "text": "1",
+                                      "fontSize": 18,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Bold",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 700
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "w": 307,
+                                  "h": 72,
+                                  "children": [
+                                    {
+                                      "name": "Bold Text",
+                                      "type": "FRAME",
+                                      "w": 307,
+                                      "h": 25,
+                                      "children": [
+                                        {
+                                          "name": "Rated #1 in California",
+                                          "type": "TEXT",
+                                          "w": 167,
+                                          "h": 25,
+                                          "text": "Rated #1 in California",
+                                          "fontSize": 16,
+                                          "fontName": {
+                                            "family": "DM Sans",
+                                            "style": "Bold",
+                                            "variationSettings": {
+                                              "opsz": 14,
+                                              "wght": 700
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Top 10 in the nation for customer satisfaction.",
+                                      "type": "TEXT",
+                                      "w": 308,
+                                      "h": 47,
+                                      "text": "Top 10 in the nation for customer satisfaction.",
+                                      "fontSize": 15,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Regular",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 400
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "w": 365,
+                              "h": 74,
+                              "children": [
+                                {
+                                  "name": "Italic Text",
+                                  "type": "FRAME",
+                                  "w": 44,
+                                  "h": 44,
+                                  "children": [
+                                    {
+                                      "name": "★",
+                                      "type": "TEXT",
+                                      "w": 18,
+                                      "h": 28,
+                                      "text": "★",
+                                      "fontSize": 18,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Bold",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 700
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "w": 307,
+                                  "h": 49,
+                                  "children": [
+                                    {
+                                      "name": "Bold Text",
+                                      "type": "FRAME",
+                                      "w": 307,
+                                      "h": 25,
+                                      "children": [
+                                        {
+                                          "name": "ASI 5-Star supplier",
+                                          "type": "TEXT",
+                                          "w": 149,
+                                          "h": 25,
+                                          "text": "ASI 5-Star supplier",
+                                          "fontSize": 16,
+                                          "fontName": {
+                                            "family": "DM Sans",
+                                            "style": "Bold",
+                                            "variationSettings": {
+                                              "opsz": 14,
+                                              "wght": 700
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "PRO Supplier and 2018 SAGE Rated Supplier.",
+                                      "type": "TEXT",
+                                      "w": 307,
+                                      "h": 24,
+                                      "text": "PRO Supplier and 2018 SAGE Rated Supplier.",
+                                      "fontSize": 15,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Regular",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 400
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "w": 365,
+                              "h": 74,
+                              "children": [
+                                {
+                                  "name": "Italic Text",
+                                  "type": "FRAME",
+                                  "w": 44,
+                                  "h": 44,
+                                  "children": [
+                                    {
+                                      "name": "$",
+                                      "type": "TEXT",
+                                      "w": 11,
+                                      "h": 28,
+                                      "text": "$",
+                                      "fontSize": 18,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Bold",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 700
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "w": 307,
+                                  "h": 72,
+                                  "children": [
+                                    {
+                                      "name": "Bold Text",
+                                      "type": "FRAME",
+                                      "w": 307,
+                                      "h": 25,
+                                      "children": [
+                                        {
+                                          "name": "Quantity-based pricing",
+                                          "type": "TEXT",
+                                          "w": 186,
+                                          "h": 25,
+                                          "text": "Quantity-based pricing",
+                                          "fontSize": 16,
+                                          "fontName": {
+                                            "family": "DM Sans",
+                                            "style": "Bold",
+                                            "variationSettings": {
+                                              "opsz": 14,
+                                              "wght": 700
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Shown on every product, so you can compare.",
+                                      "type": "TEXT",
+                                      "w": 308,
+                                      "h": 47,
+                                      "text": "Shown on every product, so you can compare.",
+                                      "fontSize": 15,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Regular",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 400
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Container:margin",
+                      "type": "FRAME",
+                      "w": 1136,
+                      "h": 127,
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "w": 1136,
+                          "h": 99,
+                          "children": [
+                            {
+                              "name": "Image (Awards: number 1 in California, SAGE rated supplier, ASI 5-star supplier, PRO supplier)",
+                              "type": "FRAME",
+                              "w": 1134,
+                              "h": 97,
+                              "imageHash": "602c2705f1c18bf9081c2d7abd8479e0efca7c75",
+                              "scaleMode": "FILL",
+                              "children": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Section",
+              "type": "FRAME",
+              "w": 1440,
+              "h": 267,
+              "children": [
+                {
+                  "name": "Container",
+                  "type": "FRAME",
+                  "w": 1200,
+                  "h": 267,
+                  "children": [
+                    {
+                      "name": "Container",
+                      "type": "FRAME",
+                      "w": 1136,
+                      "h": 267,
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "w": 316,
+                          "h": 69,
+                          "children": [
+                            {
+                              "name": "Heading 2",
+                              "type": "FRAME",
+                              "w": 316,
+                              "h": 36,
+                              "children": [
+                                {
+                                  "name": "Are you a distributor?",
+                                  "type": "TEXT",
+                                  "w": 306,
+                                  "h": 36,
+                                  "text": "Are you a distributor?",
+                                  "fontSize": 32,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "Bold",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 700
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Paragraph",
+                              "type": "FRAME",
+                              "w": 316,
+                              "h": 33,
+                              "children": [
+                                {
+                                  "name": "Log in to see your pricing and track orders.",
+                                  "type": "TEXT",
+                                  "w": 316,
+                                  "h": 25,
+                                  "text": "Log in to see your pricing and track orders.",
+                                  "fontSize": 16,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "Regular",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 400
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "w": 196,
+                          "h": 171,
+                          "children": [
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "w": 89,
+                              "h": 171,
+                              "children": [
+                                {
+                                  "name": "Log in",
+                                  "type": "TEXT",
+                                  "w": 45,
+                                  "h": 25,
+                                  "text": "Log in",
+                                  "fontSize": 16,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "SemiBold",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 600
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "w": 97,
+                              "h": 171,
+                              "children": [
+                                {
+                                  "name": "Register",
+                                  "type": "TEXT",
+                                  "w": 63,
+                                  "h": 25,
+                                  "text": "Register",
+                                  "fontSize": 16,
+                                  "fontName": {
+                                    "family": "DM Sans",
+                                    "style": "SemiBold",
+                                    "variationSettings": {
+                                      "opsz": 14,
+                                      "wght": 600
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Footer:margin",
+          "type": "FRAME",
+          "w": 1440,
+          "h": 349,
+          "children": [
+            {
+              "name": "Footer",
+              "type": "FRAME",
+              "w": 1440,
+              "h": 293,
+              "children": [
+                {
+                  "name": "Container:margin",
+                  "type": "FRAME",
+                  "w": 1440,
+                  "h": 228,
+                  "children": [
+                    {
+                      "name": "Container",
+                      "type": "FRAME",
+                      "w": 1200,
+                      "h": 228,
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "w": 1136,
+                          "h": 163,
+                          "children": [
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "w": 459,
+                              "h": 163,
+                              "children": [
+                                {
+                                  "name": "Heading 4",
+                                  "type": "FRAME",
+                                  "w": 459,
+                                  "h": 24,
+                                  "children": [
+                                    {
+                                      "name": "Posh Xessories",
+                                      "type": "TEXT",
+                                      "w": 110,
+                                      "h": 24,
+                                      "text": "Posh Xessories",
+                                      "fontSize": 15,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Bold",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 700
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Paragraph:margin",
+                                  "type": "FRAME",
+                                  "w": 397,
+                                  "h": 55,
+                                  "children": [
+                                    {
+                                      "name": "Started with one mission: help people make the bes",
+                                      "type": "TEXT",
+                                      "w": 397,
+                                      "h": 45,
+                                      "text": "Started with one mission: help people make the best impressions at the best price.",
+                                      "fontSize": 14.5,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Regular",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 400
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Paragraph",
+                                  "type": "FRAME",
+                                  "w": 397,
+                                  "h": 31,
+                                  "children": [
+                                    {
+                                      "name": "Chino, CA 91710, USA",
+                                      "type": "TEXT",
+                                      "w": 139,
+                                      "h": 23,
+                                      "text": "Chino, CA 91710, USA",
+                                      "fontSize": 14.5,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Regular",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 400
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Form",
+                                  "type": "FRAME",
+                                  "w": 340,
+                                  "h": 54,
+                                  "children": [
+                                    {
+                                      "name": "Email Input - Email",
+                                      "type": "FRAME",
+                                      "w": 250,
+                                      "h": 40,
+                                      "children": [
+                                        {
+                                          "name": "Email for promotions",
+                                          "type": "TEXT",
+                                          "w": 224,
+                                          "h": 19,
+                                          "text": "Email for promotions",
+                                          "fontSize": 14.5,
+                                          "fontName": {
+                                            "family": "DM Sans",
+                                            "style": "Regular",
+                                            "variationSettings": {
+                                              "opsz": 14,
+                                              "wght": 400
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "w": 84,
+                                      "h": 40,
+                                      "children": [
+                                        {
+                                          "name": "Sign up",
+                                          "type": "TEXT",
+                                          "w": 52,
+                                          "h": 23,
+                                          "text": "Sign up",
+                                          "fontSize": 14.5,
+                                          "fontName": {
+                                            "family": "DM Sans",
+                                            "style": "SemiBold",
+                                            "variationSettings": {
+                                              "opsz": 14,
+                                              "wght": 600
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "w": 306,
+                              "h": 163,
+                              "children": [
+                                {
+                                  "name": "Heading 4",
+                                  "type": "FRAME",
+                                  "w": 306,
+                                  "h": 24,
+                                  "children": [
+                                    {
+                                      "name": "Help",
+                                      "type": "TEXT",
+                                      "w": 34,
+                                      "h": 24,
+                                      "text": "Help",
+                                      "fontSize": 15,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Bold",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 700
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "List:margin",
+                                  "type": "FRAME",
+                                  "w": 306,
+                                  "h": 121,
+                                  "children": [
+                                    {
+                                      "name": "List",
+                                      "type": "FRAME",
+                                      "w": 306,
+                                      "h": 111,
+                                      "children": [
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME",
+                                          "w": 306,
+                                          "h": 22,
+                                          "children": [
+                                            {
+                                              "name": "How to order",
+                                              "type": "TEXT",
+                                              "w": 88,
+                                              "h": 23,
+                                              "text": "How to order",
+                                              "fontSize": 14.5,
+                                              "fontName": {
+                                                "family": "DM Sans",
+                                                "style": "Regular",
+                                                "variationSettings": {
+                                                  "opsz": 14,
+                                                  "wght": 400
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME",
+                                          "w": 306,
+                                          "h": 22,
+                                          "children": [
+                                            {
+                                              "name": "Decoration price guide",
+                                              "type": "TEXT",
+                                              "w": 154,
+                                              "h": 23,
+                                              "text": "Decoration price guide",
+                                              "fontSize": 14.5,
+                                              "fontName": {
+                                                "family": "DM Sans",
+                                                "style": "Regular",
+                                                "variationSettings": {
+                                                  "opsz": 14,
+                                                  "wght": 400
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME",
+                                          "w": 306,
+                                          "h": 22,
+                                          "children": [
+                                            {
+                                              "name": "E-catalog",
+                                              "type": "TEXT",
+                                              "w": 66,
+                                              "h": 23,
+                                              "text": "E-catalog",
+                                              "fontSize": 14.5,
+                                              "fontName": {
+                                                "family": "DM Sans",
+                                                "style": "Regular",
+                                                "variationSettings": {
+                                                  "opsz": 14,
+                                                  "wght": 400
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME",
+                                          "w": 306,
+                                          "h": 22,
+                                          "children": [
+                                            {
+                                              "name": "Privacy policy",
+                                              "type": "TEXT",
+                                              "w": 94,
+                                              "h": 23,
+                                              "text": "Privacy policy",
+                                              "fontSize": 14.5,
+                                              "fontName": {
+                                                "family": "DM Sans",
+                                                "style": "Regular",
+                                                "variationSettings": {
+                                                  "opsz": 14,
+                                                  "wght": 400
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "w": 306,
+                              "h": 163,
+                              "children": [
+                                {
+                                  "name": "Heading 4",
+                                  "type": "FRAME",
+                                  "w": 306,
+                                  "h": 24,
+                                  "children": [
+                                    {
+                                      "name": "Company",
+                                      "type": "TEXT",
+                                      "w": 72,
+                                      "h": 24,
+                                      "text": "Company",
+                                      "fontSize": 15,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Bold",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 700
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "List:margin",
+                                  "type": "FRAME",
+                                  "w": 306,
+                                  "h": 121,
+                                  "children": [
+                                    {
+                                      "name": "List",
+                                      "type": "FRAME",
+                                      "w": 306,
+                                      "h": 111,
+                                      "children": [
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME",
+                                          "w": 306,
+                                          "h": 22,
+                                          "children": [
+                                            {
+                                              "name": "Company history",
+                                              "type": "TEXT",
+                                              "w": 116,
+                                              "h": 23,
+                                              "text": "Company history",
+                                              "fontSize": 14.5,
+                                              "fontName": {
+                                                "family": "DM Sans",
+                                                "style": "Regular",
+                                                "variationSettings": {
+                                                  "opsz": 14,
+                                                  "wght": 400
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME",
+                                          "w": 306,
+                                          "h": 22,
+                                          "children": [
+                                            {
+                                              "name": "Reviews",
+                                              "type": "TEXT",
+                                              "w": 54,
+                                              "h": 23,
+                                              "text": "Reviews",
+                                              "fontSize": 14.5,
+                                              "fontName": {
+                                                "family": "DM Sans",
+                                                "style": "Regular",
+                                                "variationSettings": {
+                                                  "opsz": 14,
+                                                  "wght": 400
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME",
+                                          "w": 306,
+                                          "h": 22,
+                                          "children": [
+                                            {
+                                              "name": "Awards / media",
+                                              "type": "TEXT",
+                                              "w": 105,
+                                              "h": 23,
+                                              "text": "Awards / media",
+                                              "fontSize": 14.5,
+                                              "fontName": {
+                                                "family": "DM Sans",
+                                                "style": "Regular",
+                                                "variationSettings": {
+                                                  "opsz": 14,
+                                                  "wght": 400
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME",
+                                          "w": 306,
+                                          "h": 22,
+                                          "children": [
+                                            {
+                                              "name": "Click to call",
+                                              "type": "TEXT",
+                                              "w": 78,
+                                              "h": 23,
+                                              "text": "Click to call",
+                                              "fontSize": 14.5,
+                                              "fontName": {
+                                                "family": "DM Sans",
+                                                "style": "Regular",
+                                                "variationSettings": {
+                                                  "opsz": 14,
+                                                  "wght": 400
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Container:margin",
+                          "type": "FRAME",
+                          "w": 1136,
+                          "h": 65,
+                          "children": [
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "w": 1136,
+                              "h": 37,
+                              "children": [
+                                {
+                                  "name": "Text",
+                                  "type": "FRAME",
+                                  "w": 300,
+                                  "h": 20,
+                                  "children": [
+                                    {
+                                      "name": "Design prototype, not connected to the live store.",
+                                      "type": "TEXT",
+                                      "w": 300,
+                                      "h": 21,
+                                      "text": "Design prototype, not connected to the live store.",
+                                      "fontSize": 13,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Regular",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 400
+                                        }
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Text",
+                                  "type": "FRAME",
+                                  "w": 218,
+                                  "h": 20,
+                                  "children": [
+                                    {
+                                      "name": "© PoshXessories. All rights reserved.",
+                                      "type": "TEXT",
+                                      "w": 218,
+                                      "h": 21,
+                                      "text": "© PoshXessories. All rights reserved.",
+                                      "fontSize": 13,
+                                      "fontName": {
+                                        "family": "DM Sans",
+                                        "style": "Regular",
+                                        "variationSettings": {
+                                          "opsz": 14,
+                                          "wght": 400
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Button",
+      "type": "FRAME",
+      "w": 114,
+      "h": 39,
+      "children": [
+        {
+          "name": "Design notes",
+          "type": "TEXT",
+          "w": 82,
+          "h": 21,
+          "text": "Design notes",
+          "fontSize": 13,
+          "fontName": {
+            "family": "DM Sans",
+            "style": "SemiBold",
+            "variationSettings": {
+              "opsz": 14,
+              "wght": 600
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

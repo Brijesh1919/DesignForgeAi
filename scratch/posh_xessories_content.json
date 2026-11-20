@@ -1,0 +1,3620 @@
+{
+  "name": "Posh Xessories | Concept 02 – Modern Commerce",
+  "type": "FRAME",
+  "children": [
+    {
+      "name": "Body",
+      "type": "FRAME",
+      "children": [
+        {
+          "name": "Container",
+          "type": "FRAME",
+          "children": [
+            {
+              "name": "Free artwork review on every order. Need it fast? ",
+              "type": "TEXT",
+              "text": "Free artwork review on every order. Need it fast? Ask about rush production.",
+              "fontSize": 13.5,
+              "fontFamily": "DM Sans",
+              "fontWeight": "Medium"
+            }
+          ]
+        },
+        {
+          "name": "Header",
+          "type": "FRAME",
+          "children": [
+            {
+              "name": "Container:margin",
+              "type": "FRAME",
+              "children": [
+                {
+                  "name": "Container",
+                  "type": "FRAME",
+                  "children": [
+                    {
+                      "name": "Link - Posh Xessories home",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Bold Text",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "POSH",
+                              "type": "TEXT",
+                              "text": "POSH",
+                              "fontSize": 26,
+                              "fontFamily": "DM Sans",
+                              "fontWeight": "Regular"
+                            },
+                            {
+                              "name": "Italic Text:margin",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Italic Text",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Icon",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Vector",
+                                          "type": "VECTOR"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "ESSORIES",
+                              "type": "TEXT",
+                              "text": "ESSORIES",
+                              "fontSize": 26,
+                              "fontFamily": "DM Sans",
+                              "fontWeight": "Regular"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Small:margin",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Small",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "ASI 79028 | PPAI 206478 | SAGE 64870 | UPIC POSHX",
+                                  "type": "TEXT",
+                                  "text": "ASI 79028 | PPAI 206478 | SAGE 64870 | UPIC POSHX",
+                                  "fontSize": 9,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Regular"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Form",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Dropdown - Search in",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "All categories",
+                                  "type": "TEXT",
+                                  "text": "All categories",
+                                  "fontSize": 14,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Regular"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Icon",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Vector",
+                                      "type": "VECTOR"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Search Input - Search",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Search by product name or SKU, e.g. TX-2107",
+                              "type": "TEXT",
+                              "text": "Search by product name or SKU, e.g. TX-2107",
+                              "fontSize": 16,
+                              "fontFamily": "DM Sans",
+                              "fontWeight": "Regular"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Button",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Search",
+                              "type": "TEXT",
+                              "text": "Search",
+                              "fontSize": 15.5,
+                              "fontFamily": "DM Sans",
+                              "fontWeight": "Bold"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Container:align",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Login",
+                                  "type": "TEXT",
+                                  "text": "Login",
+                                  "fontSize": 14,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "SemiBold"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Register",
+                                  "type": "TEXT",
+                                  "text": "Register",
+                                  "fontSize": 14,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "SemiBold"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Quote list",
+                                  "type": "TEXT",
+                                  "text": "Quote list",
+                                  "fontSize": 14,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "SemiBold"
+                                },
+                                {
+                                  "name": "Text",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "0",
+                                      "type": "TEXT",
+                                      "text": "0",
+                                      "fontSize": 12,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Container",
+              "type": "FRAME",
+              "children": [
+                {
+                  "name": "Container:margin",
+                  "type": "FRAME",
+                  "children": [
+                    {
+                      "name": "Container",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Button",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "☰ All categories",
+                              "type": "TEXT",
+                              "text": "☰ All categories",
+                              "fontSize": 15.5,
+                              "fontFamily": "DM Sans",
+                              "fontWeight": "Bold"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Featured",
+                                  "type": "TEXT",
+                                  "text": "Featured",
+                                  "fontSize": 14,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Medium"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Drinkware",
+                                  "type": "TEXT",
+                                  "text": "Drinkware",
+                                  "fontSize": 14,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Medium"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Journals & padfolios",
+                                  "type": "TEXT",
+                                  "text": "Journals & padfolios",
+                                  "fontSize": 14,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Medium"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Tech",
+                                  "type": "TEXT",
+                                  "text": "Tech",
+                                  "fontSize": 14,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Medium"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Pens",
+                                  "type": "TEXT",
+                                  "text": "Pens",
+                                  "fontSize": 14,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Medium"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Closeouts",
+                                  "type": "TEXT",
+                                  "text": "Closeouts",
+                                  "fontSize": 14,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Medium"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Link",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "E-flyers / Promotions",
+                                  "type": "TEXT",
+                                  "text": "E-flyers / Promotions",
+                                  "fontSize": 14,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Medium"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Link",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Advanced search",
+                                  "type": "TEXT",
+                                  "text": "Advanced search",
+                                  "fontSize": 14,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Medium"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Link",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Decoration guide",
+                                  "type": "TEXT",
+                                  "text": "Decoration guide",
+                                  "fontSize": 14,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Medium"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Link",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "My account",
+                                  "type": "TEXT",
+                                  "text": "My account",
+                                  "fontSize": 14,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Medium"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Main Content",
+          "type": "FRAME",
+          "children": [
+            {
+              "name": "Section:margin",
+              "type": "FRAME",
+              "children": [
+                {
+                  "name": "Section",
+                  "type": "FRAME",
+                  "children": [
+                    {
+                      "name": "Container",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Link",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Image",
+                              "type": "FRAME",
+                              "imageHash": "82661b2c9e1f741c022efd375bd7de85c5f85c0a",
+                              "scaleMode": "CROP",
+                              "w": 543,
+                              "h": 474
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Heading 3",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Journals that carry your brand",
+                                      "type": "TEXT",
+                                      "text": "Journals that carry your brand",
+                                      "fontSize": 46,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Soft-touch covers in every colour. Deboss, foil or",
+                                  "type": "TEXT",
+                                  "text": "Soft-touch covers in every colour. Deboss, foil or print.",
+                                  "fontSize": 16,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Regular"
+                                },
+                                {
+                                  "name": "Text",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Shop journals",
+                                      "type": "TEXT",
+                                      "text": "Shop journals",
+                                      "fontSize": 15.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Link",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Heading 3",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Drinkware",
+                                      "type": "TEXT",
+                                      "text": "Drinkware",
+                                      "fontSize": 22,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Bottles, tumblers, mugs.",
+                                  "type": "TEXT",
+                                  "text": "Bottles, tumblers, mugs.",
+                                  "fontSize": 14.5,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Regular"
+                                },
+                                {
+                                  "name": "Text",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Shop",
+                                      "type": "TEXT",
+                                      "text": "Shop",
+                                      "fontSize": 14,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "image_050 1",
+                              "type": "RECTANGLE",
+                              "imageHash": "f44f1cdbedc29a6c042df9e1ca4e2bcbf24619b4",
+                              "scaleMode": "FILL",
+                              "w": 142,
+                              "h": 142
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Link",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "image_059 1",
+                              "type": "RECTANGLE",
+                              "imageHash": "6431f4bf4699b9c6f00a2d704f66e77818bb8d51",
+                              "scaleMode": "FILL",
+                              "w": 142,
+                              "h": 142
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Heading 3",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Padfolios",
+                                      "type": "TEXT",
+                                      "text": "Padfolios",
+                                      "fontSize": 22,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "For client meetings.",
+                                  "type": "TEXT",
+                                  "text": "For client meetings.",
+                                  "fontSize": 14.5,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Regular"
+                                },
+                                {
+                                  "name": "Text",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Shop",
+                                      "type": "TEXT",
+                                      "text": "Shop",
+                                      "fontSize": 14,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Link",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "image_060 1",
+                              "type": "RECTANGLE",
+                              "imageHash": "461b3ab29b75be77c438a1193451cda0d8b9b35f",
+                              "scaleMode": "FILL",
+                              "w": 151,
+                              "h": 142
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Heading 3",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Power and mobile",
+                                      "type": "TEXT",
+                                      "text": "Power and mobile",
+                                      "fontSize": 22,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Banks, cables, stands.",
+                                  "type": "TEXT",
+                                  "text": "Banks, cables, stands.",
+                                  "fontSize": 14.5,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Regular"
+                                },
+                                {
+                                  "name": "Text",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Shop",
+                                      "type": "TEXT",
+                                      "text": "Shop",
+                                      "fontSize": 14,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Heading 3",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Quick order by SKU",
+                                      "type": "TEXT",
+                                      "text": "Quick order by SKU",
+                                      "fontSize": 19,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    },
+                                    {
+                                      "name": "Text",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "PROPOSED",
+                                          "type": "TEXT",
+                                          "text": "PROPOSED",
+                                          "fontSize": 11,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Bold"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Text Area - SKUs and quantities",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "TX-2107 x 250 DW-8966 x 500",
+                                      "type": "TEXT",
+                                      "text": "TX-2107 x 250\nDW-8966 x 500",
+                                      "fontSize": 14,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Regular"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Add to quote list",
+                                          "type": "TEXT",
+                                          "text": "Add to quote list",
+                                          "fontSize": 14,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "SemiBold"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Example",
+                                          "type": "TEXT",
+                                          "text": "Example",
+                                          "fontSize": 14,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "SemiBold"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Container:margin",
+              "type": "FRAME",
+              "children": [
+                {
+                  "name": "Container",
+                  "type": "FRAME",
+                  "children": [
+                    {
+                      "name": "Container",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Heading 2",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Shop by category",
+                              "type": "TEXT",
+                              "text": "Shop by category",
+                              "fontSize": 30,
+                              "fontFamily": "DM Sans",
+                              "fontWeight": "Bold"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Button",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "View all",
+                              "type": "TEXT",
+                              "text": "View all",
+                              "fontSize": 15.5,
+                              "fontFamily": "DM Sans",
+                              "fontWeight": "SemiBold"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Container:margin",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Container:scroll-content",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Image",
+                                      "type": "FRAME",
+                                      "imageHash": "3b74d769d01c1a33c33e16d4c970cee3a5883019",
+                                      "scaleMode": "FIT",
+                                      "w": 84,
+                                      "h": 84
+                                    },
+                                    {
+                                      "name": "Barware",
+                                      "type": "TEXT",
+                                      "text": "Barware",
+                                      "fontSize": 13.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Image",
+                                      "type": "FRAME",
+                                      "imageHash": "ea9172b0097e0d71482f7189a1d2a6572b34f784",
+                                      "scaleMode": "FIT",
+                                      "w": 84,
+                                      "h": 84
+                                    },
+                                    {
+                                      "name": "Bluetooth Speakers",
+                                      "type": "TEXT",
+                                      "text": "Bluetooth Speakers",
+                                      "fontSize": 13.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Image",
+                                      "type": "FRAME",
+                                      "imageHash": "3c358a04e40c80a00aa887885fda3efde8045c69",
+                                      "scaleMode": "FIT",
+                                      "w": 84,
+                                      "h": 84
+                                    },
+                                    {
+                                      "name": "Business Card Cases",
+                                      "type": "TEXT",
+                                      "text": "Business Card Cases",
+                                      "fontSize": 13.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Image",
+                                      "type": "FRAME",
+                                      "imageHash": "078f34be8fd4044f0dc72bb76991d9cf13678564",
+                                      "scaleMode": "FIT",
+                                      "w": 84,
+                                      "h": 84
+                                    },
+                                    {
+                                      "name": "Closeout Items",
+                                      "type": "TEXT",
+                                      "text": "Closeout Items",
+                                      "fontSize": 13.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Image",
+                                      "type": "FRAME",
+                                      "imageHash": "5c30b2184d90c81f3f7acf1d40febde701d2d8e4",
+                                      "scaleMode": "FIT",
+                                      "w": 84,
+                                      "h": 84
+                                    },
+                                    {
+                                      "name": "Custom Packaging",
+                                      "type": "TEXT",
+                                      "text": "Custom Packaging",
+                                      "fontSize": 13.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Image",
+                                      "type": "FRAME",
+                                      "imageHash": "8c2c86ff168e10d0684e0887a1dc38a568e4aea4",
+                                      "scaleMode": "FIT",
+                                      "w": 84,
+                                      "h": 84
+                                    },
+                                    {
+                                      "name": "Drinkware",
+                                      "type": "TEXT",
+                                      "text": "Drinkware",
+                                      "fontSize": 13.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Image",
+                                      "type": "FRAME",
+                                      "imageHash": "428b737ef35a3fa622f6100566bcb0b9690891af",
+                                      "scaleMode": "FIT",
+                                      "w": 84,
+                                      "h": 84
+                                    },
+                                    {
+                                      "name": "Electronics",
+                                      "type": "TEXT",
+                                      "text": "Electronics",
+                                      "fontSize": 13.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Image",
+                                      "type": "FRAME",
+                                      "imageHash": "b729c0ea162f3295b87ab1e29286d1f597a4bb12",
+                                      "scaleMode": "FIT",
+                                      "w": 84,
+                                      "h": 84
+                                    },
+                                    {
+                                      "name": "Journals & Jotters",
+                                      "type": "TEXT",
+                                      "text": "Journals & Jotters",
+                                      "fontSize": 13.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Image",
+                                      "type": "FRAME",
+                                      "imageHash": "79ad0b9023da240ef588f13eae21ff41f7c22ac3",
+                                      "scaleMode": "FIT",
+                                      "w": 84,
+                                      "h": 84
+                                    },
+                                    {
+                                      "name": "Jr. Padfolios",
+                                      "type": "TEXT",
+                                      "text": "Jr. Padfolios",
+                                      "fontSize": 13.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Image",
+                                      "type": "FRAME",
+                                      "imageHash": "1df6e03eda027c1db065e5309e7b91f2a4efa295",
+                                      "scaleMode": "FIT",
+                                      "w": 84,
+                                      "h": 84
+                                    },
+                                    {
+                                      "name": "Luggage Tags",
+                                      "type": "TEXT",
+                                      "text": "Luggage Tags",
+                                      "fontSize": 13.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Image",
+                                      "type": "FRAME",
+                                      "imageHash": "6c22fd29d21c191a1f9d02462112eb06bea2fe83",
+                                      "scaleMode": "FIT",
+                                      "w": 84,
+                                      "h": 84
+                                    },
+                                    {
+                                      "name": "Metal Pens",
+                                      "type": "TEXT",
+                                      "text": "Metal Pens",
+                                      "fontSize": 13.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Image",
+                                      "type": "FRAME",
+                                      "imageHash": "fbb791197d754422691fa7125d8d5fa859fcb916",
+                                      "scaleMode": "FIT",
+                                      "w": 84,
+                                      "h": 84
+                                    },
+                                    {
+                                      "name": "Mobile Xessories",
+                                      "type": "TEXT",
+                                      "text": "Mobile Xessories",
+                                      "fontSize": 13.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Image",
+                                      "type": "FRAME",
+                                      "imageHash": "15db170b28816716ee7a9ba898990a4f36ec542a",
+                                      "scaleMode": "FIT",
+                                      "w": 84,
+                                      "h": 84
+                                    },
+                                    {
+                                      "name": "Novelties",
+                                      "type": "TEXT",
+                                      "text": "Novelties",
+                                      "fontSize": 13.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Image",
+                                      "type": "FRAME",
+                                      "imageHash": "9b83431cea20522cf8c83662107986fe963c39a8",
+                                      "scaleMode": "FIT",
+                                      "w": 84,
+                                      "h": 84
+                                    },
+                                    {
+                                      "name": "Padfolios",
+                                      "type": "TEXT",
+                                      "text": "Padfolios",
+                                      "fontSize": 13.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Image",
+                                      "type": "FRAME",
+                                      "imageHash": "182cdeb67fc3e2e2192a54d1834f8d23f6997107",
+                                      "scaleMode": "FIT",
+                                      "w": 84,
+                                      "h": 84
+                                    },
+                                    {
+                                      "name": "Power Banks",
+                                      "type": "TEXT",
+                                      "text": "Power Banks",
+                                      "fontSize": 13.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Image",
+                                      "type": "FRAME",
+                                      "imageHash": "be9659242bf942f2cebb471279c68fd2f3476e70",
+                                      "scaleMode": "FIT",
+                                      "w": 84,
+                                      "h": 84
+                                    },
+                                    {
+                                      "name": "Stylus Pens",
+                                      "type": "TEXT",
+                                      "text": "Stylus Pens",
+                                      "fontSize": 13.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Image",
+                                      "type": "FRAME",
+                                      "imageHash": "107246601519d03193e168c6c5089f4f980ae298",
+                                      "scaleMode": "FIT",
+                                      "w": 84,
+                                      "h": 84
+                                    },
+                                    {
+                                      "name": "Tote Bags",
+                                      "type": "TEXT",
+                                      "text": "Tote Bags",
+                                      "fontSize": 13.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Button",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Image",
+                                      "type": "FRAME",
+                                      "imageHash": "935c9c609d992d502ad174bf6d1520a2403fa36b",
+                                      "scaleMode": "FIT",
+                                      "w": 84,
+                                      "h": 84
+                                    },
+                                    {
+                                      "name": "Travel Xessories",
+                                      "type": "TEXT",
+                                      "text": "Travel Xessories",
+                                      "fontSize": 13.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "SemiBold"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Container:margin",
+              "type": "FRAME",
+              "children": [
+                {
+                  "name": "Container",
+                  "type": "FRAME",
+                  "children": [
+                    {
+                      "name": "Container",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Heading 2",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Featured products",
+                              "type": "TEXT",
+                              "text": "Featured products",
+                              "fontSize": 30,
+                              "fontFamily": "DM Sans",
+                              "fontWeight": "Bold"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Button - Scroll left",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "←",
+                                  "type": "TEXT",
+                                  "text": "←",
+                                  "fontSize": 16,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Regular"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Button - Scroll right",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "→",
+                                  "type": "TEXT",
+                                  "text": "→",
+                                  "fontSize": 16,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Regular"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Container:margin",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Container:scroll-content",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Article",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Container",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Image (Pro Series | Elite TPU Leather Business Card Holder)",
+                                          "type": "FRAME",
+                                          "imageHash": "3c358a04e40c80a00aa887885fda3efde8045c69",
+                                          "scaleMode": "FIT",
+                                          "w": 206,
+                                          "h": 177
+                                        },
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Container",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Container",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Container",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Article",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Container",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Image (Elite RFID Card Holder Wallet)",
+                                          "type": "FRAME",
+                                          "imageHash": "d037801c046eefff34f019153a9ea91baffec9bb",
+                                          "scaleMode": "FIT",
+                                          "w": 206,
+                                          "h": 177
+                                        },
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Container",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Container",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Container",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Article",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Container",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Image (Oceanside Key Chain)",
+                                          "type": "FRAME",
+                                          "imageHash": "a24cc640c63753fe99f2489e131fdecef5f18b57",
+                                          "scaleMode": "FIT",
+                                          "w": 206,
+                                          "h": 177
+                                        },
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Container",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Container",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Container",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Article",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Container",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Image (Sweethome Key Chain)",
+                                          "type": "FRAME",
+                                          "imageHash": "2ad78b5fd5576d2b595c6a12360f0b2a57be09f8",
+                                          "scaleMode": "FIT",
+                                          "w": 206,
+                                          "h": 177
+                                        },
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Container",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Container",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Container",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Article",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Container",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Image (Madison 4000 mAh Slim Power Bank)",
+                                          "type": "FRAME",
+                                          "imageHash": "c78217a11b2e09bc3fef325a7db3a2c2c09e71ee",
+                                          "scaleMode": "FIT",
+                                          "w": 206,
+                                          "h": 177
+                                        },
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Container",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Container",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Container",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Article",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Container",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Image (Summit 32oz Double Wall Vacuum Insulated 18/8)",
+                                          "type": "FRAME",
+                                          "imageHash": "c6841f4ff6daccda73c1f36dd03a50a757133582",
+                                          "scaleMode": "FIT",
+                                          "w": 206,
+                                          "h": 177
+                                        },
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Container",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Container",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Container",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Container:margin",
+              "type": "FRAME",
+              "children": [
+                {
+                  "name": "Container",
+                  "type": "FRAME",
+                  "children": [
+                    {
+                      "name": "Container",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Heading 2",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "All products",
+                              "type": "TEXT",
+                              "text": "All products",
+                              "fontSize": 30,
+                              "fontFamily": "DM Sans",
+                              "fontWeight": "Bold"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Container:margin",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Sidebar - Filters",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Heading 3",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Category",
+                                          "type": "TEXT",
+                                          "text": "Category",
+                                          "fontSize": 14,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Bold"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Label",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Italic Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Label",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Italic Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Label",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Italic Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Label",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Italic Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Label",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Italic Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Label",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Italic Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Label",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Italic Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Label",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Italic Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Label",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Italic Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Label",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Italic Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Label",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Italic Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Label",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Italic Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Label",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Italic Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Label",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Italic Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Label",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Italic Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Label",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Italic Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Label",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Italic Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Label",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Text",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Italic Text",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Horizontal Rule:margin",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Horizontal Rule",
+                                      "type": "FRAME"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Heading 3",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Pricing",
+                                      "type": "TEXT",
+                                      "text": "Pricing",
+                                      "fontSize": 14,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Label:margin",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Text",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Checkbox:margin",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Show items with listed pricing",
+                                          "type": "TEXT",
+                                          "text": "Show items with listed pricing",
+                                          "fontSize": 14.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Regular"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Label",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Text",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Checkbox:margin",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Featured only",
+                                          "type": "TEXT",
+                                          "text": "Featured only",
+                                          "fontSize": 14.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Regular"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Horizontal Rule:margin",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Horizontal Rule",
+                                      "type": "FRAME"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Clear all filters",
+                                          "type": "TEXT",
+                                          "text": "Clear all filters",
+                                          "fontSize": 14,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "SemiBold"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Text",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "27 products",
+                                          "type": "TEXT",
+                                          "text": "27 products",
+                                          "fontSize": 15.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "SemiBold"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Container",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Label",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "View",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container:margin",
+                                  "type": "FRAME"
+                                },
+                                {
+                                  "name": "Container:margin",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Container",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "Article",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Paragraph",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Priced items (TX-2107, TX-2207, TX-8810, TX-916958",
+                                      "type": "TEXT",
+                                      "text": "Priced items (TX-2107, TX-2207, TX-8810, TX-916958, EX-8067, DW-8966) use figures from the live site. Other cards are image placeholders; connect the product feed for real names, SKUs and tiers.",
+                                      "fontSize": 13,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Regular"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Container:margin",
+              "type": "FRAME",
+              "children": [
+                {
+                  "name": "Container",
+                  "type": "FRAME",
+                  "children": [
+                    {
+                      "name": "Container",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Heading 2",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Promotional collections",
+                              "type": "TEXT",
+                              "text": "Promotional collections",
+                              "fontSize": 30,
+                              "fontFamily": "DM Sans",
+                              "fontWeight": "Bold"
+                            },
+                            {
+                              "name": "Text",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "PROPOSED",
+                                  "type": "TEXT",
+                                  "text": "PROPOSED",
+                                  "fontSize": 11,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Bold"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Container:margin",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Image",
+                                  "type": "FRAME",
+                                  "imageHash": "007bffdc38cfa9d8556b0bc47bf31b5a1b01996b",
+                                  "scaleMode": "FILL",
+                                  "w": 641,
+                                  "h": 240
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Heading 3",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Travel essentials",
+                                          "type": "TEXT",
+                                          "text": "Travel essentials",
+                                          "fontSize": 26,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Bold"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Luggage tags, organisers and carry gear.",
+                                      "type": "TEXT",
+                                      "text": "Luggage tags, organisers and carry gear.",
+                                      "fontSize": 14.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Regular"
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Shop travel",
+                                          "type": "TEXT",
+                                          "text": "Shop travel",
+                                          "fontSize": 14,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "SemiBold"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Image",
+                                  "type": "FRAME",
+                                  "imageHash": "13127cfcbfbd9d26786aef9ed1d42ea4cdcb7739",
+                                  "scaleMode": "FILL",
+                                  "w": 641,
+                                  "h": 240
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Heading 3",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Small gifts, big reach",
+                                          "type": "TEXT",
+                                          "text": "Small gifts, big reach",
+                                          "fontSize": 26,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Bold"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Key chains and novelties at low price points.",
+                                      "type": "TEXT",
+                                      "text": "Key chains and novelties at low price points.",
+                                      "fontSize": 14.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Regular"
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Shop novelties",
+                                          "type": "TEXT",
+                                          "text": "Shop novelties",
+                                          "fontSize": 14,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "SemiBold"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Container:margin",
+              "type": "FRAME",
+              "children": [
+                {
+                  "name": "Container",
+                  "type": "FRAME",
+                  "children": [
+                    {
+                      "name": "Container",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Heading 2",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Shop by industry",
+                              "type": "TEXT",
+                              "text": "Shop by industry",
+                              "fontSize": 30,
+                              "fontFamily": "DM Sans",
+                              "fontWeight": "Bold"
+                            },
+                            {
+                              "name": "Text",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "PROPOSED",
+                                  "type": "TEXT",
+                                  "text": "PROPOSED",
+                                  "fontSize": 11,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Bold"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Container:margin",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Heading 3",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Corporate gifting",
+                                      "type": "TEXT",
+                                      "text": "Corporate gifting",
+                                      "fontSize": 18,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Journals & Jotters",
+                                          "type": "TEXT",
+                                          "text": "Journals & Jotters",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Drinkware",
+                                          "type": "TEXT",
+                                          "text": "Drinkware",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Padfolios",
+                                          "type": "TEXT",
+                                          "text": "Padfolios",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Heading 3",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Education",
+                                      "type": "TEXT",
+                                      "text": "Education",
+                                      "fontSize": 18,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Tote Bags",
+                                          "type": "TEXT",
+                                          "text": "Tote Bags",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Stylus Pens",
+                                          "type": "TEXT",
+                                          "text": "Stylus Pens",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Drinkware",
+                                          "type": "TEXT",
+                                          "text": "Drinkware",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Heading 3",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Healthcare",
+                                      "type": "TEXT",
+                                      "text": "Healthcare",
+                                      "fontSize": 18,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Metal Pens",
+                                          "type": "TEXT",
+                                          "text": "Metal Pens",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Tote Bags",
+                                          "type": "TEXT",
+                                          "text": "Tote Bags",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Power Banks",
+                                          "type": "TEXT",
+                                          "text": "Power Banks",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Heading 3",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Financial",
+                                      "type": "TEXT",
+                                      "text": "Financial",
+                                      "fontSize": 18,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Padfolios",
+                                          "type": "TEXT",
+                                          "text": "Padfolios",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Business Card Cases",
+                                          "type": "TEXT",
+                                          "text": "Business Card Cases",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Metal Pens",
+                                          "type": "TEXT",
+                                          "text": "Metal Pens",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Heading 3",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Hospitality",
+                                      "type": "TEXT",
+                                      "text": "Hospitality",
+                                      "fontSize": 18,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Luggage Tags",
+                                          "type": "TEXT",
+                                          "text": "Luggage Tags",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Travel Xessories",
+                                          "type": "TEXT",
+                                          "text": "Travel Xessories",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Drinkware",
+                                          "type": "TEXT",
+                                          "text": "Drinkware",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Heading 3",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Events and trade shows",
+                                      "type": "TEXT",
+                                      "text": "Events and trade shows",
+                                      "fontSize": 18,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Tote Bags",
+                                          "type": "TEXT",
+                                          "text": "Tote Bags",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Mobile Xessories",
+                                          "type": "TEXT",
+                                          "text": "Mobile Xessories",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Luggage Tags",
+                                          "type": "TEXT",
+                                          "text": "Luggage Tags",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Heading 3",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Non-profit",
+                                      "type": "TEXT",
+                                      "text": "Non-profit",
+                                      "fontSize": 18,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Tote Bags",
+                                          "type": "TEXT",
+                                          "text": "Tote Bags",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Novelties",
+                                          "type": "TEXT",
+                                          "text": "Novelties",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Drinkware",
+                                          "type": "TEXT",
+                                          "text": "Drinkware",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Heading 3",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Technology",
+                                      "type": "TEXT",
+                                      "text": "Technology",
+                                      "fontSize": 18,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Power Banks",
+                                          "type": "TEXT",
+                                          "text": "Power Banks",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Mobile Xessories",
+                                          "type": "TEXT",
+                                          "text": "Mobile Xessories",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Bluetooth Speakers",
+                                          "type": "TEXT",
+                                          "text": "Bluetooth Speakers",
+                                          "fontSize": 13.5,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Medium"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Container:margin",
+              "type": "FRAME",
+              "children": [
+                {
+                  "name": "Container",
+                  "type": "FRAME",
+                  "children": [
+                    {
+                      "name": "Container",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Heading 2",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Why distributors choose Posh Xessories",
+                              "type": "TEXT",
+                              "text": "Why distributors choose Posh Xessories",
+                              "fontSize": 30,
+                              "fontFamily": "DM Sans",
+                              "fontWeight": "Bold"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Container:margin",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "1",
+                                      "type": "TEXT",
+                                      "text": "1",
+                                      "fontSize": 15.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Bold Text",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Rated #1 in California",
+                                      "type": "TEXT",
+                                      "text": "Rated #1 in California",
+                                      "fontSize": 17,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Top 10 in the nation for customer satisfaction.",
+                                  "type": "TEXT",
+                                  "text": "Top 10 in the nation for customer satisfaction.",
+                                  "fontSize": 14.5,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Regular"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "★",
+                                      "type": "TEXT",
+                                      "text": "★",
+                                      "fontSize": 15.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Bold Text",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "ASI 5-Star supplier",
+                                      "type": "TEXT",
+                                      "text": "ASI 5-Star supplier",
+                                      "fontSize": 17,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Also a PRO Supplier and 2018 SAGE Rated Supplier.",
+                                  "type": "TEXT",
+                                  "text": "Also a PRO Supplier and 2018 SAGE Rated Supplier.",
+                                  "fontSize": 14.5,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Regular"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "$",
+                                      "type": "TEXT",
+                                      "text": "$",
+                                      "fontSize": 15.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Bold Text",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Published decoration pricing",
+                                      "type": "TEXT",
+                                      "text": "Published decoration pricing",
+                                      "fontSize": 17,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "See imprint costs in the Decoration Price Guide.",
+                                  "type": "TEXT",
+                                  "text": "See imprint costs in the Decoration Price Guide.",
+                                  "fontSize": 14.5,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Regular"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "✉",
+                                      "type": "TEXT",
+                                      "text": "✉",
+                                      "fontSize": 15.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Bold Text",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Quote or sample in one step",
+                                      "type": "TEXT",
+                                      "text": "Quote or sample in one step",
+                                      "fontSize": 17,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Ask from any product card.",
+                                      "type": "TEXT",
+                                      "text": "Ask from any product card. ",
+                                      "fontSize": 14.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Regular"
+                                    },
+                                    {
+                                      "name": "Italic Text",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "PROPOSED",
+                                          "type": "TEXT",
+                                          "text": "PROPOSED",
+                                          "fontSize": 11,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "Bold"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Container:margin",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Image (Awards and supplier ratings)",
+                              "type": "FRAME",
+                              "imageHash": "7764c7873cf27acd6327f7f3b1158e8d654e888d",
+                              "scaleMode": "FILL",
+                              "w": 1296,
+                              "h": 111
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Container:margin",
+              "type": "FRAME",
+              "children": [
+                {
+                  "name": "Container",
+                  "type": "FRAME",
+                  "children": [
+                    {
+                      "name": "Container",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Heading 2",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Distributors: log in for your pricing.",
+                                  "type": "TEXT",
+                                  "text": "Distributors: log in for your pricing.",
+                                  "fontSize": 30,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Bold"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Paragraph:margin",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Track orders, reorder faster and manage your quote",
+                                  "type": "TEXT",
+                                  "text": "Track orders, reorder faster and manage your quotes. New here? Register to get started.",
+                                  "fontSize": 15.5,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "Regular"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Distributor login",
+                                  "type": "TEXT",
+                                  "text": "Distributor login",
+                                  "fontSize": 15.5,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "SemiBold"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Button",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Register",
+                                  "type": "TEXT",
+                                  "text": "Register",
+                                  "fontSize": 15.5,
+                                  "fontFamily": "DM Sans",
+                                  "fontWeight": "SemiBold"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Container:margin",
+              "type": "FRAME",
+              "children": [
+                {
+                  "name": "Container",
+                  "type": "FRAME",
+                  "children": [
+                    {
+                      "name": "Container",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Heading 2",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Promotions and new products",
+                              "type": "TEXT",
+                              "text": "Promotions and new products",
+                              "fontSize": 22,
+                              "fontFamily": "DM Sans",
+                              "fontWeight": "Bold"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Paragraph",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Special offers, straight to your inbox.",
+                              "type": "TEXT",
+                              "text": "Special offers, straight to your inbox.",
+                              "fontSize": 15.5,
+                              "fontFamily": "DM Sans",
+                              "fontWeight": "Regular"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Form",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Email Input - Email",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Work email",
+                              "type": "TEXT",
+                              "text": "Work email",
+                              "fontSize": 15.5,
+                              "fontFamily": "DM Sans",
+                              "fontWeight": "Regular"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Button",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Sign up",
+                              "type": "TEXT",
+                              "text": "Sign up",
+                              "fontSize": 15.5,
+                              "fontFamily": "DM Sans",
+                              "fontWeight": "SemiBold"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Footer:margin",
+          "type": "FRAME",
+          "children": [
+            {
+              "name": "Footer",
+              "type": "FRAME",
+              "children": [
+                {
+                  "name": "Container:margin",
+                  "type": "FRAME",
+                  "children": [
+                    {
+                      "name": "Container",
+                      "type": "FRAME",
+                      "children": [
+                        {
+                          "name": "Container",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Heading 4",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "About us",
+                                      "type": "TEXT",
+                                      "text": "About us",
+                                      "fontSize": 15,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Paragraph:margin",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Posh Xessories, Inc. was started with one mission:",
+                                      "type": "TEXT",
+                                      "text": "Posh Xessories, Inc. was started with one mission: help people make the best impressions at the best price.",
+                                      "fontSize": 14.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Regular"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Container",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Button",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "Click to call",
+                                          "type": "TEXT",
+                                          "text": "Click to call",
+                                          "fontSize": 14,
+                                          "fontFamily": "DM Sans",
+                                          "fontWeight": "SemiBold"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Heading 4",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Corporate office",
+                                      "type": "TEXT",
+                                      "text": "Corporate office",
+                                      "fontSize": 15,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Paragraph",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Chino, CA 91710, USA",
+                                      "type": "TEXT",
+                                      "text": "Chino, CA 91710, USA",
+                                      "fontSize": 14.5,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Regular"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Heading 4",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Common FAQ",
+                                      "type": "TEXT",
+                                      "text": "Common FAQ",
+                                      "fontSize": 15,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "List:margin",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "List",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Heading 4",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Connect with us",
+                                      "type": "TEXT",
+                                      "text": "Connect with us",
+                                      "fontSize": 15,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Bold"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "List:margin",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "List",
+                                      "type": "FRAME",
+                                      "children": [
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME"
+                                        },
+                                        {
+                                          "name": "List Item",
+                                          "type": "FRAME"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Container:margin",
+                          "type": "FRAME",
+                          "children": [
+                            {
+                              "name": "Container",
+                              "type": "FRAME",
+                              "children": [
+                                {
+                                  "name": "Text",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "Concept 02 design prototype. Not connected to the ",
+                                      "type": "TEXT",
+                                      "text": "Concept 02 design prototype. Not connected to the live store.",
+                                      "fontSize": 13,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Regular"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Text",
+                                  "type": "FRAME",
+                                  "children": [
+                                    {
+                                      "name": "© PoshXessories. All rights reserved.",
+                                      "type": "TEXT",
+                                      "text": "© PoshXessories. All rights reserved.",
+                                      "fontSize": 13,
+                                      "fontFamily": "DM Sans",
+                                      "fontWeight": "Regular"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Button",
+      "type": "FRAME",
+      "children": [
+        {
+          "name": "Design notes",
+          "type": "TEXT",
+          "text": "Design notes",
+          "fontSize": 13,
+          "fontFamily": "DM Sans",
+          "fontWeight": "SemiBold"
+        }
+      ]
+    }
+  ]
+}
