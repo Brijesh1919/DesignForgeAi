@@ -58,8 +58,7 @@ export function safeSetFillHorizontal(node: SceneNode): boolean {
   if (!("layoutSizingHorizontal" in node)) return false;
   if (!canUseAutoLayoutSizing(node)) {
     console.warn(
-      `[DesignForge][Layout WARNING] Prevented setting horizontal FILL on "${node.name || node.type}" because parent "${
-        node.parent?.name || "canvas"
+      `[DesignForge][Layout WARNING] Prevented setting horizontal FILL on "${node.name || node.type}" because parent "${node.parent?.name || "canvas"
       }" is not Auto Layout.`
     );
     safeSetFixedHorizontal(node);
@@ -82,8 +81,7 @@ export function safeSetFillVertical(node: SceneNode): boolean {
   if (!("layoutSizingVertical" in node)) return false;
   if (!canUseAutoLayoutSizing(node)) {
     console.warn(
-      `[DesignForge][Layout WARNING] Prevented setting vertical FILL on "${node.name || node.type}" because parent "${
-        node.parent?.name || "canvas"
+      `[DesignForge][Layout WARNING] Prevented setting vertical FILL on "${node.name || node.type}" because parent "${node.parent?.name || "canvas"
       }" is not Auto Layout.`
     );
     safeSetFixedVertical(node);
@@ -104,19 +102,26 @@ export function safeSetFillVertical(node: SceneNode): boolean {
  */
 export function safeSetHugHorizontal(node: SceneNode): boolean {
   if (!("layoutSizingHorizontal" in node)) return false;
-  if (!canUseAutoLayoutSizing(node)) {
-    safeSetFixedHorizontal(node);
-    return false;
-  }
-  if ("layoutMode" in node && (node as any).layoutMode === "NONE") {
+  // If the node itself is an Auto Layout frame, it can hug its primary/counter axis!
+  const isSelfAutoLayout = "layoutMode" in node && (node as any).layoutMode !== "NONE";
+  if (!isSelfAutoLayout && !canUseAutoLayoutSizing(node)) {
     safeSetFixedHorizontal(node);
     return false;
   }
   try {
+    if (isSelfAutoLayout) {
+      if ((node as any).layoutMode === "HORIZONTAL") {
+        (node as any).primaryAxisSizingMode = "AUTO";
+      } else {
+        (node as any).counterAxisSizingMode = "AUTO";
+      }
+    }
     (node as any).layoutSizingHorizontal = "HUG";
     return true;
   } catch (error) {
-    safeSetFixedHorizontal(node);
+    if (!isSelfAutoLayout) {
+      safeSetFixedHorizontal(node);
+    }
     return false;
   }
 }
@@ -126,19 +131,26 @@ export function safeSetHugHorizontal(node: SceneNode): boolean {
  */
 export function safeSetHugVertical(node: SceneNode): boolean {
   if (!("layoutSizingVertical" in node)) return false;
-  if (!canUseAutoLayoutSizing(node)) {
-    safeSetFixedVertical(node);
-    return false;
-  }
-  if ("layoutMode" in node && (node as any).layoutMode === "NONE") {
+  // If the node itself is an Auto Layout frame, it can hug its vertical contents!
+  const isSelfAutoLayout = "layoutMode" in node && (node as any).layoutMode !== "NONE";
+  if (!isSelfAutoLayout && !canUseAutoLayoutSizing(node)) {
     safeSetFixedVertical(node);
     return false;
   }
   try {
+    if (isSelfAutoLayout) {
+      if ((node as any).layoutMode === "VERTICAL") {
+        (node as any).primaryAxisSizingMode = "AUTO";
+      } else {
+        (node as any).counterAxisSizingMode = "AUTO";
+      }
+    }
     (node as any).layoutSizingVertical = "HUG";
     return true;
   } catch (error) {
-    safeSetFixedVertical(node);
+    if (!isSelfAutoLayout) {
+      safeSetFixedVertical(node);
+    }
     return false;
   }
 }
@@ -203,8 +215,7 @@ export function safeSetAbsolute(node: SceneNode): boolean {
   if (!("layoutPositioning" in node)) return false;
   if (!canUseAutoLayoutSizing(node)) {
     console.warn(
-      `[DesignForge][Layout WARNING] Prevented setting layoutPositioning ABSOLUTE on "${
-        node.name || node.type
+      `[DesignForge][Layout WARNING] Prevented setting layoutPositioning ABSOLUTE on "${node.name || node.type
       }" because parent "${node.parent?.name || "canvas"}" is not Auto Layout.`
     );
     safeSetAutoPositioning(node);
@@ -379,8 +390,8 @@ export function determineSizingBehavior(
     typeof element.style?.cornerRadius === "number"
       ? element.style.cornerRadius
       : typeof element.style?.cornerRadius?.topLeft === "number"
-      ? element.style.cornerRadius.topLeft
-      : 0;
+        ? element.style.cornerRadius.topLeft
+        : 0;
 
   const isCapsuleOrPillShape =
     cornerRadiusVal >= 12 || (sourceHeight > 0 && cornerRadiusVal >= sourceHeight / 2 - 4);
