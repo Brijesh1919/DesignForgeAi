@@ -41,12 +41,13 @@ import { createFigmaMotionAnimation } from "./generators/figma-motion-animator";
 import { generateNightToDayMotionScene } from "./generators/night-to-day-animator";
 import { generateColorSwitcherComponent } from "./generators/color-switcher-component";
 import { generateLoaderBufferAnimation } from "./generators/loader-buffer-animator";
+import { convertToResponsiveFrame } from "./generators/responsive-converter";
 
 // ─── Plugin Init ─────────────────────────────────────────────
 
 figma.showUI(__html__, {
-  width: 460,
-  height: 660,
+  width: 520,
+  height: 700,
   themeColors: true,
   title: "DesignForge AI",
 });
@@ -112,6 +113,10 @@ figma.ui.onmessage = async (msg: UIToPluginMessage) => {
 
     case "EXPORT_FRAME_CODE":
       await handleExportFrameCode(msg.payload?.requestId, msg.payload?.nodeId);
+      break;
+
+    case "CONVERT_RESPONSIVE_FRAME":
+      await handleConvertResponsiveFrame(msg.payload);
       break;
 
     case "EXECUTE_ADJUST_MOBILE_LAYOUT":
@@ -1303,6 +1308,36 @@ async function handleExportFrameCode(requestId?: string, nodeId?: string): Promi
   }
 }
 
+async function handleConvertResponsiveFrame(payload: any = {}): Promise<void> {
+  try {
+    figma.notify(`📱 Converting to ${payload.targetWidth || 412}px responsive layout...`, { timeout: 3000 });
+    const result = await convertToResponsiveFrame(payload);
+
+    figma.ui.postMessage({
+      type: "CONVERT_RESPONSIVE_RESULT",
+      payload: {
+        requestId: payload.requestId,
+        ...result,
+      },
+    });
+
+    if (result.success) {
+      figma.notify(`✨ Converted "${result.frameName}" to ${result.targetWidth}px!`, { timeout: 3500 });
+    } else {
+      figma.notify(`❌ Conversion error: ${result.error || "Failed to convert frame"}`, { error: true, timeout: 4000 });
+    }
+  } catch (err: any) {
+    figma.ui.postMessage({
+      type: "CONVERT_RESPONSIVE_RESULT",
+      payload: {
+        requestId: payload.requestId,
+        success: false,
+        error: err.message || "Unexpected error converting responsive frame",
+      },
+    });
+    figma.notify(`❌ Error: ${err.message || "Unknown error"}`, { error: true, timeout: 4000 });
+  }
+}
 
 async function handleAdjustMobileLayout(payload: any = {}): Promise<void> {
   try {

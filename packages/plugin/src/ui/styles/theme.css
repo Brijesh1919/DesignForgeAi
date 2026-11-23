@@ -9,7 +9,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 /* ─── CSS Reset ───────────────────────────────────────────── */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -140,7 +142,9 @@
 }
 
 /* ─── Base Styles ─────────────────────────────────────────── */
-html, body, #root {
+html,
+body,
+#root {
   width: 100%;
   height: 100%;
   font-family: var(--font-sans);
@@ -255,24 +259,58 @@ html, body, #root {
 }
 
 /* ─── Feature Navigation Tabs ───────────────────────────── */
+.feature-tabs-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  flex-shrink: 0 !important;
+  min-height: 42px;
+  height: 42px;
+}
+
+.feature-tabs-track,
 .feature-tabs {
   display: flex;
+  align-items: center;
   background: var(--bg-secondary);
   border-radius: var(--radius-md);
-  padding: 5px;
+  padding: 4px;
   border: 1px solid var(--border-default);
   gap: 4px;
   box-shadow: var(--shadow-sm);
   width: 100%;
+  height: 100%;
+  min-height: 42px;
+  flex-shrink: 0 !important;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-default) transparent;
+  scroll-behavior: smooth;
+  user-select: none;
+}
+
+.feature-tabs-track::-webkit-scrollbar,
+.feature-tabs::-webkit-scrollbar {
+  height: 3px;
+}
+
+.feature-tabs-track::-webkit-scrollbar-thumb,
+.feature-tabs::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 4px;
 }
 
 .feature-tab {
-  flex: 1;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 6px;
+  padding: 0 12px;
+  height: 32px;
+  min-height: 32px;
   border-radius: var(--radius-sm);
   border: none;
   background: transparent;
@@ -286,6 +324,17 @@ html, body, #root {
   user-select: none;
 }
 
+.feature-tab__icon {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+.feature-tab__label {
+  display: inline-block;
+  line-height: 1;
+}
+
 .feature-tab:hover:not(.feature-tab--active) {
   background: var(--bg-hover);
   color: var(--text-primary);
@@ -295,6 +344,34 @@ html, body, #root {
   background: var(--accent-gradient);
   color: #ffffff !important;
   box-shadow: 0 2px 8px var(--accent-primary-glow);
+}
+
+.tabs-nav-btn {
+  width: 24px;
+  height: 34px;
+  min-height: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+  z-index: 2;
+}
+
+.tabs-nav-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: scale(1.05);
 }
 
 /* ─── Upload Zone ─────────────────────────────────────────── */
@@ -947,22 +1024,37 @@ html, body, #root {
 
 /* ─── Animations ──────────────────────────────────────────── */
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 @keyframes pulse-glow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
   }
+
   50% {
     box-shadow: 0 0 40px rgba(99, 102, 241, 0.4);
   }
 }
 
 @keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes slide-up {
@@ -970,6 +1062,7 @@ html, body, #root {
     transform: translateY(20px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -977,19 +1070,39 @@ html, body, #root {
 }
 
 @keyframes bounce-in {
-  0% { transform: scale(0); opacity: 0; }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 /* ─── Utility ─────────────────────────────────────────────── */

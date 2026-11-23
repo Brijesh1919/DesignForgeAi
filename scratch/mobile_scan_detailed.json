@@ -1,0 +1,1350 @@
+{
+  "name": "Posh Xessories | Mobile UI (412)",
+  "type": "FRAME",
+  "w": 412,
+  "h": 5061,
+  "layoutMode": "VERTICAL",
+  "sizingH": "FIXED",
+  "sizingV": "HUG",
+  "children": [
+    {
+      "name": "Status Bar",
+      "type": "FRAME",
+      "w": 412,
+      "h": 33,
+      "layoutMode": "HORIZONTAL",
+      "sizingH": "FILL",
+      "sizingV": "HUG",
+      "children": [
+        {
+          "name": "9:41",
+          "type": "TEXT",
+          "w": 27,
+          "h": 15,
+          "sizingH": "HUG",
+          "sizingV": "HUG"
+        },
+        {
+          "name": "Icons",
+          "type": "FRAME",
+          "w": 51,
+          "h": 13,
+          "layoutMode": "HORIZONTAL",
+          "sizingH": "HUG",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "5G",
+              "type": "TEXT",
+              "w": 16,
+              "h": 13,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "100%",
+              "type": "TEXT",
+              "w": 29,
+              "h": 13,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Top Certification Strip",
+      "type": "FRAME",
+      "w": 412,
+      "h": 27,
+      "layoutMode": "HORIZONTAL",
+      "sizingH": "FILL",
+      "sizingV": "HUG",
+      "children": [
+        {
+          "name": "ASI 79028 | PPAI 206478 | SAGE 64870",
+          "type": "TEXT",
+          "w": 199,
+          "h": 13,
+          "sizingH": "HUG",
+          "sizingV": "HUG"
+        },
+        {
+          "name": "(800) 555-POSH",
+          "type": "TEXT",
+          "w": 80,
+          "h": 13,
+          "sizingH": "HUG",
+          "sizingV": "HUG"
+        }
+      ]
+    },
+    {
+      "name": "Mobile App Header",
+      "type": "FRAME",
+      "w": 412,
+      "h": 52,
+      "layoutMode": "HORIZONTAL",
+      "sizingH": "FILL",
+      "sizingV": "HUG",
+      "children": [
+        {
+          "name": "Brand",
+          "type": "FRAME",
+          "w": 166,
+          "h": 19,
+          "layoutMode": "HORIZONTAL",
+          "sizingH": "HUG",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "PX Badge",
+              "type": "FRAME",
+              "w": 19,
+              "h": 16,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Text",
+              "type": "FRAME",
+              "w": 139,
+              "h": 19,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "Actions",
+          "type": "FRAME",
+          "w": 107,
+          "h": 26,
+          "layoutMode": "HORIZONTAL",
+          "sizingH": "HUG",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Cart Badge",
+              "type": "FRAME",
+              "w": 42,
+              "h": 25,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Request Quote Pill",
+              "type": "FRAME",
+              "w": 57,
+              "h": 26,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Mobile Quick Links",
+      "type": "FRAME",
+      "w": 412,
+      "h": 33,
+      "layoutMode": "HORIZONTAL",
+      "sizingH": "FILL",
+      "sizingV": "HUG",
+      "children": [
+        {
+          "name": "Products",
+          "type": "TEXT",
+          "w": 49,
+          "h": 14,
+          "sizingH": "HUG",
+          "sizingV": "HUG"
+        },
+        {
+          "name": "E-flyers",
+          "type": "TEXT",
+          "w": 45,
+          "h": 15,
+          "sizingH": "HUG",
+          "sizingV": "HUG"
+        },
+        {
+          "name": "How to Order",
+          "type": "TEXT",
+          "w": 77,
+          "h": 15,
+          "sizingH": "HUG",
+          "sizingV": "HUG"
+        },
+        {
+          "name": "My Account",
+          "type": "TEXT",
+          "w": 69,
+          "h": 15,
+          "sizingH": "HUG",
+          "sizingV": "HUG"
+        },
+        {
+          "name": "Login",
+          "type": "TEXT",
+          "w": 32,
+          "h": 15,
+          "sizingH": "HUG",
+          "sizingV": "HUG"
+        }
+      ]
+    },
+    {
+      "name": "Section 1: Hero & Discovery",
+      "type": "FRAME",
+      "w": 412,
+      "h": 658,
+      "layoutMode": "VERTICAL",
+      "sizingH": "FILL",
+      "sizingV": "HUG",
+      "children": [
+        {
+          "name": "Eyebrow",
+          "type": "FRAME",
+          "w": 380,
+          "h": 23,
+          "layoutMode": "HORIZONTAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "★ PREMIUM IMPRINT & SOURCING COLLECTION",
+              "type": "TEXT",
+              "w": 268,
+              "h": 13,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "Promotional products your clients will keep.",
+          "type": "TEXT",
+          "w": 380,
+          "h": 68,
+          "sizingH": "FIXED",
+          "sizingV": "FIXED"
+        },
+        {
+          "name": "Search by name or SKU, or start with a category. Precision enterprise sourcing with California's fastest proof turnaround.",
+          "type": "TEXT",
+          "w": 380,
+          "h": 60,
+          "sizingH": "FIXED",
+          "sizingV": "FIXED"
+        },
+        {
+          "name": "Mobile Search Bar",
+          "type": "FRAME",
+          "w": 380,
+          "h": 34,
+          "layoutMode": "HORIZONTAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Search by SKU or keyword...",
+              "type": "TEXT",
+              "w": 175,
+              "h": 16,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Search Button",
+              "type": "FRAME",
+              "w": 67,
+              "h": 31,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "Popular Tags",
+          "type": "FRAME",
+          "w": 380,
+          "h": 23,
+          "layoutMode": "HORIZONTAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "POPULAR:",
+              "type": "TEXT",
+              "w": 54,
+              "h": 13,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Drinkware",
+              "type": "FRAME",
+              "w": 72,
+              "h": 23,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Journals",
+              "type": "FRAME",
+              "w": 63,
+              "h": 23,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Power banks",
+              "type": "FRAME",
+              "w": 86,
+              "h": 23,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Tote bags",
+              "type": "FRAME",
+              "w": 71,
+              "h": 23,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "Hero Visual Card",
+          "type": "FRAME",
+          "w": 380,
+          "h": 240,
+          "layoutMode": "NONE",
+          "sizingH": "FIXED",
+          "sizingV": "FIXED",
+          "children": [
+            {
+              "name": "Journal Showcase Photo",
+              "type": "FRAME",
+              "w": 380,
+              "h": 240,
+              "layoutMode": "NONE",
+              "sizingH": "FIXED",
+              "sizingV": "FIXED"
+            },
+            {
+              "name": "Featured SKU Badge",
+              "type": "FRAME",
+              "w": 176,
+              "h": 58,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "FIXED"
+            }
+          ]
+        },
+        {
+          "name": "Action CTAs",
+          "type": "FRAME",
+          "w": 380,
+          "h": 19,
+          "layoutMode": "HORIZONTAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Explore Catalog Button",
+              "type": "FRAME",
+              "w": 95,
+              "h": 16,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Request Custom Quote Button",
+              "type": "FRAME",
+              "w": 92,
+              "h": 19,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "Proofing Highlight",
+          "type": "FRAME",
+          "w": 380,
+          "h": 31,
+          "layoutMode": "HORIZONTAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "CALIFORNIA IN-HOUSE:",
+              "type": "TEXT",
+              "w": 123,
+              "h": 13,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Laser, Screen & Deboss Mastered",
+              "type": "TEXT",
+              "w": 177,
+              "h": 13,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section 2: Category Tiles",
+      "type": "FRAME",
+      "w": 412,
+      "h": 624,
+      "layoutMode": "VERTICAL",
+      "sizingH": "FILL",
+      "sizingV": "HUG",
+      "children": [
+        {
+          "name": "Category Header",
+          "type": "FRAME",
+          "w": 380,
+          "h": 60,
+          "layoutMode": "VERTICAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "FAST PROCUREMENT NAVIGATION",
+              "type": "TEXT",
+              "w": 200,
+              "h": 13,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Explore Core Product Categories",
+              "type": "TEXT",
+              "w": 321,
+              "h": 24,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "View All 18 Catalog Categories →",
+              "type": "TEXT",
+              "w": 187,
+              "h": 15,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "Category Grid (2 Columns)",
+          "type": "FRAME",
+          "w": 380,
+          "h": 500,
+          "layoutMode": "VERTICAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Row 1",
+              "type": "FRAME",
+              "w": 380,
+              "h": 116,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "FILL",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Row 2",
+              "type": "FRAME",
+              "w": 380,
+              "h": 116,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "FILL",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Row 3",
+              "type": "FRAME",
+              "w": 380,
+              "h": 116,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "FILL",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Row 4",
+              "type": "FRAME",
+              "w": 380,
+              "h": 116,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "FILL",
+              "sizingV": "HUG"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section 3: Filter Chips",
+      "type": "FRAME",
+      "w": 412,
+      "h": 81,
+      "layoutMode": "VERTICAL",
+      "sizingH": "FILL",
+      "sizingV": "HUG",
+      "children": [
+        {
+          "name": "Summary",
+          "type": "FRAME",
+          "w": 378,
+          "h": 13,
+          "layoutMode": "HORIZONTAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Showing 4 Featured Distributor Products",
+              "type": "TEXT",
+              "w": 207,
+              "h": 13,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "•",
+              "type": "TEXT",
+              "w": 6,
+              "h": 12,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Live Tiering",
+              "type": "TEXT",
+              "w": 62,
+              "h": 13,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "Filter Chips",
+          "type": "FRAME",
+          "w": 378,
+          "h": 28,
+          "layoutMode": "HORIZONTAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "All Products",
+              "type": "FRAME",
+              "w": 87,
+              "h": 25,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Drinkware",
+              "type": "FRAME",
+              "w": 82,
+              "h": 28,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Journals",
+              "type": "FRAME",
+              "w": 73,
+              "h": 28,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Power & Tech",
+              "type": "FRAME",
+              "w": 101,
+              "h": 28,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Accessories",
+              "type": "FRAME",
+              "w": 94,
+              "h": 28,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section 4: Featured Products",
+      "type": "FRAME",
+      "w": 412,
+      "h": 1748,
+      "layoutMode": "VERTICAL",
+      "sizingH": "FILL",
+      "sizingV": "HUG",
+      "children": [
+        {
+          "name": "Header",
+          "type": "FRAME",
+          "w": 380,
+          "h": 66,
+          "layoutMode": "VERTICAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Featured products",
+              "type": "TEXT",
+              "w": 198,
+              "h": 27,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Price per unit. It drops as quantity rises.",
+              "type": "TEXT",
+              "w": 244,
+              "h": 16,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "View all products →",
+              "type": "TEXT",
+              "w": 112,
+              "h": 15,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "Product: TX-2107",
+          "type": "FRAME",
+          "w": 380,
+          "h": 366,
+          "layoutMode": "VERTICAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Image Area",
+              "type": "FRAME",
+              "w": 380,
+              "h": 200,
+              "layoutMode": "NONE",
+              "sizingH": "FIXED",
+              "sizingV": "FIXED"
+            },
+            {
+              "name": "Content",
+              "type": "FRAME",
+              "w": 378,
+              "h": 164,
+              "layoutMode": "VERTICAL",
+              "sizingH": "FILL",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "Product: DW-8966",
+          "type": "FRAME",
+          "w": 380,
+          "h": 366,
+          "layoutMode": "VERTICAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Image Area",
+              "type": "FRAME",
+              "w": 380,
+              "h": 200,
+              "layoutMode": "NONE",
+              "sizingH": "FIXED",
+              "sizingV": "FIXED"
+            },
+            {
+              "name": "Content",
+              "type": "FRAME",
+              "w": 378,
+              "h": 164,
+              "layoutMode": "VERTICAL",
+              "sizingH": "FILL",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "Product: EX-8067",
+          "type": "FRAME",
+          "w": 380,
+          "h": 366,
+          "layoutMode": "VERTICAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Image Area",
+              "type": "FRAME",
+              "w": 380,
+              "h": 200,
+              "layoutMode": "NONE",
+              "sizingH": "FIXED",
+              "sizingV": "FIXED"
+            },
+            {
+              "name": "Content",
+              "type": "FRAME",
+              "w": 378,
+              "h": 164,
+              "layoutMode": "VERTICAL",
+              "sizingH": "FILL",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "Product: TX-916958",
+          "type": "FRAME",
+          "w": 380,
+          "h": 366,
+          "layoutMode": "VERTICAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Image Area",
+              "type": "FRAME",
+              "w": 380,
+              "h": 200,
+              "layoutMode": "NONE",
+              "sizingH": "FIXED",
+              "sizingV": "FIXED"
+            },
+            {
+              "name": "Content",
+              "type": "FRAME",
+              "w": 378,
+              "h": 164,
+              "layoutMode": "VERTICAL",
+              "sizingH": "FILL",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "Disclaimer Note",
+          "type": "FRAME",
+          "w": 380,
+          "h": 70,
+          "layoutMode": "HORIZONTAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Prices for the featured items come from the live site. Other products are image placeholders; connect the product feed for real names, SKUs and tiers.",
+              "type": "TEXT",
+              "w": 352,
+              "h": 48,
+              "sizingH": "FIXED",
+              "sizingV": "FIXED"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section 5: Assistance Banner",
+      "type": "FRAME",
+      "w": 412,
+      "h": 264,
+      "layoutMode": "VERTICAL",
+      "sizingH": "FILL",
+      "sizingV": "HUG",
+      "children": [
+        {
+          "name": "Assistance Card",
+          "type": "FRAME",
+          "w": 380,
+          "h": 224,
+          "layoutMode": "VERTICAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "DEDICATED SOURCING DESK",
+              "type": "TEXT",
+              "w": 172,
+              "h": 13,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Not sure what to choose? Share your budget, quantity and deadline, and we will suggest options.",
+              "type": "TEXT",
+              "w": 340,
+              "h": 72,
+              "sizingH": "FIXED",
+              "sizingV": "FIXED"
+            },
+            {
+              "name": "Our California product specialists curate tailored presentations with distributor net pricing within 2 business hours.",
+              "type": "TEXT",
+              "w": 340,
+              "h": 36,
+              "sizingH": "FIXED",
+              "sizingV": "FIXED"
+            },
+            {
+              "name": "Actions",
+              "type": "FRAME",
+              "w": 340,
+              "h": 17,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "FILL",
+              "sizingV": "HUG"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section 6: Resources & Trust",
+      "type": "FRAME",
+      "w": 412,
+      "h": 696,
+      "layoutMode": "VERTICAL",
+      "sizingH": "FILL",
+      "sizingV": "HUG",
+      "children": [
+        {
+          "name": "Header",
+          "type": "FRAME",
+          "w": 380,
+          "h": 44,
+          "layoutMode": "VERTICAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "SELF-SERVICE DISTRIBUTOR TOOLS",
+              "type": "TEXT",
+              "w": 211,
+              "h": 13,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Ordering Resources",
+              "type": "TEXT",
+              "w": 215,
+              "h": 27,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "E-catalog",
+          "type": "FRAME",
+          "w": 380,
+          "h": 65,
+          "layoutMode": "HORIZONTAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Text",
+              "type": "FRAME",
+              "w": 100,
+              "h": 35,
+              "layoutMode": "VERTICAL",
+              "sizingH": "FIXED",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Action Tag",
+              "type": "FRAME",
+              "w": 94,
+              "h": 20,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "E-flyers",
+          "type": "FRAME",
+          "w": 380,
+          "h": 65,
+          "layoutMode": "HORIZONTAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Text",
+              "type": "FRAME",
+              "w": 100,
+              "h": 35,
+              "layoutMode": "VERTICAL",
+              "sizingH": "FIXED",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Action Tag",
+              "type": "FRAME",
+              "w": 124,
+              "h": 20,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "Decoration price guide",
+          "type": "FRAME",
+          "w": 380,
+          "h": 65,
+          "layoutMode": "HORIZONTAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Text",
+              "type": "FRAME",
+              "w": 100,
+              "h": 35,
+              "layoutMode": "VERTICAL",
+              "sizingH": "FIXED",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Action Tag",
+              "type": "FRAME",
+              "w": 118,
+              "h": 20,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "How to order",
+          "type": "FRAME",
+          "w": 380,
+          "h": 65,
+          "layoutMode": "HORIZONTAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Text",
+              "type": "FRAME",
+              "w": 100,
+              "h": 35,
+              "layoutMode": "VERTICAL",
+              "sizingH": "FIXED",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Action Tag",
+              "type": "FRAME",
+              "w": 113,
+              "h": 20,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "Rated #1 in California",
+          "type": "FRAME",
+          "w": 380,
+          "h": 34,
+          "layoutMode": "HORIZONTAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Badge",
+              "type": "FRAME",
+              "w": 8,
+              "h": 19,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Copy",
+              "type": "FRAME",
+              "w": 100,
+              "h": 32,
+              "layoutMode": "VERTICAL",
+              "sizingH": "FIXED",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "ASI 5-Star supplier",
+          "type": "FRAME",
+          "w": 380,
+          "h": 34,
+          "layoutMode": "HORIZONTAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Badge",
+              "type": "FRAME",
+              "w": 17,
+              "h": 19,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Copy",
+              "type": "FRAME",
+              "w": 100,
+              "h": 32,
+              "layoutMode": "VERTICAL",
+              "sizingH": "FIXED",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "Quantity-based pricing",
+          "type": "FRAME",
+          "w": 380,
+          "h": 34,
+          "layoutMode": "HORIZONTAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Badge",
+              "type": "FRAME",
+              "w": 11,
+              "h": 19,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Copy",
+              "type": "FRAME",
+              "w": 100,
+              "h": 32,
+              "layoutMode": "VERTICAL",
+              "sizingH": "FIXED",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "Awards Graphic Card",
+          "type": "FRAME",
+          "w": 380,
+          "h": 82,
+          "layoutMode": "VERTICAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Awards Graphic",
+              "type": "FRAME",
+              "w": 364,
+              "h": 64,
+              "layoutMode": "NONE",
+              "sizingH": "FIXED",
+              "sizingV": "FIXED"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section 7: Distributor Portal",
+      "type": "FRAME",
+      "w": 412,
+      "h": 259,
+      "layoutMode": "VERTICAL",
+      "sizingH": "FILL",
+      "sizingV": "HUG",
+      "children": [
+        {
+          "name": "Distributor Card",
+          "type": "FRAME",
+          "w": 380,
+          "h": 219,
+          "layoutMode": "VERTICAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "VERIFIED DISTRIBUTOR ACCESS ONLY",
+              "type": "TEXT",
+              "w": 229,
+              "h": 13,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Are you a distributor? Log in to see your pricing and track orders.",
+              "type": "TEXT",
+              "w": 340,
+              "h": 48,
+              "sizingH": "FIXED",
+              "sizingV": "FIXED"
+            },
+            {
+              "name": "Unlock confidential EQP pricing tiers, instantaneous online vector art proof approvals, real-time live inventory levels, and California warehouse tracking.",
+              "type": "TEXT",
+              "w": 340,
+              "h": 54,
+              "sizingH": "FIXED",
+              "sizingV": "FIXED"
+            },
+            {
+              "name": "Portal Buttons",
+              "type": "FRAME",
+              "w": 89,
+              "h": 18,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Enterprise Mobile Footer",
+      "type": "FRAME",
+      "w": 412,
+      "h": 586,
+      "layoutMode": "VERTICAL",
+      "sizingH": "FILL",
+      "sizingV": "HUG",
+      "children": [
+        {
+          "name": "Newsletter Box",
+          "type": "FRAME",
+          "w": 380,
+          "h": 81,
+          "layoutMode": "VERTICAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "STAY INFORMED ON TIER BREAKS & OVERSTOCK FLASHES",
+              "type": "TEXT",
+              "w": 341,
+              "h": 13,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Special distributor offers, straight to your inbox.",
+              "type": "TEXT",
+              "w": 294,
+              "h": 16,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Newsletter Input",
+              "type": "FRAME",
+              "w": 380,
+              "h": 32,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "FILL",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "Divider",
+          "type": "FRAME",
+          "w": 380,
+          "h": 1,
+          "layoutMode": "NONE",
+          "sizingH": "FIXED",
+          "sizingV": "FIXED",
+          "children": []
+        },
+        {
+          "name": "Brand Info",
+          "type": "FRAME",
+          "w": 380,
+          "h": 144,
+          "layoutMode": "VERTICAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Logo",
+              "type": "FRAME",
+              "w": 380,
+              "h": 19,
+              "layoutMode": "HORIZONTAL",
+              "sizingH": "FILL",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "ASI 79028 | PPAI 206478 | SAGE 64870 | UPIC POSHX",
+              "type": "TEXT",
+              "w": 260,
+              "h": 12,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Posh Xessories, Inc. was started with one mission: help people make the best impressions at the best price. Precision wholesale supply chain, in-house master embellishment, and award-winning California delivery speeds.",
+              "type": "TEXT",
+              "w": 380,
+              "h": 54,
+              "sizingH": "FIXED",
+              "sizingV": "FIXED"
+            },
+            {
+              "name": "📍 14250 Monte Vista Ave, Chino, CA 91710",
+              "type": "TEXT",
+              "w": 238,
+              "h": 14,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Distributor Hotline: (800) 555-POSH",
+              "type": "TEXT",
+              "w": 182,
+              "h": 13,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "Divider",
+          "type": "FRAME",
+          "w": 380,
+          "h": 1,
+          "layoutMode": "NONE",
+          "sizingH": "FIXED",
+          "sizingV": "FIXED",
+          "children": []
+        },
+        {
+          "name": "Footer Links Grid",
+          "type": "FRAME",
+          "w": 380,
+          "h": 120,
+          "layoutMode": "HORIZONTAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Ordering & Resources",
+              "type": "FRAME",
+              "w": 180,
+              "h": 120,
+              "layoutMode": "VERTICAL",
+              "sizingH": "FIXED",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "Company & Recognition",
+              "type": "FRAME",
+              "w": 180,
+              "h": 120,
+              "layoutMode": "VERTICAL",
+              "sizingH": "FIXED",
+              "sizingV": "HUG"
+            }
+          ]
+        },
+        {
+          "name": "Divider",
+          "type": "FRAME",
+          "w": 380,
+          "h": 1,
+          "layoutMode": "NONE",
+          "sizingH": "FIXED",
+          "sizingV": "FIXED",
+          "children": []
+        },
+        {
+          "name": "Legal Notice",
+          "type": "FRAME",
+          "w": 380,
+          "h": 30,
+          "layoutMode": "VERTICAL",
+          "sizingH": "FILL",
+          "sizingV": "HUG",
+          "children": [
+            {
+              "name": "Design prototype, not connected to the live store.",
+              "type": "TEXT",
+              "w": 259,
+              "h": 13,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            },
+            {
+              "name": "© PoshXessories. All rights reserved.",
+              "type": "TEXT",
+              "w": 193,
+              "h": 13,
+              "sizingH": "HUG",
+              "sizingV": "HUG"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

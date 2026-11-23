@@ -84,6 +84,20 @@ export type UIToPluginMessage =
       };
     }
   | {
+      type: "CONVERT_RESPONSIVE_FRAME";
+      payload: {
+        requestId?: string;
+        nodeId?: string;
+        targetWidth: number;
+        targetName?: string;
+        mode?: "smart" | "direct";
+        horizontalPadding?: number;
+        scaleTypography?: boolean;
+        reflowGrids?: boolean;
+        createNewFrame?: boolean;
+      };
+    }
+  | {
       type: "EXECUTE_ADJUST_MOBILE_LAYOUT";
       payload?: {
         requestId?: string;
@@ -387,6 +401,22 @@ export type PluginToUIMessage =
         motionFrameId?: string;
         instanceId?: string;
         details?: string[];
+        error?: string;
+      };
+    }
+  | {
+      type: "CONVERT_RESPONSIVE_RESULT";
+      payload: {
+        requestId?: string;
+        success: boolean;
+        frameId?: string;
+        frameName?: string;
+        targetWidth?: number;
+        width?: number;
+        height?: number;
+        sectionsAdjusted?: number;
+        textNodesScaled?: number;
+        gridsReflowed?: number;
         error?: string;
       };
     }

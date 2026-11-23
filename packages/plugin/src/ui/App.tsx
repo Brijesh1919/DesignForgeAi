@@ -14,6 +14,8 @@ import { GenerateAIView } from "./components/GenerateAIView";
 import { WebsiteUrlView } from "./components/WebsiteUrlView";
 import { AgentBridgeView } from "./components/AgentBridgeView";
 import { ExportCodeView } from "./components/ExportCodeView";
+import { ResponsiveView } from "./components/ResponsiveView";
+import { FeatureTabs } from "./components/FeatureTabs";
 import "./styles/theme.css";
 
 const ToastItem: React.FC<{ toast: any; onRemove: (id: string) => void }> = ({ toast, onRemove }) => {
@@ -117,145 +119,98 @@ export const App: React.FC = () => {
             }}
           >
             {/* Input Mode Selector */}
-            {(!htmlContent && !cssContent) && (
-              <div className="feature-tabs" role="tablist">
-                <button
-                  id="tab-screenshot"
-                  role="tab"
-                  aria-selected={inputMode === "screenshot"}
-                  onClick={() => setInputMode("screenshot")}
-                  className={`feature-tab ${inputMode === "screenshot" ? "feature-tab--active" : ""}`}
-                >
-                  <span>📸</span> Photo
-                </button>
-                <button
-                  id="tab-html-css"
-                  role="tab"
-                  aria-selected={inputMode === "html-css"}
-                  onClick={() => setInputMode("html-css")}
-                  className={`feature-tab ${inputMode === "html-css" ? "feature-tab--active" : ""}`}
-                >
-                  <span>📄</span> Code
-                </button>
-                <button
-                  id="tab-generate-ai"
-                  role="tab"
-                  aria-selected={inputMode === "generate-ai"}
-                  onClick={() => setInputMode("generate-ai")}
-                  className={`feature-tab ${inputMode === "generate-ai" ? "feature-tab--active" : ""}`}
-                >
-                  <span>✨</span> AI
-                </button>
-                <button
-                  id="tab-website-url"
-                  role="tab"
-                  aria-selected={inputMode === "website-url"}
-                  onClick={() => setInputMode("website-url")}
-                  className={`feature-tab ${inputMode === "website-url" ? "feature-tab--active" : ""}`}
-                >
-                  <span>🌐</span> URL
-                </button>
-                <button
-                  id="tab-agent-bridge"
-                  role="tab"
-                  aria-selected={inputMode === "agent-bridge"}
-                  onClick={() => setInputMode("agent-bridge")}
-                  className={`feature-tab ${inputMode === "agent-bridge" ? "feature-tab--active" : ""}`}
-                >
-                  <span>🔌</span> Agent
-                </button>
-                <button
-                  id="tab-export-code"
-                  role="tab"
-                  aria-selected={inputMode === "export-code"}
-                  onClick={() => setInputMode("export-code")}
-                  className={`feature-tab ${inputMode === "export-code" ? "feature-tab--active" : ""}`}
-                >
-                  <span>&lt;/&gt;</span> Export
-                </button>
-              </div>
-            )}
+            {(!htmlContent && !cssContent) && <FeatureTabs />}
 
-            {/* View renders depending on inputMode */}
-            {inputMode === "screenshot" && !htmlContent && !cssContent ? (
-              <>
-                <UploadZone />
-                {selectedImage && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                    <button onClick={startAnalysis} className="btn btn--primary btn--full btn--lg">
-                      ✨ Generate Design
-                    </button>
-                    <button onClick={generateHtmlFromScreenshot} className="btn btn--secondary btn--full">
-                      🎨 Generate HTML & CSS
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : inputMode === "generate-ai" && !htmlContent && !cssContent ? (
-              <GenerateAIView />
-            ) : inputMode === "website-url" && !htmlContent && !cssContent ? (
-              <WebsiteUrlView />
-            ) : inputMode === "export-code" && !htmlContent && !cssContent ? (
-              <ExportCodeView />
-            ) : inputMode === "agent-bridge" && !htmlContent && !cssContent ? (
-              null
-            ) : selectedImage && (htmlContent || cssContent) ? (
-              <div style={{ display: "flex", gap: "16px", height: "620px", width: "100%", overflow: "hidden" }}>
-                {/* Left Pane: Original Screenshot */}
-                <div
-                  className="card"
-                  style={{
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    padding: "12px",
-                    background: "var(--bg-secondary)",
-                    border: "1px solid var(--border-default)",
-                    borderRadius: "var(--radius-md)",
-                    overflow: "hidden",
-                  }}
-                >
-                  <h4 style={{ margin: "0 0 8px 0", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)" }}>
-                    📸 Original Screenshot
-                  </h4>
+            {/* Scrollable Main View Area */}
+            <div
+              style={{
+                flex: 1,
+                minHeight: 0,
+                overflowY: "auto",
+                overflowX: "hidden",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              {inputMode === "screenshot" && !htmlContent && !cssContent ? (
+                <>
+                  <UploadZone />
+                  {selectedImage && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "12px" }}>
+                      <button onClick={startAnalysis} className="btn btn--primary btn--full btn--lg">
+                        ✨ Generate Design
+                      </button>
+                      <button onClick={generateHtmlFromScreenshot} className="btn btn--secondary btn--full">
+                        🎨 Generate HTML & CSS
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : inputMode === "generate-ai" && !htmlContent && !cssContent ? (
+                <GenerateAIView />
+              ) : inputMode === "website-url" && !htmlContent && !cssContent ? (
+                <WebsiteUrlView />
+              ) : inputMode === "export-code" && !htmlContent && !cssContent ? (
+                <ExportCodeView />
+              ) : inputMode === "responsive" && !htmlContent && !cssContent ? (
+                <ResponsiveView />
+              ) : inputMode === "agent-bridge" && !htmlContent && !cssContent ? (
+                <AgentBridgeView />
+              ) : inputMode === "html-css" && !htmlContent && !cssContent ? (
+                <CodeWorkspace />
+              ) : selectedImage && (htmlContent || cssContent) ? (
+                <div style={{ display: "flex", gap: "16px", height: "620px", width: "100%", overflow: "hidden" }}>
+                  {/* Left Pane: Original Screenshot */}
                   <div
+                    className="card"
                     style={{
                       flex: 1,
-                      overflow: "auto",
                       display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: "var(--bg-tertiary)",
-                      borderRadius: "6px",
-                      padding: "8px",
+                      flexDirection: "column",
+                      padding: "12px",
+                      background: "var(--bg-secondary)",
+                      border: "1px solid var(--border-default)",
+                      borderRadius: "var(--radius-md)",
+                      overflow: "hidden",
                     }}
                   >
-                    <img
-                      src={selectedImage.base64}
-                      alt="Original UI"
+                    <h4 style={{ margin: "0 0 8px 0", fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)" }}>
+                      📸 Original Screenshot
+                    </h4>
+                    <div
                       style={{
-                        maxWidth: "100%",
-                        maxHeight: "100%",
-                        objectFit: "contain",
-                        borderRadius: "4px",
-                        boxShadow: "var(--shadow-sm)",
+                        flex: 1,
+                        overflow: "auto",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "var(--bg-tertiary)",
+                        borderRadius: "6px",
+                        padding: "8px",
                       }}
-                    />
+                    >
+                      <img
+                        src={selectedImage.base64}
+                        alt="Original UI"
+                        style={{
+                          maxWidth: "100%",
+                          maxHeight: "100%",
+                          objectFit: "contain",
+                          borderRadius: "4px",
+                          boxShadow: "var(--shadow-sm)",
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Right Pane: Code Workspace */}
+                  <div style={{ flex: 1.2, display: "flex", flexDirection: "column", overflow: "auto" }}>
+                    <CodeWorkspace />
                   </div>
                 </div>
-
-                {/* Right Pane: Code Workspace */}
-                <div style={{ flex: 1.2, display: "flex", flexDirection: "column", overflow: "auto" }}>
-                  <CodeWorkspace />
-                </div>
-              </div>
-            ) : (
-              <CodeWorkspace />
-            )}
-
-            {/* Persistent Agent Bridge Connection */}
-            <div style={{ display: inputMode === "agent-bridge" && !htmlContent && !cssContent ? "block" : "none" }}>
-              <AgentBridgeView />
+              ) : (
+                <CodeWorkspace />
+              )}
             </div>
           </div>
         )}

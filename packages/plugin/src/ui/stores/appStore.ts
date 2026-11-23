@@ -74,12 +74,12 @@ interface AppState {
   // HTML & CSS
   htmlContent: string;
   cssContent: string;
-  inputMode: "screenshot" | "html-css" | "generate-ai" | "website-url" | "agent-bridge" | "export-code";
+  inputMode: "screenshot" | "html-css" | "generate-ai" | "website-url" | "agent-bridge" | "export-code" | "responsive";
   aiPrompt: string;
   isGeneratingAi: boolean;
   setHtmlContent: (html: string) => void;
   setCssContent: (css: string) => void;
-  setInputMode: (mode: "screenshot" | "html-css" | "generate-ai" | "website-url" | "agent-bridge" | "export-code") => void;
+  setInputMode: (mode: "screenshot" | "html-css" | "generate-ai" | "website-url" | "agent-bridge" | "export-code" | "responsive") => void;
   setAiPrompt: (prompt: string) => void;
   setIsGeneratingAi: (isGenerating: boolean) => void;
 
