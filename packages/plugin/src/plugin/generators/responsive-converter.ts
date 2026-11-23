@@ -1508,6 +1508,57 @@ async function buildSmartMobileLandingPage(
     } catch {}
   });
 
+  // Trust Badges in Section 6
+  const trustItems = [
+    { title: "Proudly PPAI Member", desc: "Top 100 Supplier Award", badge: "1" },
+    { title: "ASI 5-Star Supplier", desc: "Highest distributor satisfaction rating", badge: "★" },
+    { title: "Quantity-based pricing", desc: "Direct factory volume discounts", badge: "$" },
+  ];
+  trustItems.forEach((item) => {
+    const card = figma.createFrame();
+    card.name = `Trust: ${item.title}`;
+    card.resize(innerContentWidth, 54);
+    card.layoutMode = "HORIZONTAL";
+    card.primaryAxisAlignItems = "MIN";
+    card.counterAxisAlignItems = "CENTER";
+    card.paddingLeft = 14;
+    card.paddingRight = 14;
+    card.paddingTop = 10;
+    card.paddingBottom = 10;
+    card.itemSpacing = 12;
+    card.cornerRadius = 10;
+    card.fills = [{ type: "SOLID", color: C.bgCanvas }];
+    card.strokes = [{ type: "SOLID", color: C.borderLight }];
+    card.strokeWeight = 1;
+
+    const iconBox = figma.createFrame();
+    iconBox.name = "Icon";
+    iconBox.resize(32, 32);
+    iconBox.cornerRadius = 8;
+    iconBox.layoutMode = "HORIZONTAL";
+    iconBox.primaryAxisAlignItems = "CENTER";
+    iconBox.counterAxisAlignItems = "CENTER";
+    iconBox.fills = [{ type: "SOLID", color: C.blueTint }];
+    iconBox.appendChild(createTxt(item.badge, 12, "Bold", C.bluePrimary));
+    card.appendChild(iconBox);
+
+    const left = figma.createFrame();
+    left.name = "Text";
+    left.layoutMode = "VERTICAL";
+    left.itemSpacing = 2;
+    left.fills = [];
+    left.appendChild(createTxt(item.title, 12.5, "Bold", C.navySlate));
+    left.appendChild(createTxt(item.desc, 10.5, "Regular", C.slateBody));
+    card.appendChild(left);
+
+    resSection.appendChild(card);
+    try {
+      card.layoutPositioning = "AUTO";
+      card.layoutSizingHorizontal = "FILL";
+      card.layoutSizingVertical = "HUG";
+    } catch {}
+  });
+
   // Awards graphic banner
   if (IMAGES.awardsGraphic) {
     const awardWrap = figma.createFrame();
@@ -1609,51 +1660,202 @@ async function buildSmartMobileLandingPage(
   } catch {}
   appendAndFill(root, portalSection);
 
-  // 11. ENTERPRISE MOBILE FOOTER
-  const footer = figma.createFrame();
-  footer.name = "Enterprise Mobile Footer";
-  footer.resize(targetWidth, 260);
-  footer.layoutMode = "VERTICAL";
-  footer.paddingLeft = 16;
-  footer.paddingRight = 16;
-  footer.paddingTop = 28;
-  footer.paddingBottom = 32;
-  footer.itemSpacing = 16;
-  footer.fills = [{ type: "SOLID", color: C.darkFooter }];
+  // 11. SECTION 8: NEWSLETTER SUBSCRIPTION
+  const newsSection = figma.createFrame();
+  newsSection.name = "Section 8: Newsletter Subscription";
+  newsSection.resize(targetWidth, 160);
+  newsSection.layoutMode = "VERTICAL";
+  newsSection.paddingLeft = 16;
+  newsSection.paddingRight = 16;
+  newsSection.paddingTop = 20;
+  newsSection.paddingBottom = 20;
+  newsSection.itemSpacing = 12;
+  newsSection.fills = [{ type: "SOLID", color: C.navyDark }];
 
-  const footBrand = figma.createFrame();
-  footBrand.name = "Brand";
-  footBrand.layoutMode = "HORIZONTAL";
-  footBrand.itemSpacing = 4;
-  footBrand.counterAxisAlignItems = "CENTER";
-  footBrand.fills = [];
-  footBrand.appendChild(createTxt("POSH", 16, "Bold", C.bgPure));
-  footBrand.appendChild(createTxt("XESSORIES", 16, "Bold", C.skyAccent));
-  footer.appendChild(footBrand);
-
-  footer.appendChild(
+  newsSection.appendChild(
     createTxt(
-      "Precision enterprise promotional products and executive gifting. Proudly serving certified distributors nationwide.",
-      12,
-      "Regular",
-      { r: 0.6, g: 0.68, b: 0.8 },
+      "Stay up to date with new products, offers and specials by subscribing to our newsletter:",
+      12.5,
+      "Medium",
+      C.bgPure,
       { lineHeight: 18 }
     )
   );
 
-  const footLinks = [
-    "Products & Categories",
-    "Distributor Resources",
-    "Proofing & Turnaround Times",
-    "Privacy Policy & Terms",
-  ];
-  footLinks.forEach((l) => {
-    footer.appendChild(createTxt(`• ${l}`, 12, "Medium", { r: 0.8, g: 0.88, b: 0.98 }));
-  });
+  const newsForm = figma.createFrame();
+  newsForm.name = "Subscription Form";
+  newsForm.resize(innerContentWidth, 48);
+  newsForm.layoutMode = "HORIZONTAL";
+  newsForm.primaryAxisAlignItems = "SPACE_BETWEEN";
+  newsForm.counterAxisAlignItems = "CENTER";
+  newsForm.paddingLeft = 14;
+  newsForm.paddingRight = 4;
+  newsForm.paddingTop = 4;
+  newsForm.paddingBottom = 4;
+  newsForm.cornerRadius = 8;
+  newsForm.fills = [{ type: "SOLID", color: C.navySlate }];
+  newsForm.strokes = [{ type: "SOLID", color: C.slateDark }];
+  newsForm.strokeWeight = 1;
 
+  newsForm.appendChild(
+    createTxt("Type your email address here...", 12, "Regular", C.slateLight)
+  );
+
+  const signUpBtn = figma.createFrame();
+  signUpBtn.name = "Sign Up Button";
+  signUpBtn.layoutMode = "HORIZONTAL";
+  signUpBtn.primaryAxisAlignItems = "CENTER";
+  signUpBtn.counterAxisAlignItems = "CENTER";
+  signUpBtn.paddingLeft = 18;
+  signUpBtn.paddingRight = 18;
+  signUpBtn.paddingTop = 9;
+  signUpBtn.paddingBottom = 9;
+  signUpBtn.cornerRadius = 6;
+  signUpBtn.fills = [{ type: "SOLID", color: C.bluePrimary }];
+  signUpBtn.appendChild(createTxt("Sign Up", 12.5, "Bold", C.bgPure));
+  newsForm.appendChild(signUpBtn);
+
+  newsSection.appendChild(newsForm);
+  try {
+    newsForm.layoutPositioning = "AUTO";
+    newsForm.layoutSizingHorizontal = "FILL";
+    newsForm.layoutSizingVertical = "HUG";
+  } catch {}
+  appendAndFill(root, newsSection);
+
+  // 12. SECTION 9: COMPLETE ENTERPRISE FOOTER
+  const footer = figma.createFrame();
+  footer.name = "Section 9: Enterprise Footer";
+  footer.resize(targetWidth, 680);
+  footer.layoutMode = "VERTICAL";
+  footer.paddingLeft = 16;
+  footer.paddingRight = 16;
+  footer.paddingTop = 28;
+  footer.paddingBottom = 36;
+  footer.itemSpacing = 20;
+  footer.fills = [{ type: "SOLID", color: C.darkFooter }];
+
+  // A. Brand & Address
+  const footBrandBlock = figma.createFrame();
+  footBrandBlock.name = "Brand & Address";
+  footBrandBlock.layoutMode = "VERTICAL";
+  footBrandBlock.itemSpacing = 6;
+  footBrandBlock.fills = [];
+
+  const footBrand = figma.createFrame();
+  footBrand.name = "Brand Name";
+  footBrand.layoutMode = "HORIZONTAL";
+  footBrand.itemSpacing = 4;
+  footBrand.counterAxisAlignItems = "CENTER";
+  footBrand.fills = [];
+  footBrand.appendChild(createTxt("POSH", 18, "Bold", C.bgPure));
+  footBrand.appendChild(createTxt("XESSORIES", 18, "Bold", C.skyAccent));
+  footBrandBlock.appendChild(footBrand);
+
+  footBrandBlock.appendChild(
+    createTxt("41090 Belmont Terrace, Fremont, CA 94538", 12, "Medium", { r: 0.72, g: 0.8, b: 0.92 })
+  );
+  footer.appendChild(footBrandBlock);
+
+  // B. Company Description
   footer.appendChild(
     createTxt(
-      "© 2024 Posh Xessories Inc. All rights reserved. ASI 79028 | PPAI 206478 | SAGE 64870",
+      "Posh Xessories is a full-service supplier offering high-quality promotional products, quick turnaround times, and outstanding customer service. We specialize in custom laser engraving, color imprinting, and custom gift sets.",
+      11.5,
+      "Regular",
+      { r: 0.6, g: 0.68, b: 0.8 },
+      { lineHeight: 17 }
+    )
+  );
+
+  // C. Industry Credentials
+  const idsRow = figma.createFrame();
+  idsRow.name = "Industry Credentials";
+  idsRow.layoutMode = "HORIZONTAL";
+  idsRow.itemSpacing = 8;
+  idsRow.fills = [];
+  const ids = ["ASI 79028", "PPAI 206478", "SAGE 64870"];
+  ids.forEach((id) => {
+    const badge = figma.createFrame();
+    badge.name = `ID: ${id}`;
+    badge.layoutMode = "HORIZONTAL";
+    badge.counterAxisAlignItems = "CENTER";
+    badge.paddingLeft = 10;
+    badge.paddingRight = 10;
+    badge.paddingTop = 5;
+    badge.paddingBottom = 5;
+    badge.cornerRadius = 6;
+    badge.fills = [{ type: "SOLID", color: C.slateDark }];
+    badge.appendChild(createTxt(id, 10.5, "Bold", C.skyAccent));
+    idsRow.appendChild(badge);
+  });
+  footer.appendChild(idsRow);
+
+  // D. Column 1: Ordering Resources
+  const col1 = figma.createFrame();
+  col1.name = "Column: Ordering Resources";
+  col1.layoutMode = "VERTICAL";
+  col1.itemSpacing = 8;
+  col1.fills = [];
+  col1.appendChild(createTxt("ORDERING RESOURCES", 12, "Bold", C.skyAccent, { letterSpacing: 0.5 }));
+
+  const orderingLinks = [
+    "Quick Order & Virtual Proofs",
+    "Artwork Guidelines & Templates",
+    "Shipping & Production Times",
+    "General Information",
+    "Terms and Conditions",
+  ];
+  orderingLinks.forEach((link) => {
+    col1.appendChild(createTxt(`• ${link}`, 12, "Regular", { r: 0.82, g: 0.88, b: 0.96 }));
+  });
+  footer.appendChild(col1);
+
+  // E. Column 2: Company & Protection
+  const col2 = figma.createFrame();
+  col2.name = "Column: Company & Protection";
+  col2.layoutMode = "VERTICAL";
+  col2.itemSpacing = 8;
+  col2.fills = [];
+  col2.appendChild(createTxt("COMPANY & PROTECTION", 12, "Bold", C.skyAccent, { letterSpacing: 0.5 }));
+
+  const protectionLinks = [
+    "California Proposition 65 Compliance",
+    "CPSIA & Child Safety Standards",
+    "Product Safety & Quality Testing",
+    "Social Compliance & Code of Conduct",
+    "Contact Customer Support",
+  ];
+  protectionLinks.forEach((link) => {
+    col2.appendChild(createTxt(`• ${link}`, 12, "Regular", { r: 0.82, g: 0.88, b: 0.96 }));
+  });
+  footer.appendChild(col2);
+
+  // F. Customer Support Contact Card
+  const contactCard = figma.createFrame();
+  contactCard.name = "Customer Support Card";
+  contactCard.resize(innerContentWidth, 120);
+  contactCard.layoutMode = "VERTICAL";
+  contactCard.itemSpacing = 8;
+  contactCard.paddingLeft = 16;
+  contactCard.paddingRight = 16;
+  contactCard.paddingTop = 14;
+  contactCard.paddingBottom = 14;
+  contactCard.cornerRadius = 10;
+  contactCard.fills = [{ type: "SOLID", color: C.navySlate }];
+  contactCard.strokes = [{ type: "SOLID", color: C.slateDark }];
+  contactCard.strokeWeight = 1;
+
+  contactCard.appendChild(createTxt("📞 Toll-Free: (800) 333-7069", 12, "SemiBold", C.bgPure));
+  contactCard.appendChild(createTxt("☎ Local Phone: (510) 651-7800", 12, "SemiBold", C.bgPure));
+  contactCard.appendChild(createTxt("✉ Email: sales@poshxessories.com", 12, "Medium", C.skyAccent));
+  contactCard.appendChild(createTxt("🕒 Hours: Mon - Fri: 8:00 AM - 5:00 PM PST", 11, "Regular", { r: 0.65, g: 0.72, b: 0.82 }));
+  footer.appendChild(contactCard);
+
+  // G. Copyright & California Decoration Notice
+  footer.appendChild(
+    createTxt(
+      "Product designs and artwork © 2024 Posh Xessories Inc. All rights reserved. Precision manufacturing & California in-house decorated.",
       10.5,
       "Regular",
       { r: 0.45, g: 0.52, b: 0.62 },
@@ -2395,6 +2597,70 @@ async function buildGenericSmartMobilePage(
   } catch {}
   appendSection(calloutSection);
 
+  // 4.5. Dynamic Newsletter / Extra Subscription Section
+  const newsletterCandidate = discoveredTexts.find(
+    (t) =>
+      (t.text.toLowerCase().includes("newsletter") ||
+        t.text.toLowerCase().includes("subscribe") ||
+        t.text.toLowerCase().includes("stay up to date")) &&
+      t.text.length <= 120
+  );
+  if (newsletterCandidate) {
+    const newsSec = figma.createFrame();
+    newsSec.name = "Newsletter Section";
+    newsSec.resize(targetWidth, 140);
+    newsSec.layoutMode = "VERTICAL";
+    newsSec.paddingLeft = 16;
+    newsSec.paddingRight = 16;
+    newsSec.paddingTop = 20;
+    newsSec.paddingBottom = 20;
+    newsSec.itemSpacing = 12;
+    newsSec.fills = [
+      {
+        type: "SOLID",
+        color: T.isDark ? { r: 0.08, g: 0.11, b: 0.18 } : { r: 0.94, g: 0.96, b: 0.98 },
+      },
+    ];
+
+    newsSec.appendChild(
+      makeTxt(newsletterCandidate.text, 13, "SemiBold", T.textPrimary, {
+        lineHeight: 18,
+        fillWidth: true,
+      })
+    );
+
+    const formRow = figma.createFrame();
+    formRow.name = "Subscription Form";
+    formRow.resize(innerWidth, 46);
+    formRow.layoutMode = "HORIZONTAL";
+    formRow.primaryAxisAlignItems = "SPACE_BETWEEN";
+    formRow.counterAxisAlignItems = "CENTER";
+    formRow.paddingLeft = 14;
+    formRow.paddingRight = 4;
+    formRow.paddingTop = 4;
+    formRow.paddingBottom = 4;
+    formRow.cornerRadius = 8;
+    formRow.fills = [{ type: "SOLID", color: T.cardBg }];
+    formRow.strokes = [{ type: "SOLID", color: T.borderLight }];
+    formRow.strokeWeight = 1;
+    formRow.appendChild(makeTxt("Enter your email...", 12, "Regular", T.textMuted));
+
+    const sBtn = figma.createFrame();
+    sBtn.name = "Subscribe Button";
+    sBtn.layoutMode = "HORIZONTAL";
+    sBtn.counterAxisAlignItems = "CENTER";
+    sBtn.paddingLeft = 16;
+    sBtn.paddingRight = 16;
+    sBtn.paddingTop = 8;
+    sBtn.paddingBottom = 8;
+    sBtn.cornerRadius = 6;
+    sBtn.fills = [{ type: "SOLID", color: T.brandAccent }];
+    sBtn.appendChild(makeTxt("Subscribe", 12.5, "Bold", { r: 1, g: 1, b: 1 }));
+    formRow.appendChild(sBtn);
+    newsSec.appendChild(formRow);
+    appendSection(newsSec);
+  }
+
   // 5. Mobile Footer
   const footer = figma.createFrame();
   footer.name = "Mobile Footer";
@@ -2404,10 +2670,10 @@ async function buildGenericSmartMobilePage(
   footer.paddingRight = 16;
   footer.paddingTop = 28;
   footer.paddingBottom = 32;
-  footer.itemSpacing = 14;
+  footer.itemSpacing = 16;
   footer.fills = [{ type: "SOLID", color: T.isDark ? { r: 0.04, g: 0.06, b: 0.1 } : { r: 0.05, g: 0.07, b: 0.12 } }];
 
-  footer.appendChild(makeTxt(brandName, 16, "Bold", { r: 1, g: 1, b: 1 }));
+  footer.appendChild(makeTxt(brandName, 18, "Bold", { r: 1, g: 1, b: 1 }));
   footer.appendChild(
     makeTxt(
       "High-performance design system with production-grade components and responsive Auto-Layout.",
@@ -2418,10 +2684,49 @@ async function buildGenericSmartMobilePage(
     )
   );
 
-  const footerLinks = ["Products & Solutions", "Documentation", "Terms of Service", "Privacy Policy"];
-  footerLinks.forEach((l) => {
+  // Dynamically harvest links found in sourceNode
+  const discoveredLinks = discoveredTexts
+    .filter(
+      (t) =>
+        t.y > sourceNode.height * 0.55 &&
+        t.text.length >= 4 &&
+        t.text.length <= 45 &&
+        !t.text.includes(brandName) &&
+        !t.text.toLowerCase().includes("copyright") &&
+        !t.text.includes("©")
+    )
+    .map((t) => t.text)
+    .slice(0, 10);
+
+  const linksToRender =
+    discoveredLinks.length >= 3
+      ? discoveredLinks
+      : ["Products & Solutions", "Documentation", "Terms of Service", "Privacy Policy"];
+  linksToRender.forEach((l) => {
     footer.appendChild(makeTxt(`• ${l}`, 12, "Medium", { r: 0.8, g: 0.88, b: 0.98 }));
   });
+
+  // Check for contact info (phone, email, address)
+  const contactCandidates = discoveredTexts.filter(
+    (t) =>
+      t.text.includes("@") ||
+      t.text.includes("(510)") ||
+      t.text.includes("(800)") ||
+      t.text.toLowerCase().includes("phone") ||
+      t.text.toLowerCase().includes("toll-free") ||
+      t.text.toLowerCase().includes("contact")
+  );
+  if (contactCandidates.length > 0) {
+    const cBox = figma.createFrame();
+    cBox.name = "Contact Info";
+    cBox.layoutMode = "VERTICAL";
+    cBox.itemSpacing = 6;
+    cBox.fills = [];
+    contactCandidates.slice(0, 4).forEach((c) => {
+      cBox.appendChild(makeTxt(c.text, 11.5, "Medium", { r: 0.75, g: 0.82, b: 0.92 }));
+    });
+    footer.appendChild(cBox);
+  }
 
   footer.appendChild(
     makeTxt(`© 2024 ${brandName}. All rights reserved.`, 10.5, "Regular", { r: 0.45, g: 0.52, b: 0.62 }, {
