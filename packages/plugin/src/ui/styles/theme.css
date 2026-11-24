@@ -285,21 +285,41 @@ body,
   min-height: 42px;
   flex-shrink: 0 !important;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: thin;
-  scrollbar-color: var(--border-default) transparent;
-  scroll-behavior: smooth;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  cursor: grab;
   user-select: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: auto;
+}
+
+.feature-tabs-track--dragging {
+  cursor: grabbing !important;
+  user-select: none !important;
 }
 
 .feature-tabs-track::-webkit-scrollbar,
 .feature-tabs::-webkit-scrollbar {
-  height: 3px;
+  height: 4px;
+}
+
+.feature-tabs-track::-webkit-scrollbar-track,
+.feature-tabs::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
 }
 
 .feature-tabs-track::-webkit-scrollbar-thumb,
 .feature-tabs::-webkit-scrollbar-thumb {
-  background: var(--border-default);
+  background: rgba(255, 255, 255, 0.22);
   border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.feature-tabs-track:hover::-webkit-scrollbar-thumb,
+.feature-tabs:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.45);
 }
 
 .feature-tab {

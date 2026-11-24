@@ -34,6 +34,12 @@ export const FeatureTabs: React.FC = () => {
 
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Drag-to-scroll tracking
+  const startXRef = useRef(0);
+  const scrollLeftRef = useRef(0);
+  const hasMovedRef = useRef(false);
 
   // Check scroll position to show/hide indicators
   const updateScrollState = useCallback(() => {
@@ -63,24 +69,78 @@ export const FeatureTabs: React.FC = () => {
     }
   }, [inputMode, updateScrollState]);
 
-  // Handle standard desktop mouse wheel on the tab bar
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+  // Native non-passive wheel listener for butter-smooth horizontal scrolling
+  // Converts both mouse wheel (deltaY) and touchpad swipe (deltaX) to horizontal scroll
+  useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    if (e.deltaY !== 0) {
-      e.preventDefault();
-      el.scrollLeft += e.deltaY;
+
+    const onWheel = (e: WheelEvent) => {
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (delta !== 0) {
+        e.preventDefault();
+        el.scrollLeft += delta * 0.85;
+        updateScrollState();
+      }
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [updateScrollState]);
+
+  // Window-level drag-to-scroll listeners: works reliably even if pointer moves outside the 42px bar
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const onMouseMove = (e: MouseEvent) => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const x = e.pageX - el.getBoundingClientRect().left;
+      const walk = (x - startXRef.current) * 1.25;
+      if (Math.abs(walk) > 3) {
+        hasMovedRef.current = true;
+      }
+      el.scrollLeft = scrollLeftRef.current - walk;
       updateScrollState();
+    };
+
+    const onMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [isDragging, updateScrollState]);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setIsDragging(true);
+    hasMovedRef.current = false;
+    startXRef.current = e.pageX - el.getBoundingClientRect().left;
+    scrollLeftRef.current = el.scrollLeft;
+  };
+
+  const handleTabClick = (tabId: TabItem["id"]) => {
+    // If user dragged to scroll, do not select the tab
+    if (hasMovedRef.current) {
+      hasMovedRef.current = false;
+      return;
     }
+    setInputMode(tabId);
   };
 
   const handleScrollLeft = () => {
-    scrollRef.current?.scrollBy({ left: -140, behavior: "smooth" });
+    scrollRef.current?.scrollBy({ left: -160, behavior: "smooth" });
     setTimeout(updateScrollState, 250);
   };
 
   const handleScrollRight = () => {
-    scrollRef.current?.scrollBy({ left: 140, behavior: "smooth" });
+    scrollRef.current?.scrollBy({ left: 160, behavior: "smooth" });
     setTimeout(updateScrollState, 250);
   };
 
@@ -101,10 +161,10 @@ export const FeatureTabs: React.FC = () => {
       {/* Scrollable Tabs Track */}
       <div
         ref={scrollRef}
-        className="feature-tabs-track"
+        className={`feature-tabs-track ${isDragging ? "feature-tabs-track--dragging" : ""}`}
         role="tablist"
-        onWheel={handleWheel}
         onScroll={updateScrollState}
+        onMouseDown={handleMouseDown}
       >
         {TABS.map((tab) => {
           const isActive = inputMode === tab.id;
@@ -114,7 +174,7 @@ export const FeatureTabs: React.FC = () => {
               id={`tab-${tab.id}`}
               role="tab"
               aria-selected={isActive}
-              onClick={() => setInputMode(tab.id)}
+              onClick={() => handleTabClick(tab.id)}
               className={`feature-tab ${isActive ? "feature-tab--active" : ""}`}
             >
               <span className="feature-tab__icon">{tab.icon}</span>

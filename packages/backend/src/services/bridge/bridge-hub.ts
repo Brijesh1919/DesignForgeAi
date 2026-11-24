@@ -127,6 +127,11 @@ export class BridgeHub {
 
     // Pick the most recent active client to prevent duplicate execution across reconnecting sockets
     const activeClient = openClients[openClients.length - 1];
+    if (!activeClient) {
+      throw new Error(
+        "No active Figma plugin connected. Please open the 'DesignForge AI' plugin in Figma and switch to the '🔌 Agent Bridge' tab."
+      );
+    }
 
     const id = uuidv4();
     const command: BridgeCommand = {

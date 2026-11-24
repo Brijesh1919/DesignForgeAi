@@ -12,6 +12,8 @@
  *    single-letter wrapping, and downscales typography safely.
  */
 
+
+
 export interface ResponsiveConvertOptions {
   nodeId?: string;
   targetWidth: number;
@@ -49,29 +51,53 @@ export async function convertToResponsiveFrame(
       createNewFrame = true,
     } = options;
 
-    // 1. Find source frame
-    let sourceNode: FrameNode | null = null;
-    if (nodeId) {
-      sourceNode = (await figma.getNodeByIdAsync(nodeId)) as FrameNode;
+    // Helper to find the top-level frame of a node (even if user clicked an inner text/layer)
+    function findTopLevelFrame(node: SceneNode | null | undefined): FrameNode | null {
+      if (!node) return null;
+      if (node.type === "FRAME" && (!node.parent || node.parent.type === "PAGE" || node.parent.type === "SECTION")) {
+        return node as FrameNode;
+      }
+      let curr: any = node;
+      while (curr && curr.parent && curr.parent.type !== "PAGE") {
+        if (curr.parent.type === "SECTION" && curr.type === "FRAME") {
+          return curr as FrameNode;
+        }
+        curr = curr.parent;
+      }
+      if (curr && curr.type === "FRAME") {
+        return curr as FrameNode;
+      }
+      if (node.type === "FRAME") {
+        return node as FrameNode;
+      }
+      if (node.parent && node.parent.type === "FRAME") {
+        return node.parent as FrameNode;
+      }
+      return null;
     }
-    if (!sourceNode && figma.currentPage.selection.length > 0) {
-      const candidate = figma.currentPage.selection[0];
-      if (candidate.type === "FRAME") {
-        sourceNode = candidate as FrameNode;
-      } else if ("parent" in candidate && candidate.parent && candidate.parent.type === "FRAME") {
-        sourceNode = candidate.parent as FrameNode;
+
+    // 1. Resolve source frame:
+    // ALWAYS check currently active canvas selection first so the currently selected frame takes priority!
+    let sourceNode: FrameNode | null = null;
+    if (figma.currentPage.selection.length > 0) {
+      sourceNode = findTopLevelFrame(figma.currentPage.selection[0]);
+    }
+    // If active canvas selection is empty, fall back to explicit nodeId
+    if (!sourceNode && nodeId) {
+      const explicit = await figma.getNodeByIdAsync(nodeId);
+      if (explicit) {
+        sourceNode = findTopLevelFrame(explicit as SceneNode);
       }
     }
 
     if (!sourceNode || sourceNode.type !== "FRAME") {
       return {
         success: false,
-        error: "No frame selected. Please select a frame on your Figma canvas first.",
+        error: "No frame selected. Please click on any design frame on your Figma canvas first.",
       };
     }
 
-    // Determine if we should use smart reconstruction
-    // Smart reconstruction is used when mode === "smart" or auto-detected on landing pages
+    // Check if source frame is the Posh Landing Page
     const isMobileTarget = targetWidth <= 480;
     const isPoshLandingPage =
       sourceNode.name.includes("Posh") ||
@@ -83,12 +109,8 @@ export async function convertToResponsiveFrame(
             n.name.includes("SECTION 1")
         ) !== null);
 
-    if (mode === "smart" && isMobileTarget) {
-      if (isPoshLandingPage) {
-        return await buildSmartMobileLandingPage(sourceNode, targetWidth, options);
-      } else {
-        return await buildGenericSmartMobilePage(sourceNode, targetWidth, options);
-      }
+    if (isMobileTarget && isPoshLandingPage) {
+      return await buildSmartMobileLandingPage(sourceNode, targetWidth, options);
     } else {
       return await reflowDirectTree(sourceNode, targetWidth, options);
     }
@@ -101,8 +123,109 @@ export async function convertToResponsiveFrame(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 0. GLOBAL CARD & CONTAINER SIZING NORMALIZER
+// SAFE HELPERS: GUARDS AGAINST FIGMA SYMBOLS (figma.mixed) & GRID RESTRICTIONS
 // ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Safely converts any value (including figma.mixed Symbol, undefined, null, NaN) to a number.
+ * NEVER throws "Cannot convert a Symbol value to a number".
+ */
+export function toNum(val: any, fallback: number = 0): number {
+  return typeof val === "number" && !isNaN(val) ? val : fallback;
+}
+
+/**
+ * Safely sets layoutMode on a node.
+ * Instances cannot change layoutMode; wraps in try-catch.
+ */
+export function safeSetLayoutMode(
+  node: SceneNode,
+  mode: "NONE" | "HORIZONTAL" | "VERTICAL"
+): void {
+  try {
+    if ("layoutMode" in node && (node as any).type !== "INSTANCE") {
+      (node as any).layoutMode = mode;
+    }
+  } catch { }
+}
+
+/**
+ * Safely sets counterAxisAlignItems on a frame.
+ * If layoutMode === "GRID", counterAxisAlignItems MUST be "MIN".
+ * NEVER throws "counterAxisAlignItems must be 'MIN' when layoutMode is 'GRID'".
+ */
+export function safeSetCounterAlign(
+  frame: FrameNode | ComponentNode | InstanceNode,
+  align: "MIN" | "CENTER" | "MAX" | "BASELINE"
+): void {
+  try {
+    if ((frame.layoutMode as string) === "GRID") {
+      frame.counterAxisAlignItems = "MIN";
+    } else if (frame.layoutMode === "HORIZONTAL" || frame.layoutMode === "VERTICAL") {
+      frame.counterAxisAlignItems = align;
+    }
+  } catch { }
+}
+
+/**
+ * Safely sets primaryAxisAlignItems on a frame.
+ */
+export function safeSetPrimaryAlign(
+  frame: FrameNode | ComponentNode | InstanceNode,
+  align: "MIN" | "CENTER" | "MAX" | "SPACE_BETWEEN"
+): void {
+  try {
+    if (
+      frame.layoutMode === "HORIZONTAL" ||
+      frame.layoutMode === "VERTICAL" ||
+      (frame.layoutMode as string) === "GRID"
+    ) {
+      frame.primaryAxisAlignItems = align;
+    }
+  } catch { }
+}
+
+/**
+ * Safely sets padding on a frame.
+ */
+export function safeSetPadding(
+  frame: FrameNode | ComponentNode | InstanceNode,
+  top?: number,
+  right?: number,
+  bottom?: number,
+  left?: number
+): void {
+  try {
+    if (top !== undefined && typeof top === "number") frame.paddingTop = top;
+    if (right !== undefined && typeof right === "number") frame.paddingRight = right;
+    if (bottom !== undefined && typeof bottom === "number") frame.paddingBottom = bottom;
+    if (left !== undefined && typeof left === "number") frame.paddingLeft = left;
+  } catch { }
+}
+
+/**
+ * Safely sets cornerRadius on a node.
+ * If node is an Instance or cornerRadius is unsupported/mixed, handles safely.
+ */
+export function safeSetCornerRadius(node: SceneNode, radius: number): void {
+  try {
+    if ("cornerRadius" in node && (node as any).type !== "INSTANCE" && typeof radius === "number") {
+      (node as any).cornerRadius = radius;
+    }
+  } catch { }
+}
+
+/**
+ * Safely sets itemSpacing on a frame.
+ */
+export function safeSetItemSpacing(
+  frame: FrameNode | ComponentNode | InstanceNode,
+  spacing: number
+): void {
+  try {
+    if (typeof spacing === "number") frame.itemSpacing = spacing;
+  } catch { }
+}
 
 export type ResponsiveSemanticRole =
   | "ROOT"
@@ -111,9 +234,86 @@ export type ResponsiveSemanticRole =
   | "BADGE_OR_CHIP"
   | "BUTTON_CTA"
   | "BUTTON_INLINE"
+  | "NAV_OR_HEADER_ROW"
   | "HORIZONTAL_ROW"
   | "CARD_OR_BOX"
   | "CONTAINER";
+
+/**
+ * Formats a TextNode for responsive layout.
+ * Guarantees that short text, labels, nav links, buttons, and badges NEVER wrap letter-by-letter.
+ * Only multiline headings and paragraphs in vertical containers wrap, and only across the full available width.
+ */
+export function formatResponsiveTextNode(
+  t: TextNode,
+  parentLayout: "VERTICAL" | "HORIZONTAL" | "NONE" | "GRID",
+  availableWidth: number
+): void {
+  try {
+    if ("layoutPositioning" in t && (t as any).layoutPositioning === "ABSOLUTE") {
+      (t as any).layoutPositioning = "AUTO";
+    }
+  } catch { }
+
+  // 1. First measure natural single-line width with WIDTH_AND_HEIGHT
+  try {
+    t.textAutoResize = "WIDTH_AND_HEIGHT";
+  } catch { }
+
+  const chars = (t.characters || "").trim();
+  const naturalWidth = t.width;
+  const isShortLabel = (chars.length <= 30 && !chars.includes("\n")) || chars.length === 0;
+
+  // In horizontal rows, nav items, buttons, badges, chips, or short labels:
+  // ALWAYS keep WIDTH_AND_HEIGHT (Hug contents) so text NEVER wraps letter by letter!
+  if (parentLayout === "HORIZONTAL" || isShortLabel || availableWidth < 120) {
+    try {
+      t.textAutoResize = "WIDTH_AND_HEIGHT";
+      t.layoutSizingHorizontal = "HUG";
+      t.layoutSizingVertical = "HUG";
+    } catch { }
+    return;
+  }
+
+  // In vertical layouts:
+  if (parentLayout === "VERTICAL") {
+    const maxSafeW = Math.max(140, availableWidth);
+    // If the text naturally exceeds available width or is an explicit multiline paragraph:
+    if (naturalWidth > maxSafeW || chars.length > 35 || chars.includes("\n")) {
+      try {
+        // Set width to full available width FIRST before switching to HEIGHT resize
+        t.resize(maxSafeW, t.height);
+        t.textAutoResize = "HEIGHT";
+        t.layoutSizingHorizontal = "FILL";
+        t.layoutSizingVertical = "HUG";
+      } catch {
+        try {
+          t.resize(maxSafeW, t.height);
+          t.textAutoResize = "HEIGHT";
+        } catch { }
+      }
+    } else {
+      // Short heading or label that fits on one line: Hug width & height
+      try {
+        t.textAutoResize = "WIDTH_AND_HEIGHT";
+        t.layoutSizingHorizontal = "HUG";
+        t.layoutSizingVertical = "HUG";
+      } catch { }
+    }
+  } else {
+    // In NONE or GRID layouts:
+    if (availableWidth >= 140 && (naturalWidth > availableWidth || chars.length > 35 || chars.includes("\n"))) {
+      try {
+        t.resize(availableWidth, t.height);
+        t.textAutoResize = "HEIGHT";
+      } catch { }
+    } else {
+      try {
+        t.textAutoResize = "WIDTH_AND_HEIGHT";
+      } catch { }
+    }
+  }
+}
 
 /**
  * Classifies a frame node into a semantic UI role based on its name, dimensions,
@@ -131,10 +331,23 @@ export function classifyResponsiveRole(
   const width = f.width;
   const height = f.height;
   const childrenCount = f.children ? f.children.length : 0;
-  const hasVisual =
-    ("fills" in f && Array.isArray(f.fills) && f.fills.length > 0) ||
-    ("strokes" in f && Array.isArray(f.strokes) && f.strokes.length > 0) ||
-    (typeof f.cornerRadius === "number" && f.cornerRadius > 0);
+  const radius = toNum(f.cornerRadius, 0);
+
+  // Check for REAL visible styling:
+  const hasVisibleFill =
+    "fills" in f &&
+    Array.isArray(f.fills) &&
+    f.fills.some(
+      (fill) =>
+        fill.type !== undefined &&
+        fill.visible !== false &&
+        (fill.opacity === undefined || fill.opacity > 0.05)
+    );
+  const hasVisibleStroke =
+    "strokes" in f &&
+    Array.isArray(f.strokes) &&
+    f.strokes.some((s) => s.type !== undefined && s.visible !== false);
+  const hasRealCardVisual = (hasVisibleFill || hasVisibleStroke) && (radius >= 4 || width >= 100);
 
   // 1. Icon / Avatar / Small Square Graphic (<= 48x48)
   if (
@@ -155,7 +368,7 @@ export function classifyResponsiveRole(
   ];
   const isBadgeName = badgeKeywords.some((kw) => lowerName.includes(kw));
   const isBadgeShape =
-    hasVisual &&
+    hasVisibleFill &&
     childrenCount === 1 &&
     height <= 36 &&
     width <= 180 &&
@@ -165,16 +378,36 @@ export function classifyResponsiveRole(
     return "BADGE_OR_CHIP";
   }
 
-  // 3. Buttons (Primary Full-Width CTA vs Inline/Header Button)
+  // 3. Navigation / Header Row / Nav Links (NEVER turn into vertical 16px columns!)
+  const isNavOrHeader =
+    lowerName.includes("nav") ||
+    lowerName.includes("menu") ||
+    lowerName.includes("link") ||
+    lowerName.includes("header") ||
+    lowerName.includes("top-bar") ||
+    lowerName.includes("topbar") ||
+    lowerName.includes("appbar") ||
+    lowerName.includes("breadcrumb") ||
+    lowerName.includes("tab-bar") ||
+    lowerName.includes("tabs") ||
+    (parent && (parent.name || "").toLowerCase().includes("nav")) ||
+    (parent && (parent.name || "").toLowerCase().includes("header")) ||
+    (parent && (parent.name || "").toLowerCase().includes("menu"));
+
+  if (isNavOrHeader && (f.layoutMode === "HORIZONTAL" || childrenCount <= 12)) {
+    return "NAV_OR_HEADER_ROW";
+  }
+
+  // 4. Buttons (Primary Full-Width CTA vs Inline/Header Button)
   const buttonKeywords = [
     "button", "btn", "cta", "submit", "quote", "sample",
     "login", "register", "action", "contact"
   ];
   const hasButtonKeyword = buttonKeywords.some((kw) => lowerName.includes(kw));
   const isButtonShape =
-    hasVisual &&
-    (f.cornerRadius || 0) >= 4 &&
-    height >= 30 &&
+    (hasVisibleFill || hasVisibleStroke) &&
+    radius >= 4 &&
+    height >= 28 &&
     height <= 60 &&
     childrenCount <= 3 &&
     f.children.some((c) => c.type === "TEXT");
@@ -203,335 +436,318 @@ export function classifyResponsiveRole(
     return "BUTTON_INLINE";
   }
 
-  // 4. Horizontal Row (e.g. Price Row, Tag Row, Action Bar, Info Row)
+  // 5. Genuine Card / Box (MUST be checked before general HORIZONTAL_ROW so cards with image+text become VERTICAL!)
+  const trueCardKeywords = [
+    "card", "tile", "pricing", "product", "testimonial", "review",
+    "feature", "item", "article", "post", "cell", "plan", "box"
+  ];
+  const hasTrueCardName = trueCardKeywords.some((kw) => lowerName.includes(kw));
+  const isStuck100x100 = (width === 100 && height === 100) || (height === 100 && childrenCount > 0);
+  const isCardShape = hasRealCardVisual && width >= 100 && height >= 60;
+
+  if ((hasTrueCardName || isCardShape || isStuck100x100) && childrenCount >= 1 && width >= 80 && height >= 40) {
+    return "CARD_OR_BOX";
+  }
+
+  // 6. Horizontal Row (e.g. Price Row, Tag Row, Action Bar, Info Row, Rating Stars, Avatar+Name)
   if (f.layoutMode === "HORIZONTAL" && childrenCount >= 2) {
     return "HORIZONTAL_ROW";
   }
 
-  // 5. Card / Box / Tile / Panel / Item Container
-  const cardKeywords = [
-    "card", "box", "tile", "item", "container", "panel", "wrapper",
-    "article", "product", "pricing", "feature", "column", "col",
-    "content", "body", "block", "banner", "portal", "post",
-    "service", "review", "testimonial", "cell"
-  ];
-  const hasCardKeyword = cardKeywords.some((kw) => lowerName.includes(kw));
-  const isStuck100x100 = (width === 100 && height === 100) || (height === 100 && childrenCount > 0);
-
-  if (
-    hasCardKeyword ||
-    isStuck100x100 ||
-    (hasVisual && childrenCount >= 2 && width >= 120 && height >= 50)
-  ) {
-    return "CARD_OR_BOX";
-  }
-
-  // 6. Generic Container
+  // 7. Generic Container / Structural Wrapper (transparent columns, wrappers, flex divs)
   return "CONTAINER";
 }
 
 /**
  * Post-order safety scan: Enforces Fill Container width & Hug Contents height
  * on all card, box, tile, panel, item, and container frames across the converted tree.
- * Guarantees zero nodes are left stuck with fixed 100x100 dimensions, and ensures
- * proper padding is always applied so auto-layout hugging never makes cards thin.
+ * Guarantees zero nodes are left stuck with fixed 100x100 dimensions, applies generous
+ * padding ONLY to genuine cards (never stacking on transparent wrappers), and formats
+ * all text so it never wraps letter by letter.
  */
 export function fixAllCardsAndContainers(rootNode: FrameNode, targetWidth: number): number {
   let count = 0;
   const innerContentWidth = targetWidth - 32;
 
   function visit(node: SceneNode, parent: FrameNode | null) {
-    if (node.type === "FRAME" || node.type === "COMPONENT" || node.type === "INSTANCE") {
-      const f = node as FrameNode;
-      const role = classifyResponsiveRole(f, parent, rootNode);
+    try {
+      if (node.type === "FRAME" || node.type === "COMPONENT" || node.type === "INSTANCE") {
+        const f = node as FrameNode;
+        const role = classifyResponsiveRole(f, parent, rootNode);
 
-      // 1. Post-order traversal: recurse on children first
-      for (const child of [...f.children]) {
-        visit(child, f);
-      }
-
-      // Root frame itself: keep targetWidth and hug/auto height
-      if (role === "ROOT") {
-        f.resize(targetWidth, f.height);
-        f.counterAxisSizingMode = "FIXED";
-        f.primaryAxisSizingMode = "AUTO";
-        return;
-      }
-
-      count++;
-
-      // Ensure layoutPositioning is AUTO so auto-layout rules apply
-      try {
-        if ("layoutPositioning" in f) {
-          f.layoutPositioning = "AUTO";
-        }
-      } catch {}
-
-      // Apply smart rules according to semantic role:
-
-      if (role === "SECTION") {
-        // Top-level page section:
-        if (f.layoutMode === "NONE") f.layoutMode = "VERTICAL";
-        f.primaryAxisAlignItems = "MIN";
-        f.counterAxisAlignItems = "MIN";
-        if (f.paddingLeft < 14) f.paddingLeft = 16;
-        if (f.paddingRight < 14) f.paddingRight = 16;
-        if (f.paddingTop < 14) f.paddingTop = 24;
-        if (f.paddingBottom < 14) f.paddingBottom = 28;
-        if (f.itemSpacing < 10) f.itemSpacing = 16;
-        try {
-          f.layoutSizingHorizontal = "FILL";
-          f.layoutSizingVertical = "HUG";
-        } catch {
-          f.resize(targetWidth, f.height);
-        }
-      } else if (role === "ICON_OR_AVATAR") {
-        // Icons and avatars: KEEP FIXED DIMENSIONS!
-        try {
-          f.layoutSizingHorizontal = "FIXED";
-          f.layoutSizingVertical = "FIXED";
-        } catch {}
-      } else if (role === "BADGE_OR_CHIP") {
-        // Badges, chips, tags, pills: HUG horizontal & HUG vertical (NEVER fill container!)
-        if (f.layoutMode === "NONE") f.layoutMode = "HORIZONTAL";
-        f.counterAxisAlignItems = "CENTER";
-        f.primaryAxisAlignItems = "CENTER";
-        if (f.paddingTop < 4 || f.paddingTop > 10) f.paddingTop = 6;
-        if (f.paddingBottom < 4 || f.paddingBottom > 10) f.paddingBottom = 6;
-        if (f.paddingLeft < 8 || f.paddingLeft > 18) f.paddingLeft = 12;
-        if (f.paddingRight < 8 || f.paddingRight > 18) f.paddingRight = 12;
-        if ((f.cornerRadius || 0) < 6) f.cornerRadius = 16;
-
-        try {
-          f.counterAxisSizingMode = "AUTO";
-          f.primaryAxisSizingMode = "AUTO";
-          f.layoutSizingHorizontal = "HUG";
-          f.layoutSizingVertical = "HUG";
-        } catch {}
-
-        // Ensure child text inside badge/chip hugs its contents
-        for (const child of f.children) {
-          if (child.type === "TEXT") {
-            const t = child as TextNode;
+        // 1. Post-order traversal: recurse on children first
+        if (f.children) {
+          for (const child of [...f.children]) {
             try {
-              t.textAutoResize = "WIDTH_AND_HEIGHT";
-              t.layoutPositioning = "AUTO";
-              t.layoutSizingHorizontal = "HUG";
-              t.layoutSizingVertical = "HUG";
-            } catch {}
-          }
-        }
-      } else if (role === "BUTTON_CTA") {
-        // Primary Full-Width CTA inside card / hero / section:
-        f.layoutMode = "HORIZONTAL";
-        f.primaryAxisAlignItems = "CENTER";
-        f.counterAxisAlignItems = "CENTER";
-        if (f.paddingTop < 10) f.paddingTop = 12;
-        if (f.paddingBottom < 10) f.paddingBottom = 12;
-        if (f.paddingLeft < 14) f.paddingLeft = 18;
-        if (f.paddingRight < 14) f.paddingRight = 18;
-        if ((f.cornerRadius || 0) < 6) f.cornerRadius = 8;
-        if (f.itemSpacing < 6 && f.children.length > 1) f.itemSpacing = 8;
-
-        try {
-          f.layoutSizingHorizontal = "FILL";
-          f.layoutSizingVertical = "HUG";
-        } catch {
-          try { f.layoutAlign = "STRETCH"; } catch {}
-        }
-
-        // Child text inside CTA button
-        for (const child of f.children) {
-          if (child.type === "TEXT") {
-            const t = child as TextNode;
-            try {
-              t.textAutoResize = "WIDTH_AND_HEIGHT";
-              t.textAlignHorizontal = "CENTER";
-              t.layoutPositioning = "AUTO";
-              t.layoutSizingHorizontal = "HUG";
-              t.layoutSizingVertical = "HUG";
-            } catch {}
-          }
-        }
-      } else if (role === "BUTTON_INLINE") {
-        // Inline / Header / Search button:
-        f.layoutMode = "HORIZONTAL";
-        f.primaryAxisAlignItems = "CENTER";
-        f.counterAxisAlignItems = "CENTER";
-        if (f.paddingTop < 6) f.paddingTop = 8;
-        if (f.paddingBottom < 6) f.paddingBottom = 8;
-        if (f.paddingLeft < 10) f.paddingLeft = 14;
-        if (f.paddingRight < 10) f.paddingRight = 14;
-        if ((f.cornerRadius || 0) < 6) f.cornerRadius = 8;
-
-        try {
-          f.counterAxisSizingMode = "AUTO";
-          f.primaryAxisSizingMode = "AUTO";
-          f.layoutSizingHorizontal = "HUG";
-          f.layoutSizingVertical = "HUG";
-        } catch {}
-
-        for (const child of f.children) {
-          if (child.type === "TEXT") {
-            const t = child as TextNode;
-            try {
-              t.textAutoResize = "WIDTH_AND_HEIGHT";
-              t.layoutPositioning = "AUTO";
-              t.layoutSizingHorizontal = "HUG";
-              t.layoutSizingVertical = "HUG";
-            } catch {}
-          }
-        }
-      } else if (role === "HORIZONTAL_ROW") {
-        // Horizontal rows (e.g. Price Row, Tag Row, Info Row):
-        try {
-          f.layoutSizingHorizontal = "FILL";
-          f.layoutSizingVertical = "HUG";
-        } catch {}
-
-        // Check if children are 2 cards (e.g. category tiles 50/50):
-        const allCardChildren =
-          f.children.length >= 2 &&
-          f.children.every(
-            (c) =>
-              c.type === "FRAME" &&
-              ((c as FrameNode).name.toLowerCase().includes("tile") ||
-                (c as FrameNode).name.toLowerCase().includes("card"))
-          );
-
-        for (const child of f.children) {
-          if (child.type === "FRAME") {
-            const cf = child as FrameNode;
-            try {
-              if (allCardChildren) {
-                cf.layoutSizingHorizontal = "FILL";
-                cf.layoutSizingVertical = "HUG";
-              } else {
-                cf.layoutSizingHorizontal = "HUG";
-                cf.layoutSizingVertical = "HUG";
-              }
-            } catch {}
-          } else if (child.type === "TEXT") {
-            const t = child as TextNode;
-            try {
-              t.textAutoResize = "WIDTH_AND_HEIGHT";
-              t.layoutSizingHorizontal = "HUG";
-              t.layoutSizingVertical = "HUG";
-            } catch {}
-          }
-        }
-      } else if (role === "CARD_OR_BOX" || role === "CONTAINER") {
-        // Cards, Tiles, Content Boxes, Panels:
-        if (f.layoutMode === "NONE" && f.children.length > 0) {
-          f.layoutMode = "VERTICAL";
-          f.primaryAxisAlignItems = "MIN";
-          f.counterAxisAlignItems = "MIN";
-        }
-
-        // CRUCIAL: ALWAYS ENFORCE GENEROUS PADDING ON CARDS & BOXES!
-        // This guarantees that when layoutSizingVertical = "HUG" is applied,
-        // the container does NOT collapse into a thin strip!
-        const hasVisual =
-          ("fills" in f && Array.isArray(f.fills) && f.fills.length > 0) ||
-          ("strokes" in f && Array.isArray(f.strokes) && f.strokes.length > 0) ||
-          (typeof f.cornerRadius === "number" && f.cornerRadius > 0);
-
-        if (hasVisual || role === "CARD_OR_BOX") {
-          if (f.paddingTop < 14) f.paddingTop = 16;
-          if (f.paddingBottom < 14) f.paddingBottom = 16;
-          if (f.paddingLeft < 14) f.paddingLeft = 16;
-          if (f.paddingRight < 14) f.paddingRight = 16;
-          if (f.itemSpacing < 8) f.itemSpacing = 12;
-          if (hasVisual && (f.cornerRadius === undefined || f.cornerRadius < 8)) {
-            f.cornerRadius = 12;
+              visit(child, f);
+            } catch (childErr) {
+              console.warn(`[ResponsiveConverter] Error visiting child "${child.name}":`, childErr);
+            }
           }
         }
 
-        // Width: FILL container
-        if (parent && parent.layoutMode !== "NONE") {
+        // Root frame itself: keep targetWidth and hug/auto height
+        if (role === "ROOT") {
+          try {
+            f.resize(targetWidth, f.height);
+            f.counterAxisSizingMode = "FIXED";
+            f.primaryAxisSizingMode = "AUTO";
+          } catch { }
+          return;
+        }
+
+        count++;
+
+        // Ensure layoutPositioning is AUTO so auto-layout rules apply
+        try {
+          if ("layoutPositioning" in f) {
+            f.layoutPositioning = "AUTO";
+          }
+        } catch { }
+
+        // Apply smart rules according to semantic role:
+        if (role === "SECTION") {
+          // Top-level page section:
+          if (f.layoutMode === "NONE" || (f.layoutMode as string) === "GRID") {
+            safeSetLayoutMode(f, "VERTICAL");
+          }
+          safeSetPrimaryAlign(f, "MIN");
+          safeSetCounterAlign(f, "MIN");
+          safeSetPadding(f, 24, 16, 28, 16);
+          safeSetItemSpacing(f, 16);
           try {
             f.layoutSizingHorizontal = "FILL";
-          } catch {
-            try {
-              f.layoutAlign = "STRETCH";
-            } catch {
-              const safeW =
-                parent.layoutMode === "VERTICAL"
-                  ? parent.width - (parent.paddingLeft + parent.paddingRight)
-                  : f.width;
-              if (safeW > 100) f.resize(safeW, f.height);
-            }
-          }
-        } else if (f.width < innerContentWidth) {
-          try {
-            f.resize(innerContentWidth, f.height);
-          } catch {}
-        }
-
-        // Height: HUG contents
-        if (f.layoutMode !== "NONE") {
-          try {
-            if (f.layoutMode === "VERTICAL") {
-              f.primaryAxisSizingMode = "AUTO";
-            } else {
-              f.counterAxisSizingMode = "AUTO";
-            }
             f.layoutSizingVertical = "HUG";
-          } catch {}
-        } else if (f.height <= 100 && f.children.length > 0) {
-          const maxY = Math.max(...f.children.map((c) => c.y + c.height));
-          if (maxY > 100) {
-            try {
-              f.resize(f.width, maxY + 24);
-            } catch {}
+          } catch {
+            try { f.resize(targetWidth, f.height); } catch { }
           }
-        }
+        } else if (role === "ICON_OR_AVATAR") {
+          try {
+            f.layoutSizingHorizontal = "FIXED";
+            f.layoutSizingVertical = "FIXED";
+          } catch { }
+        } else if (role === "BADGE_OR_CHIP") {
+          if (f.layoutMode === "NONE") safeSetLayoutMode(f, "HORIZONTAL");
+          safeSetCounterAlign(f, "CENTER");
+          safeSetPrimaryAlign(f, "CENTER");
+          safeSetPadding(f, 6, 12, 6, 12);
+          if (toNum(f.cornerRadius) < 6) safeSetCornerRadius(f, 16);
 
-        // Adjust children inside the card:
-        for (const child of f.children) {
-          if (child.type === "TEXT") {
-            const t = child as TextNode;
-            const tLower = (t.name || "").toLowerCase();
-            const isHeadingOrDesc =
-              t.characters.length > 25 ||
-              tLower.includes("title") ||
-              tLower.includes("head") ||
-              tLower.includes("desc") ||
-              tLower.includes("body");
+          try {
+            f.counterAxisSizingMode = "AUTO";
+            f.primaryAxisSizingMode = "AUTO";
+            f.layoutSizingHorizontal = "HUG";
+            f.layoutSizingVertical = "HUG";
+          } catch { }
 
-            if (isHeadingOrDesc) {
-              try {
-                t.textAutoResize = "HEIGHT";
-                t.layoutPositioning = "AUTO";
-                t.layoutSizingHorizontal = "FILL";
-              } catch {}
-            } else {
-              try {
-                t.textAutoResize = "WIDTH_AND_HEIGHT";
-                t.layoutPositioning = "AUTO";
-                t.layoutSizingHorizontal = "HUG";
-                t.layoutSizingVertical = "HUG";
-              } catch {}
+          for (const child of f.children) {
+            if (child.type === "TEXT") {
+              formatResponsiveTextNode(child as TextNode, "HORIZONTAL", f.width);
             }
-          } else if (
-            child.type === "RECTANGLE" ||
-            (child.type === "FRAME" && (!child.children || child.children.length === 0))
-          ) {
-            const r = child as RectangleNode | FrameNode;
+          }
+        } else if (role === "NAV_OR_HEADER_ROW") {
+          // Navigation / Header row: keep horizontal, compact spacing, NO giant vertical stacks!
+          safeSetLayoutMode(f, "HORIZONTAL");
+          safeSetPrimaryAlign(f, "MIN");
+          safeSetCounterAlign(f, "CENTER");
+          safeSetItemSpacing(f, 8);
+          safeSetPadding(f, 4, 0, 4, 0);
+          try {
+            f.layoutSizingHorizontal = "HUG";
+            f.layoutSizingVertical = "HUG";
+          } catch { }
+
+          for (const child of f.children) {
+            if (child.type === "TEXT") {
+              formatResponsiveTextNode(child as TextNode, "HORIZONTAL", f.width);
+            }
+          }
+        } else if (role === "BUTTON_CTA") {
+          // Primary Full-Width CTA inside card / hero / section:
+          if (f.layoutMode === "NONE") safeSetLayoutMode(f, "HORIZONTAL");
+          safeSetPrimaryAlign(f, "CENTER");
+          safeSetCounterAlign(f, "CENTER");
+          safeSetPadding(f, 12, 18, 12, 18);
+          if (toNum(f.cornerRadius) < 6) safeSetCornerRadius(f, 8);
+          if (toNum(f.itemSpacing) < 6 && f.children.length > 1) safeSetItemSpacing(f, 8);
+
+          try {
+            f.layoutSizingHorizontal = "FILL";
+            f.layoutSizingVertical = "HUG";
+          } catch {
+            try { f.layoutAlign = "STRETCH"; } catch { }
+          }
+
+          for (const child of f.children) {
+            if (child.type === "TEXT") {
+              formatResponsiveTextNode(child as TextNode, "HORIZONTAL", f.width);
+            }
+          }
+        } else if (role === "BUTTON_INLINE") {
+          if (f.layoutMode === "NONE") safeSetLayoutMode(f, "HORIZONTAL");
+          safeSetPrimaryAlign(f, "CENTER");
+          safeSetCounterAlign(f, "CENTER");
+          safeSetPadding(f, 8, 14, 8, 14);
+          if (toNum(f.cornerRadius) < 6) safeSetCornerRadius(f, 8);
+
+          try {
+            f.counterAxisSizingMode = "AUTO";
+            f.primaryAxisSizingMode = "AUTO";
+            f.layoutSizingHorizontal = "HUG";
+            f.layoutSizingVertical = "HUG";
+          } catch { }
+
+          for (const child of f.children) {
+            if (child.type === "TEXT") {
+              formatResponsiveTextNode(child as TextNode, "HORIZONTAL", f.width);
+            }
+          }
+        } else if (role === "HORIZONTAL_ROW") {
+          try {
+            f.layoutSizingHorizontal = "FILL";
+            f.layoutSizingVertical = "HUG";
+          } catch { }
+
+          for (const child of f.children) {
+            if (child.type === "TEXT") {
+              formatResponsiveTextNode(child as TextNode, "HORIZONTAL", f.width);
+            }
+          }
+        } else if (role === "CARD_OR_BOX") {
+          // Content Card MUST ALWAYS take VERTICAL flow on mobile!
+          safeSetLayoutMode(f, "VERTICAL");
+          safeSetPrimaryAlign(f, "MIN");
+          safeSetCounterAlign(f, "MIN");
+
+          safeSetPadding(f, 16, 16, 16, 16);
+          safeSetItemSpacing(f, 12);
+          if (toNum(f.cornerRadius) < 8) {
+            safeSetCornerRadius(f, 14);
+          }
+
+          // Width: FILL container
+          if (parent && parent.layoutMode !== "NONE") {
             try {
-              r.layoutPositioning = "AUTO";
-              r.layoutSizingHorizontal = "FILL";
-              if (r.height < 120) {
-                r.resize(r.width, 160);
+              f.layoutSizingHorizontal = "FILL";
+            } catch {
+              try {
+                f.layoutAlign = "STRETCH";
+              } catch {
+                const safeW =
+                  parent.layoutMode === "VERTICAL"
+                    ? parent.width - (toNum(parent.paddingLeft) + toNum(parent.paddingRight))
+                    : f.width;
+                if (safeW > 100) {
+                  try { f.resize(safeW, f.height); } catch { }
+                }
               }
-            } catch {}
+            }
+          } else if (f.width < innerContentWidth) {
+            try {
+              f.resize(innerContentWidth, f.height);
+            } catch { }
+          }
+
+          // Height: HUG contents
+          if (f.layoutMode !== "NONE") {
+            try {
+              if (f.layoutMode === "VERTICAL") {
+                f.primaryAxisSizingMode = "AUTO";
+              } else {
+                f.counterAxisSizingMode = "AUTO";
+              }
+              f.layoutSizingVertical = "HUG";
+            } catch { }
+          }
+
+          // Adjust children inside the card:
+          for (const child of f.children) {
+            if (child.type === "TEXT") {
+              formatResponsiveTextNode(child as TextNode, f.layoutMode, f.width - 32);
+            } else if (
+              child.type === "RECTANGLE" ||
+              (child.type === "FRAME" && (!child.children || child.children.length === 0))
+            ) {
+              const r = child as RectangleNode | FrameNode;
+              try {
+                r.layoutPositioning = "AUTO";
+                r.layoutSizingHorizontal = "FILL";
+                // If it is a thin line / divider / separator (height <= 8), KEEP its height (1px, 2px, etc.)!
+                // Only if it is an actual media/image frame or placeholder that had height stuck at 100, give it a proper height!
+                const hasImg = "fills" in r && Array.isArray((r as any).fills) && (r as any).fills.some((fl: any) => fl.type === "IMAGE");
+                const cName = (r.name || "").toLowerCase();
+                const isPhoto = hasImg || cName.includes("img") || cName.includes("image") || cName.includes("photo") || cName.includes("thumb") || cName.includes("pic");
+                if (isPhoto || (r.height >= 40 && r.height <= 320)) {
+                  r.resize(f.width - 32, Math.max(140, Math.min(200, r.height)));
+                  if ("cornerRadius" in r) (r as any).cornerRadius = 10;
+                  if ("clipsContent" in r) (r as any).clipsContent = true;
+                }
+              } catch { }
+            } else if (child.type === "FRAME" && child.children && child.children.length > 0) {
+              const cRole = classifyResponsiveRole(child as FrameNode, f, rootNode);
+              if (cRole === "BUTTON_CTA" || cRole === "BUTTON_INLINE") {
+                safeSetLayoutMode(child as FrameNode, "HORIZONTAL");
+                safeSetPrimaryAlign(child as FrameNode, "CENTER");
+                safeSetCounterAlign(child as FrameNode, "CENTER");
+                safeSetPadding(child as FrameNode, 12, 16, 12, 16);
+                if (toNum((child as FrameNode).cornerRadius) < 6) safeSetCornerRadius(child as FrameNode, 8);
+                try {
+                  (child as FrameNode).layoutSizingHorizontal = "FILL";
+                  (child as FrameNode).layoutSizingVertical = "HUG";
+                } catch { }
+              }
+            }
+          }
+        } else if (role === "CONTAINER") {
+          // Transparent structural wrapper (div.col, div.wrapper, div.inner):
+          // DO NOT inject 16px padding! Keep padding clean (0 or original minimal padding)
+          // to prevent compounding nested padding!
+          if ((f.layoutMode === "NONE" || (f.layoutMode as string) === "GRID") && f.children.length > 0) {
+            safeSetLayoutMode(f, "VERTICAL");
+            safeSetPrimaryAlign(f, "MIN");
+            safeSetCounterAlign(f, "MIN");
+          }
+
+          safeSetItemSpacing(f, 8);
+
+          // Width: FILL container
+          if (parent && parent.layoutMode !== "NONE") {
+            try {
+              f.layoutSizingHorizontal = "FILL";
+            } catch {
+              try { f.layoutAlign = "STRETCH"; } catch { }
+            }
+          }
+
+          // Height: HUG contents
+          if (f.layoutMode !== "NONE") {
+            try {
+              if (f.layoutMode === "VERTICAL") {
+                f.primaryAxisSizingMode = "AUTO";
+              } else {
+                f.counterAxisSizingMode = "AUTO";
+              }
+              f.layoutSizingVertical = "HUG";
+            } catch { }
+          }
+
+          for (const child of f.children) {
+            if (child.type === "TEXT") {
+              formatResponsiveTextNode(child as TextNode, f.layoutMode, f.width);
+            }
           }
         }
       }
+    } catch (nodeErr) {
+      console.warn(`[ResponsiveConverter] Error in fixAllCardsAndContainers on "${node.name}":`, nodeErr);
     }
   }
 
-  visit(rootNode, null);
+  try {
+    visit(rootNode, null);
+  } catch (visitErr) {
+    console.warn("[ResponsiveConverter] Error in fixAllCardsAndContainers visit:", visitErr);
+  }
   return count;
 }
 
@@ -709,7 +925,7 @@ async function buildSmartMobileLandingPage(
   // Helper: Append and Fill
   function appendAndFill(parent: FrameNode, child: FrameNode, hugVertical: boolean = true) {
     if (child.width < targetWidth) {
-      try { child.resize(targetWidth, Math.max(child.height, 36)); } catch {}
+      try { child.resize(targetWidth, Math.max(child.height, 36)); } catch { }
     }
     parent.appendChild(child);
     try {
@@ -994,7 +1210,7 @@ async function buildSmartMobileLandingPage(
       pill.primaryAxisSizingMode = "AUTO";
       pill.layoutSizingHorizontal = "HUG";
       pill.layoutSizingVertical = "HUG";
-    } catch {}
+    } catch { }
     popRow.appendChild(pill);
   });
   heroSection.appendChild(popRow);
@@ -1129,7 +1345,7 @@ async function buildSmartMobileLandingPage(
       row.layoutPositioning = "AUTO";
       row.layoutSizingHorizontal = "FILL";
       row.layoutSizingVertical = "HUG";
-    } catch {}
+    } catch { }
 
     for (let c = 0; c < 2; c++) {
       const idx = r * 2 + c;
@@ -1170,7 +1386,7 @@ async function buildSmartMobileLandingPage(
         tile.layoutPositioning = "AUTO";
         tile.layoutSizingHorizontal = "FILL";
         tile.layoutSizingVertical = "HUG";
-      } catch {}
+      } catch { }
     }
     catSection.appendChild(row);
   }
@@ -1227,7 +1443,7 @@ async function buildSmartMobileLandingPage(
       chip.primaryAxisSizingMode = "AUTO";
       chip.layoutSizingHorizontal = "HUG";
       chip.layoutSizingVertical = "HUG";
-    } catch {}
+    } catch { }
     chipsRow.appendChild(chip);
   });
   filterSection.appendChild(chipsRow);
@@ -1314,7 +1530,7 @@ async function buildSmartMobileLandingPage(
     try {
       imgWrap.layoutPositioning = "AUTO";
       imgWrap.layoutSizingHorizontal = "FILL";
-    } catch {}
+    } catch { }
 
     const pImg = createImgNode(
       prod.sku,
@@ -1329,7 +1545,7 @@ async function buildSmartMobileLandingPage(
     pImg.y = 0;
     try {
       pImg.layoutSizingHorizontal = "FILL";
-    } catch {}
+    } catch { }
     imgWrap.appendChild(pImg);
     card.appendChild(imgWrap);
 
@@ -1345,7 +1561,7 @@ async function buildSmartMobileLandingPage(
       cardInfo.layoutPositioning = "AUTO";
       cardInfo.layoutSizingHorizontal = "FILL";
       cardInfo.layoutSizingVertical = "HUG";
-    } catch {}
+    } catch { }
     cardInfo.appendChild(createTxt(prod.cat, 10.5, "Bold", C.bluePrimary));
     cardInfo.appendChild(createTxt(prod.sku, 15, "Bold", C.navySlate));
 
@@ -1360,7 +1576,7 @@ async function buildSmartMobileLandingPage(
       priceRow.layoutPositioning = "AUTO";
       priceRow.layoutSizingHorizontal = "FILL";
       priceRow.layoutSizingVertical = "HUG";
-    } catch {}
+    } catch { }
     priceRow.appendChild(createTxt(prod.price, 14, "Bold", C.navySlate));
     priceRow.appendChild(createTxt(prod.min, 11, "Medium", C.greenAccent));
     cardInfo.appendChild(priceRow);
@@ -1380,7 +1596,7 @@ async function buildSmartMobileLandingPage(
       quoteBtn.layoutPositioning = "AUTO";
       quoteBtn.layoutSizingHorizontal = "FILL";
       quoteBtn.layoutSizingVertical = "HUG";
-    } catch {}
+    } catch { }
     quoteBtn.appendChild(createTxt("Request a Quote", 12.5, "SemiBold", C.bgPure));
     card.appendChild(quoteBtn);
 
@@ -1389,7 +1605,7 @@ async function buildSmartMobileLandingPage(
       card.layoutPositioning = "AUTO";
       card.layoutSizingHorizontal = "FILL";
       card.layoutSizingVertical = "HUG";
-    } catch {}
+    } catch { }
   });
   appendAndFill(root, prodSection);
 
@@ -1451,7 +1667,7 @@ async function buildSmartMobileLandingPage(
     assistBtn.layoutPositioning = "AUTO";
     assistBtn.layoutSizingHorizontal = "FILL";
     assistBtn.layoutSizingVertical = "HUG";
-  } catch {}
+  } catch { }
   appendAndFill(root, assistSection);
 
   // 9. SECTION 6: ORDERING RESOURCES & TRUST CREDENTIALS
@@ -1505,7 +1721,7 @@ async function buildSmartMobileLandingPage(
       card.layoutPositioning = "AUTO";
       card.layoutSizingHorizontal = "FILL";
       card.layoutSizingVertical = "HUG";
-    } catch {}
+    } catch { }
   });
 
   // Trust Badges in Section 6
@@ -1556,7 +1772,7 @@ async function buildSmartMobileLandingPage(
       card.layoutPositioning = "AUTO";
       card.layoutSizingHorizontal = "FILL";
       card.layoutSizingVertical = "HUG";
-    } catch {}
+    } catch { }
   });
 
   // Awards graphic banner
@@ -1657,7 +1873,7 @@ async function buildSmartMobileLandingPage(
     portalBox.layoutSizingVertical = "HUG";
     portalBtnRow.layoutPositioning = "AUTO";
     portalBtnRow.layoutSizingHorizontal = "FILL";
-  } catch {}
+  } catch { }
   appendAndFill(root, portalSection);
 
   // 11. SECTION 8: NEWSLETTER SUBSCRIPTION
@@ -1720,7 +1936,7 @@ async function buildSmartMobileLandingPage(
     newsForm.layoutPositioning = "AUTO";
     newsForm.layoutSizingHorizontal = "FILL";
     newsForm.layoutSizingVertical = "HUG";
-  } catch {}
+  } catch { }
   appendAndFill(root, newsSection);
 
   // 12. SECTION 9: COMPLETE ENTERPRISE FOOTER
@@ -1903,7 +2119,7 @@ async function buildGenericSmartMobilePage(
     { family: "Roboto", style: "Bold" },
   ];
   for (const f of fontsToLoad) {
-    try { await figma.loadFontAsync(f); } catch {}
+    try { await figma.loadFontAsync(f); } catch { }
   }
 
   // 1. Discover Theme Colors
@@ -1988,7 +2204,7 @@ async function buildGenericSmartMobilePage(
       try {
         t.layoutPositioning = "AUTO";
         t.layoutSizingHorizontal = "FILL";
-      } catch {}
+      } catch { }
     }
     return t;
   }
@@ -2019,7 +2235,7 @@ async function buildGenericSmartMobilePage(
     try {
       frame.layoutPositioning = "AUTO";
       frame.layoutSizingHorizontal = "FILL";
-    } catch {}
+    } catch { }
     return frame;
   }
 
@@ -2202,7 +2418,7 @@ async function buildGenericSmartMobilePage(
 
   function appendSection(child: FrameNode) {
     if (child.width < targetWidth) {
-      try { child.resize(targetWidth, Math.max(child.height, 36)); } catch {}
+      try { child.resize(targetWidth, Math.max(child.height, 36)); } catch { }
     }
     root.appendChild(child);
     try {
@@ -2216,7 +2432,7 @@ async function buildGenericSmartMobilePage(
         }
         child.layoutSizingVertical = "HUG";
       }
-    } catch {}
+    } catch { }
   }
 
   // 0. Status Bar
@@ -2356,7 +2572,7 @@ async function buildGenericSmartMobilePage(
   try {
     heroCard.layoutPositioning = "AUTO";
     heroCard.layoutSizingHorizontal = "FILL";
-  } catch {}
+  } catch { }
 
   const heroImgNode = makeImgBox("Hero Image", innerWidth, 220, heroImg ? heroImg.hash : null, "FILL", null, 0);
   heroImgNode.x = 0;
@@ -2375,7 +2591,7 @@ async function buildGenericSmartMobilePage(
     ctaStack.layoutPositioning = "AUTO";
     ctaStack.layoutSizingHorizontal = "FILL";
     ctaStack.layoutSizingVertical = "HUG";
-  } catch {}
+  } catch { }
 
   const mainBtn = figma.createFrame();
   mainBtn.name = "Primary CTA Button";
@@ -2389,7 +2605,7 @@ async function buildGenericSmartMobilePage(
     mainBtn.layoutPositioning = "AUTO";
     mainBtn.layoutSizingHorizontal = "FILL";
     mainBtn.layoutSizingVertical = "HUG";
-  } catch {}
+  } catch { }
   mainBtn.appendChild(makeTxt(heroCtaText, 13.5, "Bold", { r: 1, g: 1, b: 1 }));
   ctaStack.appendChild(mainBtn);
   heroSection.appendChild(ctaStack);
@@ -2400,12 +2616,12 @@ async function buildGenericSmartMobilePage(
     discoveredCards.length > 0
       ? discoveredCards.slice(0, 6)
       : discoveredImages.slice(1, 5).map((img, i) => ({
-          title: img.name.replace(/[-_]/g, " ") || `Feature Item ${i + 1}`,
-          cat: "FEATURED",
-          price: "$29.00",
-          desc: "Crafted with durable materials and precision design.",
-          imageHash: img.hash,
-        }));
+        title: img.name.replace(/[-_]/g, " ") || `Feature Item ${i + 1}`,
+        cat: "FEATURED",
+        price: "$29.00",
+        desc: "Crafted with durable materials and precision design.",
+        imageHash: img.hash,
+      }));
 
   if (cardsToRender.length > 0) {
     const cardsSection = figma.createFrame();
@@ -2429,7 +2645,7 @@ async function buildGenericSmartMobilePage(
       cardsHead.layoutPositioning = "AUTO";
       cardsHead.layoutSizingHorizontal = "FILL";
       cardsHead.layoutSizingVertical = "HUG";
-    } catch {}
+    } catch { }
     cardsHead.appendChild(makeTxt("FEATURED SHOWCASE", 11, "Bold", T.brandAccent, { letterSpacing: 0.5 }));
     cardsHead.appendChild(makeTxt("Explore Collection", 22, "Bold", T.textPrimary));
     cardsSection.appendChild(cardsHead);
@@ -2461,7 +2677,7 @@ async function buildGenericSmartMobilePage(
       try {
         imgWrap.layoutPositioning = "AUTO";
         imgWrap.layoutSizingHorizontal = "FILL";
-      } catch {}
+      } catch { }
 
       const cardImg = makeImgBox(c.title, innerWidth - 32, 170, c.imageHash || null, "FIT", T.cardSubtleBg, 10);
       cardImg.x = 0;
@@ -2481,7 +2697,7 @@ async function buildGenericSmartMobilePage(
         info.layoutPositioning = "AUTO";
         info.layoutSizingHorizontal = "FILL";
         info.layoutSizingVertical = "HUG";
-      } catch {}
+      } catch { }
 
       if (c.cat) info.appendChild(makeTxt(c.cat.toUpperCase(), 10.5, "Bold", T.brandAccent));
       info.appendChild(makeTxt(c.title, 15, "Bold", T.textPrimary, { fillWidth: true }));
@@ -2498,7 +2714,7 @@ async function buildGenericSmartMobilePage(
           pRow.layoutPositioning = "AUTO";
           pRow.layoutSizingHorizontal = "FILL";
           pRow.layoutSizingVertical = "HUG";
-        } catch {}
+        } catch { }
         pRow.appendChild(makeTxt(c.price, 14, "Bold", T.textPrimary));
         pRow.appendChild(makeTxt("In Stock", 11, "Medium", { r: 0.08, g: 0.64, b: 0.36 }));
         info.appendChild(pRow);
@@ -2518,7 +2734,7 @@ async function buildGenericSmartMobilePage(
         btn.layoutPositioning = "AUTO";
         btn.layoutSizingHorizontal = "FILL";
         btn.layoutSizingVertical = "HUG";
-      } catch {}
+      } catch { }
       btn.appendChild(makeTxt("View Details →", 12.5, "SemiBold", { r: 1, g: 1, b: 1 }));
       card.appendChild(btn);
 
@@ -2527,7 +2743,7 @@ async function buildGenericSmartMobilePage(
         card.layoutPositioning = "AUTO";
         card.layoutSizingHorizontal = "FILL";
         card.layoutSizingVertical = "HUG";
-      } catch {}
+      } catch { }
     });
 
     appendSection(cardsSection);
@@ -2585,7 +2801,7 @@ async function buildGenericSmartMobilePage(
     calloutBtn.layoutPositioning = "AUTO";
     calloutBtn.layoutSizingHorizontal = "FILL";
     calloutBtn.layoutSizingVertical = "HUG";
-  } catch {}
+  } catch { }
   calloutBtn.appendChild(makeTxt("Contact Support Team", 12.5, "SemiBold", { r: 1, g: 1, b: 1 }));
   calloutBox.appendChild(calloutBtn);
 
@@ -2594,7 +2810,7 @@ async function buildGenericSmartMobilePage(
     calloutBox.layoutPositioning = "AUTO";
     calloutBox.layoutSizingHorizontal = "FILL";
     calloutBox.layoutSizingVertical = "HUG";
-  } catch {}
+  } catch { }
   appendSection(calloutSection);
 
   // 4.5. Dynamic Newsletter / Extra Subscription Section
@@ -2759,6 +2975,103 @@ async function buildGenericSmartMobilePage(
 // 3. ADAPTIVE AUTO-LAYOUT TREE REFLOW (FOR ARBITRARY FRAMES & COMPONENTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Transforms any desktop header or navbar frame into a compact 56px mobile app header.
+ * Identifies the Brand / Logo, retains essential action icons, collapses desktop links
+ * into a sleek mobile hamburger menu button, and enforces 56px height.
+ */
+function compactMobileNavbar(header: FrameNode, targetWidth: number): void {
+  try {
+    // 1. Scan children to separate Brand / Logo from desktop navigation links
+    let logoNode: SceneNode | null = null;
+    const navLinks: SceneNode[] = [];
+    const actionIcons: SceneNode[] = [];
+
+    for (const child of header.children) {
+      const cName = (child.name || "").toLowerCase();
+      const isLogo =
+        cName.includes("logo") ||
+        cName.includes("brand") ||
+        (child.type === "TEXT" && child.characters.length <= 15 && child.x < 140);
+      const isAction =
+        cName.includes("cart") ||
+        cName.includes("search") ||
+        cName.includes("user") ||
+        cName.includes("profile") ||
+        cName.includes("bag");
+      const isNav =
+        cName.includes("nav") ||
+        cName.includes("link") ||
+        cName.includes("menu") ||
+        (child.type === "FRAME" && (child as FrameNode).children && (child as FrameNode).children.length >= 2) ||
+        (child.type === "TEXT" && !isLogo);
+
+      if (isLogo && !logoNode) {
+        logoNode = child;
+      } else if (isAction) {
+        actionIcons.push(child);
+      } else if (isNav) {
+        navLinks.push(child);
+      }
+    }
+
+    if (!logoNode && header.children.length > 0) {
+      logoNode = header.children[0];
+    }
+
+    // 2. If there are desktop navigation links, hide them to prevent a 400px vertical list
+    if (navLinks.length >= 1) {
+      for (const link of navLinks) {
+        if (link !== logoNode) {
+          try { link.visible = false; } catch { }
+        }
+      }
+    }
+
+    // 3. Ensure a clean mobile menu button (hamburger) exists
+    const hasHamburger = header.findOne(
+      (n) =>
+        n.name.toLowerCase().includes("hamburger") ||
+        n.name.toLowerCase().includes("menu-btn") ||
+        n.name.toLowerCase().includes("menu_btn")
+    );
+
+    if (!hasHamburger) {
+      const menuBtn = figma.createFrame();
+      menuBtn.name = "Mobile Menu Button";
+      menuBtn.resize(36, 36);
+      menuBtn.cornerRadius = 6;
+      menuBtn.layoutMode = "VERTICAL";
+      menuBtn.primaryAxisAlignItems = "CENTER";
+      menuBtn.counterAxisAlignItems = "CENTER";
+      menuBtn.itemSpacing = 4;
+      menuBtn.fills = [];
+      const barColor: RGB = { r: 0.12, g: 0.15, b: 0.2 };
+      for (let i = 0; i < 3; i++) {
+        const bar = figma.createRectangle();
+        bar.resize(18, 2);
+        bar.cornerRadius = 1;
+        bar.fills = [{ type: "SOLID", color: barColor }];
+        menuBtn.appendChild(bar);
+      }
+      header.appendChild(menuBtn);
+    }
+
+    // 4. Enforce 56px mobile app bar Auto-Layout
+    safeSetLayoutMode(header, "HORIZONTAL");
+    safeSetPrimaryAlign(header, "SPACE_BETWEEN");
+    safeSetCounterAlign(header, "CENTER");
+    safeSetPadding(header, 12, 16, 12, 16);
+    try {
+      header.resize(targetWidth, 56);
+      header.layoutSizingHorizontal = "FILL";
+      header.layoutSizingVertical = "FIXED";
+    } catch { }
+  } catch (err) {
+    console.warn("[ResponsiveConverter] Error in compactMobileNavbar:", err);
+  }
+}
+
 async function reflowDirectTree(
   sourceNode: FrameNode,
   targetWidth: number = 412,
@@ -2821,150 +3134,343 @@ async function reflowDirectTree(
   let gridsReflowed = 0;
 
   // Configure Root Frame
-  workingFrame.resize(targetWidth, workingFrame.height);
-  if (workingFrame.layoutMode === "NONE") {
-    workingFrame.layoutMode = "VERTICAL";
-    workingFrame.itemSpacing = 0;
+  // If workingFrame has no auto-layout (freeform canvas / absolute coordinates),
+  // sort all direct top-level children by their visual Y coordinate so that
+  // top-of-page sections (header, hero, features, footer) stay in natural visual order!
+  if (sourceNode.layoutMode === "NONE" && workingFrame.children && workingFrame.children.length > 1) {
+    try {
+      const sorted = [...workingFrame.children].sort((a, b) => a.y - b.y);
+      sorted.forEach((ch, idx) => workingFrame.insertChild(idx, ch));
+    } catch (e) { }
   }
-  workingFrame.counterAxisSizingMode = "FIXED";
-  workingFrame.primaryAxisSizingMode = "AUTO";
 
-  // Re-order absolute header if it was placed at the end of the DOM
-  const children = [...workingFrame.children];
-  const headerIdx = children.findIndex(
-    (c) => c.name.toLowerCase().includes("header") || c.name.toLowerCase().includes("navbar")
-  );
-  if (headerIdx > 0 && workingFrame.layoutMode === "VERTICAL") {
-    const headerNode = children[headerIdx];
-    workingFrame.insertChild(0, headerNode);
+  try {
+    workingFrame.resize(targetWidth, workingFrame.height);
+  } catch { }
+  safeSetLayoutMode(workingFrame, "VERTICAL");
+  safeSetItemSpacing(workingFrame, 0);
+  try {
+    workingFrame.counterAxisSizingMode = "FIXED";
+    workingFrame.primaryAxisSizingMode = "AUTO";
+    workingFrame.clipsContent = false;
+  } catch { }
+
+  // Re-order header if it was placed at the end of the DOM
+  if (workingFrame.children && workingFrame.children.length > 0) {
+    const currentChildren = [...workingFrame.children];
+    const headerIdx = currentChildren.findIndex((c) => {
+      const lower = c.name.toLowerCase();
+      return lower.includes("header") || lower.includes("navbar") || lower.includes("top-bar");
+    });
+    if (headerIdx > 0) {
+      try {
+        const headerNode = currentChildren[headerIdx];
+        workingFrame.insertChild(0, headerNode);
+      } catch (e) { }
+    }
   }
 
   async function reflowNode(
     node: SceneNode,
-    parentLayout: "VERTICAL" | "HORIZONTAL" | "NONE",
+    parentLayout: "VERTICAL" | "HORIZONTAL" | "NONE" | "GRID",
     availableWidth: number,
     depth: number
   ): Promise<void> {
     if (depth > 12) return;
 
-    if (node.type === "FRAME") {
-      const frame = node as FrameNode;
-      sectionsAdjusted++;
+    try {
+      if (node.type === "FRAME" || node.type === "COMPONENT" || node.type === "INSTANCE") {
+        const frame = node as FrameNode;
+        sectionsAdjusted++;
 
-      // Remove absolute positioning so children participate in auto-layout reflow
-      try {
-        if ("layoutPositioning" in frame && frame.layoutPositioning === "ABSOLUTE") {
-          frame.layoutPositioning = "AUTO";
-        }
-      } catch { }
-
-      // Padding Scaling
-      if (frame.paddingLeft >= 32 || frame.paddingRight >= 32) {
-        frame.paddingLeft = horizontalPadding;
-        frame.paddingRight = horizontalPadding;
-      }
-      if (frame.paddingTop > 48) {
-        frame.paddingTop = targetWidth <= 480 ? 20 : 32;
-      }
-      if (frame.paddingBottom > 48) {
-        frame.paddingBottom = targetWidth <= 480 ? 20 : 32;
-      }
-
-      // Convert NONE or GRID frames with multiple wide children into VERTICAL auto-layout
-      const isMultiCol =
-        frame.children.length >= 2 &&
-        (frame.layoutMode === "NONE" ||
-          (frame.layoutMode as string) === "GRID" ||
-          frame.layoutMode === "HORIZONTAL");
-
-      if (reflowGrids && isMultiCol && targetWidth <= 520) {
-        const totalChildWidth = frame.children.reduce((sum, c) => sum + c.width, 0);
-        if (totalChildWidth > availableWidth || frame.children.some((c) => c.width > availableWidth * 0.4)) {
-          frame.layoutMode = "VERTICAL";
-          frame.itemSpacing = 16;
-          frame.primaryAxisAlignItems = "MIN";
-          frame.counterAxisAlignItems = "MIN";
-          gridsReflowed++;
-        }
-      }
-
-      // Semantic role classification for smart sizing & padding
-      const role = classifyResponsiveRole(frame, frame.parent as FrameNode | null, workingFrame);
-
-      if (role === "BADGE_OR_CHIP") {
-        if (frame.layoutMode === "NONE") frame.layoutMode = "HORIZONTAL";
-        frame.counterAxisAlignItems = "CENTER";
-        frame.primaryAxisAlignItems = "CENTER";
-        if (frame.paddingTop < 4 || frame.paddingTop > 10) frame.paddingTop = 6;
-        if (frame.paddingBottom < 4 || frame.paddingBottom > 10) frame.paddingBottom = 6;
-        if (frame.paddingLeft < 8 || frame.paddingLeft > 18) frame.paddingLeft = 12;
-        if (frame.paddingRight < 8 || frame.paddingRight > 18) frame.paddingRight = 12;
-        if ((frame.cornerRadius || 0) < 6) frame.cornerRadius = 16;
+        // Remove absolute positioning so children participate in auto-layout reflow
         try {
-          frame.counterAxisSizingMode = "AUTO";
-          frame.primaryAxisSizingMode = "AUTO";
-          frame.layoutSizingHorizontal = "HUG";
-          frame.layoutSizingVertical = "HUG";
-        } catch {}
-      } else if (role === "BUTTON_CTA") {
-        if (frame.layoutMode === "NONE") frame.layoutMode = "HORIZONTAL";
-        frame.primaryAxisAlignItems = "CENTER";
-        frame.counterAxisAlignItems = "CENTER";
-        if (frame.paddingTop < 10) frame.paddingTop = 12;
-        if (frame.paddingBottom < 10) frame.paddingBottom = 12;
-        if (frame.paddingLeft < 14) frame.paddingLeft = 18;
-        if (frame.paddingRight < 14) frame.paddingRight = 18;
-        if ((frame.cornerRadius || 0) < 6) frame.cornerRadius = 8;
-        try {
-          frame.layoutSizingHorizontal = "FILL";
-          frame.layoutSizingVertical = "HUG";
-        } catch {
-          try { frame.layoutAlign = "STRETCH"; } catch {}
-        }
-      } else if (role === "BUTTON_INLINE") {
-        if (frame.layoutMode === "NONE") frame.layoutMode = "HORIZONTAL";
-        frame.primaryAxisAlignItems = "CENTER";
-        frame.counterAxisAlignItems = "CENTER";
-        if (frame.paddingTop < 6) frame.paddingTop = 8;
-        if (frame.paddingBottom < 6) frame.paddingBottom = 8;
-        if (frame.paddingLeft < 10) frame.paddingLeft = 14;
-        if (frame.paddingRight < 10) frame.paddingRight = 14;
-        if ((frame.cornerRadius || 0) < 6) frame.cornerRadius = 8;
-        try {
-          frame.counterAxisSizingMode = "AUTO";
-          frame.primaryAxisSizingMode = "AUTO";
-          frame.layoutSizingHorizontal = "HUG";
-          frame.layoutSizingVertical = "HUG";
-        } catch {}
-      } else if (role === "ICON_OR_AVATAR") {
-        try {
-          frame.layoutSizingHorizontal = "FIXED";
-          frame.layoutSizingVertical = "FIXED";
-        } catch {}
-      } else if (role === "CARD_OR_BOX" || role === "CONTAINER" || role === "SECTION") {
-        if (frame.layoutMode === "NONE" && frame.children.length > 0) {
-          frame.layoutMode = "VERTICAL";
-          frame.itemSpacing = frame.itemSpacing || 12;
-          frame.primaryAxisAlignItems = "MIN";
-          frame.counterAxisAlignItems = "MIN";
-        }
-
-        // Enforce generous padding so hugging content height NEVER results in thin cards
-        if (role === "SECTION") {
-          if (frame.paddingLeft < 14) frame.paddingLeft = 16;
-          if (frame.paddingRight < 14) frame.paddingRight = 16;
-          if (frame.paddingTop < 14) frame.paddingTop = 24;
-          if (frame.paddingBottom < 14) frame.paddingBottom = 28;
-          if (frame.itemSpacing < 10) frame.itemSpacing = 16;
-        } else {
-          if (frame.paddingTop < 14) frame.paddingTop = 16;
-          if (frame.paddingBottom < 14) frame.paddingBottom = 16;
-          if (frame.paddingLeft < 14) frame.paddingLeft = 16;
-          if (frame.paddingRight < 14) frame.paddingRight = 16;
-          if (frame.itemSpacing < 8) frame.itemSpacing = 12;
-          if (typeof frame.cornerRadius === "number" && frame.cornerRadius < 8 && frame.cornerRadius > 0) {
-            frame.cornerRadius = 12;
+          if ("layoutPositioning" in frame && (frame as any).layoutPositioning === "ABSOLUTE") {
+            (frame as any).layoutPositioning = "AUTO";
           }
+        } catch { }
+
+        // If a frame has layoutMode === "NONE" and has children with coordinates:
+        // Sort its children visually (by y first, then x if on approximately the same row)
+        if (frame.layoutMode === "NONE" && frame.children && frame.children.length > 1) {
+          try {
+            const sortedChildren = [...frame.children].sort((a, b) => {
+              if (Math.abs(a.y - b.y) <= 16) {
+                return a.x - b.x;
+              }
+              return a.y - b.y;
+            });
+            sortedChildren.forEach((ch, idx) => frame.insertChild(idx, ch));
+          } catch { }
+        }
+
+        const lowerName = (frame.name || "").toLowerCase();
+        const isHeaderOrNav =
+          lowerName.includes("header") ||
+          lowerName.includes("navbar") ||
+          lowerName.includes("nav-bar") ||
+          lowerName.includes("appbar") ||
+          lowerName.includes("top-bar") ||
+          lowerName.includes("topbar") ||
+          lowerName.includes("nav") ||
+          lowerName.includes("menu");
+
+        // Collapse empty transparent spacer frames
+        const hasNoKids = !frame.children || frame.children.length === 0;
+        const hasNoFills = !frame.fills || (Array.isArray(frame.fills) && frame.fills.length === 0);
+        const hasNoStrokes = !frame.strokes || (Array.isArray(frame.strokes) && frame.strokes.length === 0);
+        if (hasNoKids && hasNoFills && hasNoStrokes && frame.height > 24) {
+          try {
+            frame.resize(frame.width, 0);
+            frame.visible = false;
+          } catch { }
+          return;
+        }
+
+        const isSectionKeyword = [
+          "section", "hero", "header", "navbar", "nav", "footer", "banner",
+          "content", "features", "pricing", "testimonial", "cta", "faq", "body", "main", "top"
+        ].some((kw) => lowerName.includes(kw));
+
+        // Only true substantial sections get treated as top-level sections!
+        // Small loose icons, buttons, badges, or divider lines at the root are NOT resized to targetWidth or given 44px padding!
+        const isTopLevelSection =
+          frame.parent === workingFrame &&
+          (isSectionKeyword || frame.width >= targetWidth * 0.45 || frame.height >= 70 || (frame.children && frame.children.length >= 3));
+
+        if (isTopLevelSection) {
+          if (frame.width > targetWidth || frame.width < targetWidth * 0.9) {
+            try {
+              frame.resize(targetWidth, frame.height);
+            } catch { }
+          }
+          try {
+            frame.layoutPositioning = "AUTO";
+            frame.layoutSizingHorizontal = "FILL";
+          } catch { }
+
+          if (isHeaderOrNav) {
+            compactMobileNavbar(frame, targetWidth);
+            return;
+          }
+
+          if (frame.layoutMode === "NONE" || (frame.layoutMode as string) === "GRID") {
+            safeSetLayoutMode(frame, "VERTICAL");
+            safeSetItemSpacing(frame, 16);
+            safeSetPrimaryAlign(frame, "MIN");
+            safeSetCounterAlign(frame, "MIN");
+          }
+
+          // Standard section padding
+          const pt = toNum(frame.paddingTop);
+          const pb = toNum(frame.paddingBottom);
+
+          safeSetPadding(
+            frame,
+            Math.min(28, Math.max(16, pt)),
+            16,
+            Math.min(28, Math.max(16, pb)),
+            16
+          );
+          safeSetItemSpacing(frame, Math.min(20, Math.max(12, toNum(frame.itemSpacing))));
+
+          if (frame.layoutMode !== "NONE") {
+            try {
+              if (frame.layoutMode === "VERTICAL") {
+                frame.primaryAxisSizingMode = "AUTO";
+              } else {
+                frame.counterAxisSizingMode = "AUTO";
+              }
+              frame.layoutSizingVertical = "HUG";
+            } catch { }
+          }
+        } else {
+          // Non-top-level padding scaling
+          const pl = toNum(frame.paddingLeft);
+          const pr = toNum(frame.paddingRight);
+          const pt = toNum(frame.paddingTop);
+          const pb = toNum(frame.paddingBottom);
+          if (pl >= 32 || pr >= 32) {
+            safeSetPadding(frame, undefined, horizontalPadding, undefined, horizontalPadding);
+          }
+          if (pt > 48) {
+            safeSetPadding(frame, targetWidth <= 480 ? 20 : 32, undefined, undefined, undefined);
+          }
+          if (pb > 48) {
+            safeSetPadding(frame, undefined, undefined, targetWidth <= 480 ? 20 : 32, undefined);
+          }
+        }
+
+        // Convert NONE or GRID frames with multiple wide children into VERTICAL auto-layout
+        const isSearchBar =
+          lowerName.includes("search") ||
+          (frame.children &&
+            frame.children.length === 2 &&
+            frame.children.some((c) => (c.name || "").toLowerCase().includes("input")) &&
+            frame.children.some((c) => (c.name || "").toLowerCase().includes("btn") || (c.name || "").toLowerCase().includes("button")));
+        const isChipOrTagRow =
+          lowerName.includes("chip") ||
+          lowerName.includes("tag") ||
+          lowerName.includes("badge") ||
+          lowerName.includes("tab");
+        const isInlineRow =
+          isHeaderOrNav ||
+          isSearchBar ||
+          isChipOrTagRow ||
+          (frame.children &&
+            frame.children.length === 2 &&
+            frame.children.every((c) => c.width < availableWidth * 0.45));
+
+        const role = classifyResponsiveRole(frame, frame.parent as FrameNode | null, workingFrame);
+
+        // Protect navigation link groups from being reflowed into vertical columns with 16px gaps!
+        const isNavGroup =
+          role === "NAV_OR_HEADER_ROW" ||
+          isHeaderOrNav ||
+          lowerName.includes("nav") ||
+          lowerName.includes("menu") ||
+          lowerName.includes("link") ||
+          (frame.parent && (frame.parent.name || "").toLowerCase().includes("header")) ||
+          (frame.parent && (frame.parent.name || "").toLowerCase().includes("nav"));
+
+        const isMultiCol =
+          !isInlineRow &&
+          !isNavGroup &&
+          frame.children &&
+          frame.children.length >= 2 &&
+          (frame.layoutMode === "NONE" ||
+            (frame.layoutMode as string) === "GRID" ||
+            frame.layoutMode === "HORIZONTAL");
+
+        if (reflowGrids && isMultiCol && targetWidth <= 520) {
+          const totalChildWidth = frame.children.reduce((sum, c) => sum + c.width, 0);
+          if (totalChildWidth > availableWidth || frame.children.some((c) => c.width > availableWidth * 0.4)) {
+            safeSetLayoutMode(frame, "VERTICAL");
+            safeSetItemSpacing(frame, 12);
+            safeSetPrimaryAlign(frame, "MIN");
+            safeSetCounterAlign(frame, "MIN");
+            gridsReflowed++;
+          }
+        }
+
+        // Media / Image Frame detection:
+        const hasImageFill =
+          "fills" in frame &&
+          Array.isArray(frame.fills) &&
+          frame.fills.some((f) => f.type === "IMAGE");
+        const isMediaPlaceholder =
+          frame.children &&
+          frame.children.length === 0 &&
+          (hasImageFill ||
+            lowerName.includes("image") ||
+            lowerName.includes("img") ||
+            lowerName.includes("photo") ||
+            lowerName.includes("thumb") ||
+            lowerName.includes("banner") ||
+            lowerName.includes("hero-img"));
+
+        if (isMediaPlaceholder) {
+          if (frame.width > availableWidth) {
+            const ratio = frame.height / Math.max(1, frame.width);
+            const newW = availableWidth;
+            const newH = Math.max(60, Math.min(320, Math.round(newW * ratio)));
+            try {
+              frame.resize(newW, newH);
+            } catch { }
+          }
+          try {
+            frame.layoutSizingHorizontal = "FILL";
+          } catch { }
+        }
+
+        if (role === "BADGE_OR_CHIP") {
+          if (frame.layoutMode === "NONE") safeSetLayoutMode(frame, "HORIZONTAL");
+          safeSetCounterAlign(frame, "CENTER");
+          safeSetPrimaryAlign(frame, "CENTER");
+          const pt = toNum(frame.paddingTop);
+          const pb = toNum(frame.paddingBottom);
+          const pl = toNum(frame.paddingLeft);
+          const pr = toNum(frame.paddingRight);
+          if (pt < 4 || pt > 10) safeSetPadding(frame, 6, undefined, undefined, undefined);
+          if (pb < 4 || pb > 10) safeSetPadding(frame, undefined, undefined, 6, undefined);
+          if (pl < 8 || pl > 18) safeSetPadding(frame, undefined, undefined, undefined, 12);
+          if (pr < 8 || pr > 18) safeSetPadding(frame, undefined, 12, undefined, undefined);
+          if (toNum(frame.cornerRadius) < 6) safeSetCornerRadius(frame, 16);
+          try {
+            frame.counterAxisSizingMode = "AUTO";
+            frame.primaryAxisSizingMode = "AUTO";
+            frame.layoutSizingHorizontal = "HUG";
+            frame.layoutSizingVertical = "HUG";
+          } catch { }
+        } else if (role === "NAV_OR_HEADER_ROW") {
+          // Navigation / Header row: keep horizontal, compact spacing, NO giant vertical stacks!
+          safeSetLayoutMode(frame, "HORIZONTAL");
+          safeSetPrimaryAlign(frame, "MIN");
+          safeSetCounterAlign(frame, "CENTER");
+          safeSetItemSpacing(frame, 8);
+          safeSetPadding(frame, 4, 0, 4, 0);
+          try {
+            frame.layoutSizingHorizontal = "HUG";
+            frame.layoutSizingVertical = "HUG";
+          } catch { }
+        } else if (role === "BUTTON_CTA") {
+          if (frame.layoutMode === "NONE") safeSetLayoutMode(frame, "HORIZONTAL");
+          safeSetPrimaryAlign(frame, "CENTER");
+          safeSetCounterAlign(frame, "CENTER");
+          if (toNum(frame.paddingTop) < 10) safeSetPadding(frame, 12, undefined, undefined, undefined);
+          if (toNum(frame.paddingBottom) < 10) safeSetPadding(frame, undefined, undefined, 12, undefined);
+          if (toNum(frame.paddingLeft) < 14) safeSetPadding(frame, undefined, undefined, undefined, 18);
+          if (toNum(frame.paddingRight) < 14) safeSetPadding(frame, undefined, 18, undefined, undefined);
+          if (toNum(frame.cornerRadius) < 6) safeSetCornerRadius(frame, 8);
+          try {
+            frame.layoutSizingHorizontal = "FILL";
+            frame.layoutSizingVertical = "HUG";
+          } catch {
+            try { frame.layoutAlign = "STRETCH"; } catch { }
+          }
+        } else if (role === "BUTTON_INLINE") {
+          if (frame.layoutMode === "NONE") safeSetLayoutMode(frame, "HORIZONTAL");
+          safeSetPrimaryAlign(frame, "CENTER");
+          safeSetCounterAlign(frame, "CENTER");
+          if (toNum(frame.paddingTop) < 6) safeSetPadding(frame, 8, undefined, undefined, undefined);
+          if (toNum(frame.paddingBottom) < 6) safeSetPadding(frame, undefined, undefined, 8, undefined);
+          if (toNum(frame.paddingLeft) < 10) safeSetPadding(frame, undefined, undefined, undefined, 14);
+          if (toNum(frame.paddingRight) < 10) safeSetPadding(frame, undefined, 14, undefined, undefined);
+          if (toNum(frame.cornerRadius) < 6) safeSetCornerRadius(frame, 8);
+          try {
+            frame.counterAxisSizingMode = "AUTO";
+            frame.primaryAxisSizingMode = "AUTO";
+            frame.layoutSizingHorizontal = "HUG";
+            frame.layoutSizingVertical = "HUG";
+          } catch { }
+        } else if (role === "ICON_OR_AVATAR") {
+          try {
+            frame.layoutSizingHorizontal = "FIXED";
+            frame.layoutSizingVertical = "FIXED";
+          } catch { }
+        } else if (role === "CARD_OR_BOX") {
+          // Cards MUST ALWAYS take VERTICAL flow on mobile!
+          safeSetLayoutMode(frame, "VERTICAL");
+          safeSetPrimaryAlign(frame, "MIN");
+          safeSetCounterAlign(frame, "MIN");
+          safeSetPadding(frame, 16, 16, 16, 16);
+          safeSetItemSpacing(frame, 12);
+          if (toNum(frame.cornerRadius) < 8) {
+            safeSetCornerRadius(frame, 14);
+          }
+        } else if (role === "SECTION") {
+          if (toNum(frame.paddingLeft) < 14) safeSetPadding(frame, undefined, undefined, undefined, 16);
+          if (toNum(frame.paddingRight) < 14) safeSetPadding(frame, undefined, 16, undefined, undefined);
+          safeSetPadding(frame, 20, undefined, 24, undefined);
+          safeSetItemSpacing(frame, 16);
+        } else {
+          // CONTAINER (transparent structural wrapper, div, col, row, inner):
+          if ((frame.layoutMode === "NONE" || (frame.layoutMode as string) === "GRID") && frame.children && frame.children.length > 0) {
+            safeSetLayoutMode(frame, "VERTICAL");
+            safeSetPrimaryAlign(frame, "MIN");
+            safeSetCounterAlign(frame, "MIN");
+          }
+          safeSetItemSpacing(frame, 8);
         }
 
         // SIZING: FILL CONTAINER (WIDTH) & HUG CONTENT (HEIGHT)
@@ -2975,7 +3481,7 @@ async function reflowDirectTree(
             try {
               frame.layoutAlign = "STRETCH";
             } catch {
-              frame.resize(availableWidth, frame.height);
+              try { frame.resize(availableWidth, frame.height); } catch { }
             }
           }
 
@@ -2987,12 +3493,12 @@ async function reflowDirectTree(
                 frame.counterAxisSizingMode = "AUTO";
               }
               frame.layoutSizingVertical = "HUG";
-            } catch {}
+            } catch { }
           }
         } else if (parentLayout === "HORIZONTAL") {
           try {
             frame.layoutSizingHorizontal = "FILL";
-          } catch {}
+          } catch { }
           if (frame.layoutMode !== "NONE") {
             try {
               if (frame.layoutMode === "VERTICAL") {
@@ -3001,118 +3507,116 @@ async function reflowDirectTree(
                 frame.counterAxisSizingMode = "AUTO";
               }
               frame.layoutSizingVertical = "HUG";
-            } catch {}
+            } catch { }
           }
         }
-      }
 
-      const currentWidth =
-        frame.layoutSizingHorizontal === "FILL" || frame.width > availableWidth
-          ? availableWidth
-          : Math.max(availableWidth, frame.width);
-      const innerAvailableWidth = Math.max(
-        60,
-        currentWidth - (frame.paddingLeft + frame.paddingRight)
-      );
+        const currentWidth =
+          frame.layoutSizingHorizontal === "FILL" || frame.width > availableWidth
+            ? availableWidth
+            : Math.max(availableWidth, frame.width);
+        const innerAvailableWidth = Math.max(
+          60,
+          currentWidth - (toNum(frame.paddingLeft) + toNum(frame.paddingRight))
+        );
 
-      for (const child of frame.children) {
-        await reflowNode(child, frame.layoutMode, innerAvailableWidth, depth + 1);
-      }
-    } else if (node.type === "TEXT" && scaleTypography) {
-      const textNode = node as TextNode;
-      textNodesScaled++;
-
-      if (textNode.fontName !== figma.mixed) {
-        await ensureFontLoaded(textNode.fontName as FontName);
-      } else {
-        try {
-          await ensureFontLoaded(fallbackFont);
-          textNode.fontName = fallbackFont;
-        } catch { }
-      }
-
-      // Enforce textAutoResize to prevent text from clipping into single letters
-      try {
-        textNode.textAutoResize = "HEIGHT";
-      } catch { }
-
-      if (typeof textNode.fontSize === "number") {
-        const oldSize = textNode.fontSize;
-        let newSize = oldSize;
-
-        if (oldSize >= 44) {
-          newSize = targetWidth <= 480 ? Math.round(oldSize * 0.55) : Math.round(oldSize * 0.75);
-          newSize = Math.max(26, Math.min(32, newSize));
-        } else if (oldSize >= 28) {
-          newSize = targetWidth <= 480 ? Math.round(oldSize * 0.7) : Math.round(oldSize * 0.85);
-          newSize = Math.max(18, Math.min(24, newSize));
-        } else if (oldSize >= 20) {
-          newSize = targetWidth <= 480 ? Math.round(oldSize * 0.8) : Math.round(oldSize * 0.9);
-          newSize = Math.max(14, Math.min(18, newSize));
-        }
-
-        if (newSize !== oldSize) {
-          try {
-            textNode.fontSize = newSize;
-            textNode.lineHeight = { value: Math.round(newSize * 1.25), unit: "PIXELS" };
-          } catch (e) {
-            console.warn("Could not scale font:", textNode.characters, e);
-          }
-        }
-      }
-
-      const parentFrame = node.parent && node.parent.type === "FRAME" ? (node.parent as FrameNode) : null;
-      const parentRole = parentFrame
-        ? classifyResponsiveRole(parentFrame, parentFrame.parent as FrameNode | null, workingFrame)
-        : "CONTAINER";
-
-      if (parentRole === "BADGE_OR_CHIP" || parentRole === "BUTTON_INLINE" || parentRole === "BUTTON_CTA") {
-        try {
-          textNode.textAutoResize = "WIDTH_AND_HEIGHT";
-          textNode.layoutSizingHorizontal = "HUG";
-          textNode.layoutSizingVertical = "HUG";
-        } catch {}
-      } else if (parentLayout === "VERTICAL") {
-        if (textNode.characters.length > 25) {
-          try {
-            textNode.layoutSizingHorizontal = "FILL";
-          } catch {
-            if (textNode.width > availableWidth) {
-              textNode.resize(availableWidth, textNode.height);
+        if (frame.children) {
+          for (const child of [...frame.children]) {
+            try {
+              await reflowNode(child, frame.layoutMode, innerAvailableWidth, depth + 1);
+            } catch (childErr) {
+              console.warn(`[ResponsiveConverter] Error in child reflow for "${child.name}":`, childErr);
             }
           }
-        } else {
+        }
+      } else if (node.type === "TEXT" && scaleTypography) {
+        const textNode = node as TextNode;
+        textNodesScaled++;
+
+        try {
+          if (textNode.fontName !== figma.mixed) {
+            await ensureFontLoaded(textNode.fontName as FontName);
+          } else {
+            await ensureFontLoaded(fallbackFont);
+            textNode.fontName = fallbackFont;
+          }
+        } catch { }
+
+        if (typeof textNode.fontSize === "number") {
+          const oldSize = textNode.fontSize;
+          let newSize = oldSize;
+
+          if (oldSize >= 44) {
+            newSize = targetWidth <= 480 ? Math.round(oldSize * 0.55) : Math.round(oldSize * 0.75);
+            newSize = Math.max(24, Math.min(30, newSize));
+          } else if (oldSize >= 28) {
+            newSize = targetWidth <= 480 ? Math.round(oldSize * 0.7) : Math.round(oldSize * 0.85);
+            newSize = Math.max(18, Math.min(22, newSize));
+          } else if (oldSize >= 20) {
+            newSize = targetWidth <= 480 ? Math.round(oldSize * 0.8) : Math.round(oldSize * 0.9);
+            newSize = Math.max(14, Math.min(17, newSize));
+          }
+
+          if (newSize !== oldSize) {
+            try {
+              textNode.fontSize = newSize;
+              textNode.lineHeight = { value: Math.round(newSize * 1.25), unit: "PIXELS" };
+            } catch (e) {
+              console.warn("Could not scale font:", textNode.characters, e);
+            }
+          }
+        }
+
+        // Format Text Node safely with formatResponsiveTextNode:
+        // Guarantees text NEVER clips or wraps into vertical single letters!
+        formatResponsiveTextNode(textNode, parentLayout, availableWidth);
+      } else if (node.type === "RECTANGLE") {
+        const rect = node as RectangleNode;
+        // If it is a thin line / divider / separator (height <= 8), KEEP its height (1px, 2px, etc.)!
+        if (rect.height <= 8) {
           try {
-            textNode.textAutoResize = "WIDTH_AND_HEIGHT";
-            textNode.layoutSizingHorizontal = "HUG";
-          } catch {}
+            if (parentLayout === "VERTICAL") (rect as any).layoutSizingHorizontal = "FILL";
+          } catch { }
+        } else {
+          if (parentLayout === "VERTICAL" && rect.width >= availableWidth * 0.45) {
+            try {
+              (rect as any).layoutSizingHorizontal = "FILL";
+            } catch { }
+          }
+          if (rect.width > availableWidth) {
+            const ratio = rect.height / Math.max(1, rect.width);
+            const newW = availableWidth;
+            const newH = Math.max(24, Math.min(320, Math.round(newW * ratio)));
+            try {
+              rect.resize(newW, newH);
+            } catch { }
+          }
         }
       }
-    } else if (node.type === "RECTANGLE") {
-      const rect = node as RectangleNode;
-      if (parentLayout === "VERTICAL" && rect.width >= availableWidth * 0.45) {
-        try {
-          (rect as any).layoutSizingHorizontal = "FILL";
-        } catch { }
-      }
-      if (rect.width > availableWidth) {
-        const ratio = rect.height / Math.max(1, rect.width);
-        const newW = availableWidth;
-        const newH = Math.max(100, Math.min(320, Math.round(newW * ratio)));
-        rect.resize(newW, newH);
-      }
+    } catch (nodeError) {
+      console.warn(`[ResponsiveConverter] Error in reflowNode for "${node.name}":`, nodeError);
     }
   }
 
-  for (const child of workingFrame.children) {
-    await reflowNode(child, workingFrame.layoutMode, contentWidth, 1);
+  for (const child of [...workingFrame.children]) {
+    try {
+      await reflowNode(child, workingFrame.layoutMode, contentWidth, 1);
+    } catch (childErr) {
+      console.warn(`[ResponsiveConverter] Error reflowing child "${child.name}":`, childErr);
+    }
   }
 
   // Post-order safety normalization: ensure all cards and containers fill width and hug height
-  fixAllCardsAndContainers(workingFrame, targetWidth);
+  try {
+    fixAllCardsAndContainers(workingFrame, targetWidth);
+  } catch (fixErr) {
+    console.warn("[ResponsiveConverter] fixAllCardsAndContainers error:", fixErr);
+  }
 
-  figma.currentPage.selection = [workingFrame];
-  figma.viewport.scrollAndZoomIntoView([workingFrame]);
+  try {
+    figma.currentPage.selection = [workingFrame];
+    figma.viewport.scrollAndZoomIntoView([workingFrame]);
+  } catch { }
 
   return {
     success: true,
