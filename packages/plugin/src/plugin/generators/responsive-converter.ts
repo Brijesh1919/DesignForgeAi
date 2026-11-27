@@ -361,18 +361,17 @@ export function classifyResponsiveRole(
     return "ICON_OR_AVATAR";
   }
 
-  // 2. Badge / Pill / Chip / Tag / Status / Sku (HUG width & height, NEVER fill container)
+  // 2. Badge / Pill / Chip / Tag / Status / Sku (HUG width & height, ALWAYS HORIZONTAL)
   const badgeKeywords = [
     "badge", "pill", "chip", "tag", "status", "label", "filter", "sku",
-    "stock", "eyebrow", "category chip", "popular"
+    "stock", "eyebrow", "category", "popular", "sale", "discount", "verified"
   ];
   const isBadgeName = badgeKeywords.some((kw) => lowerName.includes(kw));
   const isBadgeShape =
-    hasVisibleFill &&
-    childrenCount === 1 &&
-    height <= 36 &&
-    width <= 180 &&
-    f.children[0].type === "TEXT";
+    (hasVisibleFill || hasVisibleStroke || radius >= 4) &&
+    height <= 52 &&
+    width <= 260 &&
+    childrenCount <= 4;
 
   if (isBadgeName || isBadgeShape) {
     return "BADGE_OR_CHIP";
@@ -436,25 +435,75 @@ export function classifyResponsiveRole(
     return "BUTTON_INLINE";
   }
 
-  // 5. Genuine Card / Box (MUST be checked before general HORIZONTAL_ROW so cards with image+text become VERTICAL!)
-  const trueCardKeywords = [
-    "card", "tile", "pricing", "product", "testimonial", "review",
-    "feature", "item", "article", "post", "cell", "plan", "box"
+  // 5. Compact Inline Horizontal Row (MUST be classified before CARD_OR_BOX!)
+  // E.g.: icon + text, rating stars, price + discount tag, avatar + user name, steppers, swatches
+  const inlineRowKeywords = [
+    "rating", "star", "review", "avatar", "author", "user", "profile",
+    "price", "pricing-row", "meta", "info", "stat", "counter", "stepper",
+    "swatch", "color", "icon-text", "icon_text", "row", "inline", "chip-group",
+    "tags", "chips", "badges", "filters", "dots", "bullet", "check"
   ];
-  const hasTrueCardName = trueCardKeywords.some((kw) => lowerName.includes(kw));
-  const isStuck100x100 = (width === 100 && height === 100) || (height === 100 && childrenCount > 0);
-  const isCardShape = hasRealCardVisual && width >= 100 && height >= 60;
+  const hasInlineRowKeyword = inlineRowKeywords.some((kw) => lowerName.includes(kw));
 
-  if ((hasTrueCardName || isCardShape || isStuck100x100) && childrenCount >= 1 && width >= 80 && height >= 40) {
-    return "CARD_OR_BOX";
-  }
+  // Compact row where height is small and content naturally flows side-by-side:
+  const isCompactRow =
+    height <= 64 &&
+    childrenCount >= 2 &&
+    (f.layoutMode === "HORIZONTAL" || f.layoutMode === "NONE" || hasInlineRowKeyword);
 
-  // 6. Horizontal Row (e.g. Price Row, Tag Row, Action Bar, Info Row, Rating Stars, Avatar+Name)
-  if (f.layoutMode === "HORIZONTAL" && childrenCount >= 2) {
+  if (hasInlineRowKeyword || isCompactRow) {
     return "HORIZONTAL_ROW";
   }
 
-  // 7. Generic Container / Structural Wrapper (transparent columns, wrappers, flex divs)
+  // 6. Genuine BIG Content Card / Product Tile / Pricing Box / Image Card / Mockup / Banner
+  // Must be a substantial card that needs vertical mobile flow (image on top, text below)
+  const bigCardKeywords = [
+    "card", "pricing", "product", "testimonial", "review-card",
+    "feature-card", "article", "post", "tile", "plan",
+    "banner", "hero-img", "hero_img", "mockup", "showcase",
+    "image-card", "img-card", "photo-card", "media-card", "cover", "visual", "graphic", "illustration"
+  ];
+  const hasBigCardName = bigCardKeywords.some((kw) => lowerName.includes(kw));
+  const isStuck100x100 = (width === 100 && height === 100) || (height === 100 && childrenCount > 0);
+
+  // A true card must have substantial height (>= 70px) and width (>= 100px)
+  const isBigCardHeight = height >= 70;
+  const isVisualCard = hasRealCardVisual && width >= 100 && isBigCardHeight;
+
+  // Media / Image Card detection:
+  const hasImageFillDirect =
+    "fills" in f &&
+    Array.isArray(f.fills) &&
+    f.fills.some((fill) => fill.type === "IMAGE" && fill.visible !== false);
+
+  const hasChildWithImage =
+    f.children &&
+    f.children.some(
+      (c) =>
+        ("fills" in c && Array.isArray((c as any).fills) && (c as any).fills.some((fl: any) => fl.type === "IMAGE" && fl.visible !== false)) ||
+        (c.name || "").toLowerCase().includes("image") ||
+        (c.name || "").toLowerCase().includes("img") ||
+        (c.name || "").toLowerCase().includes("photo")
+    );
+
+  const isBigImageCard =
+    (hasImageFillDirect || hasChildWithImage || hasBigCardName) &&
+    height >= 60 &&
+    width >= 100;
+
+  if (
+    isBigImageCard ||
+    ((hasBigCardName && isBigCardHeight) || isVisualCard || isStuck100x100)
+  ) {
+    return "CARD_OR_BOX";
+  }
+
+  // 7. Compact horizontal groups ONLY (e.g. 2 small chips, small icon + text that didn't have keywords, height <= 64)
+  if (f.layoutMode === "HORIZONTAL" && childrenCount >= 2 && height <= 64) {
+    return "HORIZONTAL_ROW";
+  }
+
+  // 8. Generic Container / Structural Wrapper (transparent columns, wrappers, flex divs)
   return "CONTAINER";
 }
 
@@ -567,12 +616,17 @@ export function fixAllCardsAndContainers(rootNode: FrameNode, targetWidth: numbe
           if (f.layoutMode === "NONE") safeSetLayoutMode(f, "HORIZONTAL");
           safeSetPrimaryAlign(f, "CENTER");
           safeSetCounterAlign(f, "CENTER");
-          safeSetPadding(f, 12, 18, 12, 18);
-          if (toNum(f.cornerRadius) < 6) safeSetCornerRadius(f, 8);
-          if (toNum(f.itemSpacing) < 6 && f.children.length > 1) safeSetItemSpacing(f, 8);
+          safeSetPadding(f, 15, 24, 15, 24);
+          if (toNum(f.cornerRadius) < 8) safeSetCornerRadius(f, 10);
+          if (toNum(f.itemSpacing) < 8 && f.children.length > 1) safeSetItemSpacing(f, 8);
+          if (f.height < 48) {
+            try { f.resize(f.width, 48); } catch { }
+          }
 
           try {
+            f.layoutPositioning = "AUTO";
             f.layoutSizingHorizontal = "FILL";
+            f.layoutAlign = "STRETCH";
             f.layoutSizingVertical = "HUG";
           } catch {
             try { f.layoutAlign = "STRETCH"; } catch { }
@@ -587,10 +641,14 @@ export function fixAllCardsAndContainers(rootNode: FrameNode, targetWidth: numbe
           if (f.layoutMode === "NONE") safeSetLayoutMode(f, "HORIZONTAL");
           safeSetPrimaryAlign(f, "CENTER");
           safeSetCounterAlign(f, "CENTER");
-          safeSetPadding(f, 8, 14, 8, 14);
+          safeSetPadding(f, 12, 20, 12, 20);
           if (toNum(f.cornerRadius) < 6) safeSetCornerRadius(f, 8);
+          if (f.height < 42) {
+            try { f.resize(f.width, 42); } catch { }
+          }
 
           try {
+            f.layoutPositioning = "AUTO";
             f.counterAxisSizingMode = "AUTO";
             f.primaryAxisSizingMode = "AUTO";
             f.layoutSizingHorizontal = "HUG";
@@ -603,6 +661,10 @@ export function fixAllCardsAndContainers(rootNode: FrameNode, targetWidth: numbe
             }
           }
         } else if (role === "HORIZONTAL_ROW") {
+          safeSetLayoutMode(f, "HORIZONTAL");
+          safeSetCounterAlign(f, "CENTER");
+          safeSetPrimaryAlign(f, "MIN");
+          safeSetItemSpacing(f, Math.min(toNum(f.itemSpacing) || 8, 12));
           try {
             f.layoutSizingHorizontal = "FILL";
             f.layoutSizingVertical = "HUG";
@@ -626,20 +688,22 @@ export function fixAllCardsAndContainers(rootNode: FrameNode, targetWidth: numbe
           }
 
           // Width: FILL container
+          try {
+            f.layoutPositioning = "AUTO";
+            f.layoutSizingHorizontal = "FILL";
+            f.layoutAlign = "STRETCH";
+          } catch { }
           if (parent && parent.layoutMode !== "NONE") {
             try {
               f.layoutSizingHorizontal = "FILL";
+              f.layoutAlign = "STRETCH";
             } catch {
-              try {
-                f.layoutAlign = "STRETCH";
-              } catch {
-                const safeW =
-                  parent.layoutMode === "VERTICAL"
-                    ? parent.width - (toNum(parent.paddingLeft) + toNum(parent.paddingRight))
-                    : f.width;
-                if (safeW > 100) {
-                  try { f.resize(safeW, f.height); } catch { }
-                }
+              const safeW =
+                parent.layoutMode === "VERTICAL"
+                  ? parent.width - (toNum(parent.paddingLeft) + toNum(parent.paddingRight))
+                  : f.width;
+              if (safeW > 100) {
+                try { f.resize(safeW, f.height); } catch { }
               }
             }
           } else if (f.width < innerContentWidth) {
@@ -662,26 +726,69 @@ export function fixAllCardsAndContainers(rootNode: FrameNode, targetWidth: numbe
 
           // Adjust children inside the card:
           for (const child of f.children) {
+            const cName = (child.name || "").toLowerCase();
+            const hasImgDirect =
+              "fills" in child &&
+              Array.isArray((child as any).fills) &&
+              (child as any).fills.some((fl: any) => fl.type === "IMAGE" && fl.visible !== false);
+            const isImgName =
+              cName.includes("img") ||
+              cName.includes("image") ||
+              cName.includes("photo") ||
+              cName.includes("thumb") ||
+              cName.includes("pic") ||
+              cName.includes("banner") ||
+              cName.includes("cover") ||
+              cName.includes("mockup") ||
+              cName.includes("visual") ||
+              cName.includes("media");
+            const hasChildImg =
+              child.type === "FRAME" &&
+              "children" in child &&
+              (child as FrameNode).children.some(
+                (ic: SceneNode) =>
+                  ("fills" in ic &&
+                    Array.isArray((ic as any).fills) &&
+                    (ic as any).fills.some((fl: any) => fl.type === "IMAGE" && fl.visible !== false)) ||
+                  (ic.name || "").toLowerCase().includes("img") ||
+                  (ic.name || "").toLowerCase().includes("image")
+              );
+            const isMedia = hasImgDirect || isImgName || hasChildImg;
+
             if (child.type === "TEXT") {
               formatResponsiveTextNode(child as TextNode, f.layoutMode, f.width - 32);
-            } else if (
-              child.type === "RECTANGLE" ||
-              (child.type === "FRAME" && (!child.children || child.children.length === 0))
-            ) {
-              const r = child as RectangleNode | FrameNode;
+            } else if (isMedia || (child.type === "RECTANGLE" && child.height > 8)) {
+              // Big image card / photo container inside card: MUST FILL CONTAINER!
               try {
-                r.layoutPositioning = "AUTO";
-                r.layoutSizingHorizontal = "FILL";
-                // If it is a thin line / divider / separator (height <= 8), KEEP its height (1px, 2px, etc.)!
-                // Only if it is an actual media/image frame or placeholder that had height stuck at 100, give it a proper height!
-                const hasImg = "fills" in r && Array.isArray((r as any).fills) && (r as any).fills.some((fl: any) => fl.type === "IMAGE");
-                const cName = (r.name || "").toLowerCase();
-                const isPhoto = hasImg || cName.includes("img") || cName.includes("image") || cName.includes("photo") || cName.includes("thumb") || cName.includes("pic");
-                if (isPhoto || (r.height >= 40 && r.height <= 320)) {
-                  r.resize(f.width - 32, Math.max(140, Math.min(200, r.height)));
-                  if ("cornerRadius" in r) (r as any).cornerRadius = 10;
-                  if ("clipsContent" in r) (r as any).clipsContent = true;
+                (child as any).layoutPositioning = "AUTO";
+                (child as any).layoutSizingHorizontal = "FILL";
+                (child as any).layoutAlign = "STRETCH";
+                const targetH = Math.max(140, Math.min(240, child.height || 170));
+                child.resize(Math.max(100, f.width - 32), targetH);
+                if ("cornerRadius" in child && toNum((child as any).cornerRadius) < 6) {
+                  (child as any).cornerRadius = 10;
                 }
+                if ("clipsContent" in child) (child as any).clipsContent = true;
+                // If this image frame has inner children (e.g. image rectangle):
+                if (child.type === "FRAME" && (child as FrameNode).children) {
+                  for (const inner of (child as FrameNode).children) {
+                    if (inner.type === "RECTANGLE" || inner.type === "FRAME") {
+                      try {
+                        (inner as any).layoutPositioning = "AUTO";
+                        (inner as any).layoutSizingHorizontal = "FILL";
+                        (inner as any).layoutAlign = "STRETCH";
+                        inner.resize(child.width, child.height);
+                      } catch { }
+                    }
+                  }
+                }
+              } catch { }
+            } else if (child.type === "RECTANGLE" && child.height <= 8) {
+              // Divider / separator line
+              try {
+                (child as any).layoutPositioning = "AUTO";
+                (child as any).layoutSizingHorizontal = "FILL";
+                (child as any).layoutAlign = "STRETCH";
               } catch { }
             } else if (child.type === "FRAME" && child.children && child.children.length > 0) {
               const cRole = classifyResponsiveRole(child as FrameNode, f, rootNode);
@@ -689,31 +796,72 @@ export function fixAllCardsAndContainers(rootNode: FrameNode, targetWidth: numbe
                 safeSetLayoutMode(child as FrameNode, "HORIZONTAL");
                 safeSetPrimaryAlign(child as FrameNode, "CENTER");
                 safeSetCounterAlign(child as FrameNode, "CENTER");
-                safeSetPadding(child as FrameNode, 12, 16, 12, 16);
-                if (toNum((child as FrameNode).cornerRadius) < 6) safeSetCornerRadius(child as FrameNode, 8);
+                safeSetPadding(child as FrameNode, 14, 24, 14, 24);
+                if (toNum((child as FrameNode).cornerRadius) < 8) safeSetCornerRadius(child as FrameNode, 10);
+                if (child.height < 48) {
+                  try { child.resize(child.width, 48); } catch { }
+                }
                 try {
+                  (child as FrameNode).layoutPositioning = "AUTO";
                   (child as FrameNode).layoutSizingHorizontal = "FILL";
+                  (child as FrameNode).layoutAlign = "STRETCH";
                   (child as FrameNode).layoutSizingVertical = "HUG";
                 } catch { }
+                for (const btnChild of (child as FrameNode).children) {
+                  if (btnChild.type === "TEXT") {
+                    formatResponsiveTextNode(btnChild as TextNode, "HORIZONTAL", (child as FrameNode).width);
+                  }
+                }
+              } else if (
+                cRole === "BADGE_OR_CHIP" ||
+                cRole === "HORIZONTAL_ROW" ||
+                toNum((child as FrameNode).height) <= 60
+              ) {
+                // Inside card content: small rows (icon+text, rating stars, price+tag, avatar+name, chips) MUST STAY HORIZONTAL!
+                safeSetLayoutMode(child as FrameNode, "HORIZONTAL");
+                safeSetCounterAlign(child as FrameNode, "CENTER");
+                safeSetPrimaryAlign(child as FrameNode, "MIN");
+                safeSetItemSpacing(child as FrameNode, Math.min(toNum((child as FrameNode).itemSpacing) || 6, 10));
+                try {
+                  (child as FrameNode).layoutPositioning = "AUTO";
+                  (child as FrameNode).layoutSizingHorizontal = "FILL";
+                  (child as FrameNode).layoutAlign = "STRETCH";
+                  (child as FrameNode).layoutSizingVertical = "HUG";
+                } catch { }
+                for (const innerChild of (child as FrameNode).children) {
+                  if (innerChild.type === "TEXT") {
+                    formatResponsiveTextNode(innerChild as TextNode, "HORIZONTAL", (child as FrameNode).width);
+                  }
+                }
               }
             }
           }
         } else if (role === "CONTAINER") {
           // Transparent structural wrapper (div.col, div.wrapper, div.inner):
-          // DO NOT inject 16px padding! Keep padding clean (0 or original minimal padding)
-          // to prevent compounding nested padding!
-          if ((f.layoutMode === "NONE" || (f.layoutMode as string) === "GRID") && f.children.length > 0) {
+          // If this container has desktop horizontal flow but contains cards or images with height >= 60:
+          // Reflow it to VERTICAL so cards stack vertically on mobile!
+          const hasBigCardChildren =
+            f.children &&
+            f.children.some((c) => toNum(c.height) >= 60 || toNum(c.width) > 120);
+
+          if (f.layoutMode === "HORIZONTAL" && hasBigCardChildren) {
             safeSetLayoutMode(f, "VERTICAL");
             safeSetPrimaryAlign(f, "MIN");
             safeSetCounterAlign(f, "MIN");
+            safeSetItemSpacing(f, 14);
+          } else if ((f.layoutMode === "NONE" || (f.layoutMode as string) === "GRID") && f.children.length > 0) {
+            safeSetLayoutMode(f, "VERTICAL");
+            safeSetPrimaryAlign(f, "MIN");
+            safeSetCounterAlign(f, "MIN");
+            safeSetItemSpacing(f, 8);
           }
-
-          safeSetItemSpacing(f, 8);
 
           // Width: FILL container
           if (parent && parent.layoutMode !== "NONE") {
             try {
+              f.layoutPositioning = "AUTO";
               f.layoutSizingHorizontal = "FILL";
+              f.layoutAlign = "STRETCH";
             } catch {
               try { f.layoutAlign = "STRETCH"; } catch { }
             }
@@ -919,6 +1067,11 @@ async function buildSmartMobileLandingPage(
       });
     }
     frame.fills = fills;
+    try {
+      frame.layoutPositioning = "AUTO";
+      frame.layoutSizingHorizontal = "FILL";
+      frame.layoutAlign = "STRETCH";
+    } catch { }
     return frame;
   }
 
@@ -1169,12 +1322,13 @@ async function buildSmartMobileLandingPage(
   const searchBtn = figma.createFrame();
   searchBtn.name = "Search Button";
   searchBtn.layoutMode = "HORIZONTAL";
+  searchBtn.primaryAxisAlignItems = "CENTER";
   searchBtn.counterAxisAlignItems = "CENTER";
-  searchBtn.paddingLeft = 14;
-  searchBtn.paddingRight = 14;
-  searchBtn.paddingTop = 8;
-  searchBtn.paddingBottom = 8;
-  searchBtn.cornerRadius = 6;
+  searchBtn.paddingLeft = 18;
+  searchBtn.paddingRight = 18;
+  searchBtn.paddingTop = 11;
+  searchBtn.paddingBottom = 11;
+  searchBtn.cornerRadius = 8;
   searchBtn.fills = [{ type: "SOLID", color: C.navySlate }];
   searchBtn.appendChild(createTxt("Search", 12.5, "SemiBold", C.bgPure));
   mobileSearchBar.appendChild(searchBtn);
@@ -1225,6 +1379,11 @@ async function buildSmartMobileLandingPage(
   heroPhotoCard.fills = [{ type: "SOLID", color: C.bgCanvas }];
   heroPhotoCard.strokes = [{ type: "SOLID", color: C.borderSubtle }];
   heroPhotoCard.strokeWeight = 1;
+  try {
+    heroPhotoCard.layoutPositioning = "AUTO";
+    heroPhotoCard.layoutSizingHorizontal = "FILL";
+    heroPhotoCard.layoutAlign = "STRETCH";
+  } catch { }
 
   const heroImg = createImgNode("Journal Showcase Photo", innerContentWidth, 240, IMAGES.heroJournal, "FILL", null, 0);
   heroImg.x = 0;
@@ -1268,25 +1427,45 @@ async function buildSmartMobileLandingPage(
 
   const catalogBtn = figma.createFrame();
   catalogBtn.name = "Explore Catalog Button";
-  catalogBtn.resize(innerContentWidth, 48);
+  catalogBtn.resize(innerContentWidth, 50);
   catalogBtn.layoutMode = "HORIZONTAL";
   catalogBtn.primaryAxisAlignItems = "CENTER";
   catalogBtn.counterAxisAlignItems = "CENTER";
+  catalogBtn.paddingTop = 15;
+  catalogBtn.paddingBottom = 15;
+  catalogBtn.paddingLeft = 24;
+  catalogBtn.paddingRight = 24;
   catalogBtn.cornerRadius = 10;
   catalogBtn.fills = [{ type: "SOLID", color: C.navySlate }];
+  try {
+    catalogBtn.layoutPositioning = "AUTO";
+    catalogBtn.layoutSizingHorizontal = "FILL";
+    catalogBtn.layoutAlign = "STRETCH";
+    catalogBtn.layoutSizingVertical = "HUG";
+  } catch { }
   catalogBtn.appendChild(createTxt("Explore Full 2024 Catalog →", 13.5, "Bold", C.bgPure));
   heroCtaStack.appendChild(catalogBtn);
 
   const sampleBtn = figma.createFrame();
   sampleBtn.name = "Request Free Sample Button";
-  sampleBtn.resize(innerContentWidth, 48);
+  sampleBtn.resize(innerContentWidth, 50);
   sampleBtn.layoutMode = "HORIZONTAL";
   sampleBtn.primaryAxisAlignItems = "CENTER";
   sampleBtn.counterAxisAlignItems = "CENTER";
+  sampleBtn.paddingTop = 15;
+  sampleBtn.paddingBottom = 15;
+  sampleBtn.paddingLeft = 24;
+  sampleBtn.paddingRight = 24;
   sampleBtn.cornerRadius = 10;
   sampleBtn.fills = [{ type: "SOLID", color: C.bgCanvas }];
   sampleBtn.strokes = [{ type: "SOLID", color: C.borderSubtle }];
   sampleBtn.strokeWeight = 1.5;
+  try {
+    sampleBtn.layoutPositioning = "AUTO";
+    sampleBtn.layoutSizingHorizontal = "FILL";
+    sampleBtn.layoutAlign = "STRETCH";
+    sampleBtn.layoutSizingVertical = "HUG";
+  } catch { }
   sampleBtn.appendChild(createTxt("Request Free Sample Kit", 13.5, "SemiBold", C.navySlate));
   heroCtaStack.appendChild(sampleBtn);
   heroSection.appendChild(heroCtaStack);
@@ -1586,18 +1765,23 @@ async function buildSmartMobileLandingPage(
     // Full-width Quote Button
     const quoteBtn = figma.createFrame();
     quoteBtn.name = "Quote Button";
-    quoteBtn.resize(innerContentWidth - 32, 42);
+    quoteBtn.resize(innerContentWidth - 32, 48);
     quoteBtn.layoutMode = "HORIZONTAL";
     quoteBtn.primaryAxisAlignItems = "CENTER";
     quoteBtn.counterAxisAlignItems = "CENTER";
+    quoteBtn.paddingTop = 14;
+    quoteBtn.paddingBottom = 14;
+    quoteBtn.paddingLeft = 20;
+    quoteBtn.paddingRight = 20;
     quoteBtn.cornerRadius = 8;
     quoteBtn.fills = [{ type: "SOLID", color: C.navySlate }];
     try {
       quoteBtn.layoutPositioning = "AUTO";
       quoteBtn.layoutSizingHorizontal = "FILL";
+      quoteBtn.layoutAlign = "STRETCH";
       quoteBtn.layoutSizingVertical = "HUG";
     } catch { }
-    quoteBtn.appendChild(createTxt("Request a Quote", 12.5, "SemiBold", C.bgPure));
+    quoteBtn.appendChild(createTxt("Request a Quote", 13, "SemiBold", C.bgPure));
     card.appendChild(quoteBtn);
 
     prodSection.appendChild(card);
@@ -1650,13 +1834,23 @@ async function buildSmartMobileLandingPage(
 
   const assistBtn = figma.createFrame();
   assistBtn.name = "Contact Specialist Button";
-  assistBtn.resize(innerContentWidth - 36, 42);
+  assistBtn.resize(innerContentWidth - 36, 48);
   assistBtn.layoutMode = "HORIZONTAL";
   assistBtn.primaryAxisAlignItems = "CENTER";
   assistBtn.counterAxisAlignItems = "CENTER";
+  assistBtn.paddingTop = 14;
+  assistBtn.paddingBottom = 14;
+  assistBtn.paddingLeft = 20;
+  assistBtn.paddingRight = 20;
   assistBtn.cornerRadius = 8;
   assistBtn.fills = [{ type: "SOLID", color: C.bluePrimary }];
-  assistBtn.appendChild(createTxt("Talk to a Dedicated Specialist", 12.5, "SemiBold", C.bgPure));
+  try {
+    assistBtn.layoutPositioning = "AUTO";
+    assistBtn.layoutSizingHorizontal = "FILL";
+    assistBtn.layoutAlign = "STRETCH";
+    assistBtn.layoutSizingVertical = "HUG";
+  } catch { }
+  assistBtn.appendChild(createTxt("Talk to a Dedicated Specialist", 13, "SemiBold", C.bgPure));
   assistBox.appendChild(assistBtn);
 
   assistSection.appendChild(assistBox);
@@ -1832,7 +2026,7 @@ async function buildSmartMobileLandingPage(
 
   const portalBtnRow = figma.createFrame();
   portalBtnRow.name = "Buttons";
-  portalBtnRow.resize(innerContentWidth - 40, 42);
+  portalBtnRow.resize(innerContentWidth - 40, 48);
   portalBtnRow.layoutMode = "HORIZONTAL";
   portalBtnRow.itemSpacing = 10;
   portalBtnRow.fills = [];
@@ -1842,13 +2036,13 @@ async function buildSmartMobileLandingPage(
   loginBtn.layoutMode = "HORIZONTAL";
   loginBtn.primaryAxisAlignItems = "CENTER";
   loginBtn.counterAxisAlignItems = "CENTER";
-  loginBtn.paddingLeft = 20;
-  loginBtn.paddingRight = 20;
-  loginBtn.paddingTop = 10;
-  loginBtn.paddingBottom = 10;
+  loginBtn.paddingLeft = 22;
+  loginBtn.paddingRight = 22;
+  loginBtn.paddingTop = 13;
+  loginBtn.paddingBottom = 13;
   loginBtn.cornerRadius = 8;
   loginBtn.fills = [{ type: "SOLID", color: C.bluePrimary }];
-  loginBtn.appendChild(createTxt("Log In", 12.5, "SemiBold", C.bgPure));
+  loginBtn.appendChild(createTxt("Log In", 13, "SemiBold", C.bgPure));
   portalBtnRow.appendChild(loginBtn);
 
   const regBtn = figma.createFrame();
@@ -1856,13 +2050,13 @@ async function buildSmartMobileLandingPage(
   regBtn.layoutMode = "HORIZONTAL";
   regBtn.primaryAxisAlignItems = "CENTER";
   regBtn.counterAxisAlignItems = "CENTER";
-  regBtn.paddingLeft = 20;
-  regBtn.paddingRight = 20;
-  regBtn.paddingTop = 10;
-  regBtn.paddingBottom = 10;
+  regBtn.paddingLeft = 22;
+  regBtn.paddingRight = 22;
+  regBtn.paddingTop = 13;
+  regBtn.paddingBottom = 13;
   regBtn.cornerRadius = 8;
   regBtn.fills = [{ type: "SOLID", color: C.bgPure }];
-  regBtn.appendChild(createTxt("Register", 12.5, "SemiBold", C.navySlate));
+  regBtn.appendChild(createTxt("Register", 13, "SemiBold", C.navySlate));
   portalBtnRow.appendChild(regBtn);
 
   portalBox.appendChild(portalBtnRow);
@@ -1922,10 +2116,10 @@ async function buildSmartMobileLandingPage(
   signUpBtn.layoutMode = "HORIZONTAL";
   signUpBtn.primaryAxisAlignItems = "CENTER";
   signUpBtn.counterAxisAlignItems = "CENTER";
-  signUpBtn.paddingLeft = 18;
-  signUpBtn.paddingRight = 18;
-  signUpBtn.paddingTop = 9;
-  signUpBtn.paddingBottom = 9;
+  signUpBtn.paddingLeft = 20;
+  signUpBtn.paddingRight = 20;
+  signUpBtn.paddingTop = 11;
+  signUpBtn.paddingBottom = 11;
   signUpBtn.cornerRadius = 6;
   signUpBtn.fills = [{ type: "SOLID", color: C.bluePrimary }];
   signUpBtn.appendChild(createTxt("Sign Up", 12.5, "Bold", C.bgPure));
@@ -2235,6 +2429,7 @@ async function buildGenericSmartMobilePage(
     try {
       frame.layoutPositioning = "AUTO";
       frame.layoutSizingHorizontal = "FILL";
+      frame.layoutAlign = "STRETCH";
     } catch { }
     return frame;
   }
@@ -2572,6 +2767,7 @@ async function buildGenericSmartMobilePage(
   try {
     heroCard.layoutPositioning = "AUTO";
     heroCard.layoutSizingHorizontal = "FILL";
+    heroCard.layoutAlign = "STRETCH";
   } catch { }
 
   const heroImgNode = makeImgBox("Hero Image", innerWidth, 220, heroImg ? heroImg.hash : null, "FILL", null, 0);
@@ -2583,27 +2779,33 @@ async function buildGenericSmartMobilePage(
   // Hero CTA Buttons
   const ctaStack = figma.createFrame();
   ctaStack.name = "CTA Buttons";
-  ctaStack.resize(innerWidth, 48);
+  ctaStack.resize(innerWidth, 50);
   ctaStack.layoutMode = "VERTICAL";
   ctaStack.itemSpacing = 10;
   ctaStack.fills = [];
   try {
     ctaStack.layoutPositioning = "AUTO";
     ctaStack.layoutSizingHorizontal = "FILL";
+    ctaStack.layoutAlign = "STRETCH";
     ctaStack.layoutSizingVertical = "HUG";
   } catch { }
 
   const mainBtn = figma.createFrame();
   mainBtn.name = "Primary CTA Button";
-  mainBtn.resize(innerWidth, 48);
+  mainBtn.resize(innerWidth, 50);
   mainBtn.layoutMode = "HORIZONTAL";
   mainBtn.primaryAxisAlignItems = "CENTER";
   mainBtn.counterAxisAlignItems = "CENTER";
+  mainBtn.paddingTop = 15;
+  mainBtn.paddingBottom = 15;
+  mainBtn.paddingLeft = 24;
+  mainBtn.paddingRight = 24;
   mainBtn.cornerRadius = 10;
   mainBtn.fills = [{ type: "SOLID", color: T.brandAccent }];
   try {
     mainBtn.layoutPositioning = "AUTO";
     mainBtn.layoutSizingHorizontal = "FILL";
+    mainBtn.layoutAlign = "STRETCH";
     mainBtn.layoutSizingVertical = "HUG";
   } catch { }
   mainBtn.appendChild(makeTxt(heroCtaText, 13.5, "Bold", { r: 1, g: 1, b: 1 }));
@@ -2724,18 +2926,23 @@ async function buildGenericSmartMobilePage(
       // Action Button
       const btn = figma.createFrame();
       btn.name = "Card CTA Button";
-      btn.resize(innerWidth - 32, 42);
+      btn.resize(innerWidth - 32, 48);
       btn.layoutMode = "HORIZONTAL";
       btn.primaryAxisAlignItems = "CENTER";
       btn.counterAxisAlignItems = "CENTER";
+      btn.paddingTop = 14;
+      btn.paddingBottom = 14;
+      btn.paddingLeft = 20;
+      btn.paddingRight = 20;
       btn.cornerRadius = 8;
       btn.fills = [{ type: "SOLID", color: T.isDark ? T.brandAccent : { r: 0.08, g: 0.11, b: 0.18 } }];
       try {
         btn.layoutPositioning = "AUTO";
         btn.layoutSizingHorizontal = "FILL";
+        btn.layoutAlign = "STRETCH";
         btn.layoutSizingVertical = "HUG";
       } catch { }
-      btn.appendChild(makeTxt("View Details →", 12.5, "SemiBold", { r: 1, g: 1, b: 1 }));
+      btn.appendChild(makeTxt("View Details →", 13, "SemiBold", { r: 1, g: 1, b: 1 }));
       card.appendChild(btn);
 
       cardsSection.appendChild(card);
@@ -2791,18 +2998,23 @@ async function buildGenericSmartMobilePage(
 
   const calloutBtn = figma.createFrame();
   calloutBtn.name = "Callout Button";
-  calloutBtn.resize(innerWidth - 36, 42);
+  calloutBtn.resize(innerWidth - 36, 48);
   calloutBtn.layoutMode = "HORIZONTAL";
   calloutBtn.primaryAxisAlignItems = "CENTER";
   calloutBtn.counterAxisAlignItems = "CENTER";
+  calloutBtn.paddingTop = 14;
+  calloutBtn.paddingBottom = 14;
+  calloutBtn.paddingLeft = 20;
+  calloutBtn.paddingRight = 20;
   calloutBtn.cornerRadius = 8;
   calloutBtn.fills = [{ type: "SOLID", color: T.brandAccent }];
   try {
     calloutBtn.layoutPositioning = "AUTO";
     calloutBtn.layoutSizingHorizontal = "FILL";
+    calloutBtn.layoutAlign = "STRETCH";
     calloutBtn.layoutSizingVertical = "HUG";
   } catch { }
-  calloutBtn.appendChild(makeTxt("Contact Support Team", 12.5, "SemiBold", { r: 1, g: 1, b: 1 }));
+  calloutBtn.appendChild(makeTxt("Contact Support Team", 13, "SemiBold", { r: 1, g: 1, b: 1 }));
   calloutBox.appendChild(calloutBtn);
 
   calloutSection.appendChild(calloutBox);
@@ -3323,6 +3535,17 @@ async function reflowDirectTree(
 
         const role = classifyResponsiveRole(frame, frame.parent as FrameNode | null, workingFrame);
 
+        // Protect small elements, chips, badges, and inline rows from multi-column reflow!
+        const isSmallRowOrChip =
+          role === "BADGE_OR_CHIP" ||
+          role === "HORIZONTAL_ROW" ||
+          role === "NAV_OR_HEADER_ROW" ||
+          role === "BUTTON_CTA" ||
+          role === "BUTTON_INLINE" ||
+          role === "ICON_OR_AVATAR" ||
+          isInlineRow ||
+          toNum(frame.height) <= 64;
+
         // Protect navigation link groups from being reflowed into vertical columns with 16px gaps!
         const isNavGroup =
           role === "NAV_OR_HEADER_ROW" ||
@@ -3334,7 +3557,7 @@ async function reflowDirectTree(
           (frame.parent && (frame.parent.name || "").toLowerCase().includes("nav"));
 
         const isMultiCol =
-          !isInlineRow &&
+          !isSmallRowOrChip &&
           !isNavGroup &&
           frame.children &&
           frame.children.length >= 2 &&
@@ -3344,9 +3567,10 @@ async function reflowDirectTree(
 
         if (reflowGrids && isMultiCol && targetWidth <= 520) {
           const totalChildWidth = frame.children.reduce((sum, c) => sum + c.width, 0);
-          if (totalChildWidth > availableWidth || frame.children.some((c) => c.width > availableWidth * 0.4)) {
+          // Only reflow if total child width exceeds available width OR children are substantial cards (height >= 70)
+          if (totalChildWidth > availableWidth || frame.children.some((c) => c.width > availableWidth * 0.45 && toNum(c.height) >= 70)) {
             safeSetLayoutMode(frame, "VERTICAL");
-            safeSetItemSpacing(frame, 12);
+            safeSetItemSpacing(frame, 14);
             safeSetPrimaryAlign(frame, "MIN");
             safeSetCounterAlign(frame, "MIN");
             gridsReflowed++;
@@ -3357,44 +3581,50 @@ async function reflowDirectTree(
         const hasImageFill =
           "fills" in frame &&
           Array.isArray(frame.fills) &&
-          frame.fills.some((f) => f.type === "IMAGE");
-        const isMediaPlaceholder =
+          frame.fills.some((f) => f.type === "IMAGE" && f.visible !== false);
+        const hasChildWithImageReflow =
           frame.children &&
-          frame.children.length === 0 &&
-          (hasImageFill ||
-            lowerName.includes("image") ||
-            lowerName.includes("img") ||
-            lowerName.includes("photo") ||
-            lowerName.includes("thumb") ||
-            lowerName.includes("banner") ||
-            lowerName.includes("hero-img"));
+          frame.children.some(
+            (c) =>
+              ("fills" in c && Array.isArray((c as any).fills) && (c as any).fills.some((fl: any) => fl.type === "IMAGE" && fl.visible !== false)) ||
+              (c.name || "").toLowerCase().includes("image") ||
+              (c.name || "").toLowerCase().includes("img") ||
+              (c.name || "").toLowerCase().includes("photo")
+          );
+        const isMediaPlaceholder =
+          hasImageFill ||
+          hasChildWithImageReflow ||
+          lowerName.includes("image") ||
+          lowerName.includes("img") ||
+          lowerName.includes("photo") ||
+          lowerName.includes("thumb") ||
+          lowerName.includes("banner") ||
+          lowerName.includes("mockup") ||
+          lowerName.includes("showcase") ||
+          lowerName.includes("hero-img");
 
-        if (isMediaPlaceholder) {
-          if (frame.width > availableWidth) {
+        if (isMediaPlaceholder && frame.height >= 50) {
+          if (frame.width > availableWidth || frame.width < availableWidth * 0.8) {
             const ratio = frame.height / Math.max(1, frame.width);
             const newW = availableWidth;
-            const newH = Math.max(60, Math.min(320, Math.round(newW * ratio)));
+            const newH = Math.max(120, Math.min(320, Math.round(newW * (ratio || 0.56))));
             try {
               frame.resize(newW, newH);
             } catch { }
           }
           try {
+            frame.layoutPositioning = "AUTO";
             frame.layoutSizingHorizontal = "FILL";
+            frame.layoutAlign = "STRETCH";
           } catch { }
         }
 
         if (role === "BADGE_OR_CHIP") {
-          if (frame.layoutMode === "NONE") safeSetLayoutMode(frame, "HORIZONTAL");
+          safeSetLayoutMode(frame, "HORIZONTAL");
           safeSetCounterAlign(frame, "CENTER");
           safeSetPrimaryAlign(frame, "CENTER");
-          const pt = toNum(frame.paddingTop);
-          const pb = toNum(frame.paddingBottom);
-          const pl = toNum(frame.paddingLeft);
-          const pr = toNum(frame.paddingRight);
-          if (pt < 4 || pt > 10) safeSetPadding(frame, 6, undefined, undefined, undefined);
-          if (pb < 4 || pb > 10) safeSetPadding(frame, undefined, undefined, 6, undefined);
-          if (pl < 8 || pl > 18) safeSetPadding(frame, undefined, undefined, undefined, 12);
-          if (pr < 8 || pr > 18) safeSetPadding(frame, undefined, 12, undefined, undefined);
+          safeSetPadding(frame, 6, 12, 6, 12);
+          safeSetItemSpacing(frame, 6);
           if (toNum(frame.cornerRadius) < 6) safeSetCornerRadius(frame, 16);
           try {
             frame.counterAxisSizingMode = "AUTO";
@@ -3402,6 +3632,32 @@ async function reflowDirectTree(
             frame.layoutSizingHorizontal = "HUG";
             frame.layoutSizingVertical = "HUG";
           } catch { }
+
+          for (const child of frame.children) {
+            if (child.type === "TEXT") {
+              formatResponsiveTextNode(child as TextNode, "HORIZONTAL", frame.width);
+            }
+          }
+        } else if (role === "HORIZONTAL_ROW") {
+          // Chips row, rating row, avatar+name, price+tag, icon+text
+          safeSetLayoutMode(frame, "HORIZONTAL");
+          safeSetCounterAlign(frame, "CENTER");
+          safeSetPrimaryAlign(frame, "MIN");
+          safeSetItemSpacing(frame, Math.min(toNum(frame.itemSpacing) || 8, 12));
+          try {
+            if (parentLayout === "VERTICAL") {
+              frame.layoutSizingHorizontal = "FILL";
+            } else {
+              frame.layoutSizingHorizontal = "HUG";
+            }
+            frame.layoutSizingVertical = "HUG";
+          } catch { }
+
+          for (const child of frame.children) {
+            if (child.type === "TEXT") {
+              formatResponsiveTextNode(child as TextNode, "HORIZONTAL", frame.width);
+            }
+          }
         } else if (role === "NAV_OR_HEADER_ROW") {
           // Navigation / Header row: keep horizontal, compact spacing, NO giant vertical stacks!
           safeSetLayoutMode(frame, "HORIZONTAL");
@@ -3417,13 +3673,15 @@ async function reflowDirectTree(
           if (frame.layoutMode === "NONE") safeSetLayoutMode(frame, "HORIZONTAL");
           safeSetPrimaryAlign(frame, "CENTER");
           safeSetCounterAlign(frame, "CENTER");
-          if (toNum(frame.paddingTop) < 10) safeSetPadding(frame, 12, undefined, undefined, undefined);
-          if (toNum(frame.paddingBottom) < 10) safeSetPadding(frame, undefined, undefined, 12, undefined);
-          if (toNum(frame.paddingLeft) < 14) safeSetPadding(frame, undefined, undefined, undefined, 18);
-          if (toNum(frame.paddingRight) < 14) safeSetPadding(frame, undefined, 18, undefined, undefined);
-          if (toNum(frame.cornerRadius) < 6) safeSetCornerRadius(frame, 8);
+          safeSetPadding(frame, 15, 24, 15, 24);
+          if (toNum(frame.cornerRadius) < 8) safeSetCornerRadius(frame, 10);
+          if (frame.height < 48) {
+            try { frame.resize(frame.width, 48); } catch { }
+          }
           try {
+            frame.layoutPositioning = "AUTO";
             frame.layoutSizingHorizontal = "FILL";
+            frame.layoutAlign = "STRETCH";
             frame.layoutSizingVertical = "HUG";
           } catch {
             try { frame.layoutAlign = "STRETCH"; } catch { }
@@ -3432,12 +3690,13 @@ async function reflowDirectTree(
           if (frame.layoutMode === "NONE") safeSetLayoutMode(frame, "HORIZONTAL");
           safeSetPrimaryAlign(frame, "CENTER");
           safeSetCounterAlign(frame, "CENTER");
-          if (toNum(frame.paddingTop) < 6) safeSetPadding(frame, 8, undefined, undefined, undefined);
-          if (toNum(frame.paddingBottom) < 6) safeSetPadding(frame, undefined, undefined, 8, undefined);
-          if (toNum(frame.paddingLeft) < 10) safeSetPadding(frame, undefined, undefined, undefined, 14);
-          if (toNum(frame.paddingRight) < 10) safeSetPadding(frame, undefined, 14, undefined, undefined);
+          safeSetPadding(frame, 12, 20, 12, 20);
           if (toNum(frame.cornerRadius) < 6) safeSetCornerRadius(frame, 8);
+          if (frame.height < 42) {
+            try { frame.resize(frame.width, 42); } catch { }
+          }
           try {
+            frame.layoutPositioning = "AUTO";
             frame.counterAxisSizingMode = "AUTO";
             frame.primaryAxisSizingMode = "AUTO";
             frame.layoutSizingHorizontal = "HUG";
@@ -3458,6 +3717,11 @@ async function reflowDirectTree(
           if (toNum(frame.cornerRadius) < 8) {
             safeSetCornerRadius(frame, 14);
           }
+          try {
+            frame.layoutPositioning = "AUTO";
+            frame.layoutSizingHorizontal = "FILL";
+            frame.layoutAlign = "STRETCH";
+          } catch { }
         } else if (role === "SECTION") {
           if (toNum(frame.paddingLeft) < 14) safeSetPadding(frame, undefined, undefined, undefined, 16);
           if (toNum(frame.paddingRight) < 14) safeSetPadding(frame, undefined, 16, undefined, undefined);
@@ -3476,7 +3740,9 @@ async function reflowDirectTree(
         // SIZING: FILL CONTAINER (WIDTH) & HUG CONTENT (HEIGHT)
         if (parentLayout === "VERTICAL") {
           try {
+            frame.layoutPositioning = "AUTO";
             frame.layoutSizingHorizontal = "FILL";
+            frame.layoutAlign = "STRETCH";
           } catch {
             try {
               frame.layoutAlign = "STRETCH";
